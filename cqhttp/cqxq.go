@@ -1,10 +1,7 @@
 package cqhttp
 
 import (
-	"crypto/md5"
-	"encoding/base64"
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 )
@@ -71,46 +68,5 @@ func XQ(message string) string {
 		newpic := fmt.Sprintf("[Voi=%s]", v[1])
 		message = strings.ReplaceAll(message, oldpic, newpic)
 	}
-
 	return message
-}
-
-func Base64SavePic(res string) string {
-	data, err := base64.StdEncoding.DecodeString(res)
-	if err != nil {
-		ERROR("base64编码解码失败")
-	}
-	name := fmt.Sprintf("%x", md5.Sum(data))
-	path := ImagePath + name + ".jpg"
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-	defer f.Close()
-	if err != nil {
-		ERROR("base64编码保存图片失败")
-	} else {
-		_, err = f.Write(data)
-		if err != nil {
-			ERROR("base64编码写入图片失败")
-		}
-	}
-	return path
-}
-
-func Base64SaveRec(res string) string {
-	data, err := base64.StdEncoding.DecodeString(res)
-	if err != nil {
-		ERROR("base64编码解码失败")
-	}
-	name := fmt.Sprintf("%x", md5.Sum(data))
-	path := RecordPath + name + ".amr"
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-	defer f.Close()
-	if err != nil {
-		ERROR("base64编码保存语音失败")
-	} else {
-		_, err = f.Write(data)
-		if err != nil {
-			ERROR("base64编码写入语音失败")
-		}
-	}
-	return path
 }
