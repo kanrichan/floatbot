@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <windows.h>
 extern char* GO_Create(char* version);
 extern int GO_Event(char * selfID, int mseeageType, int subType, char * groupID, char * userID, char * noticID, char * message, char * messageNum, char* messageID, char* rawMessage, char* time, char* ret);
 extern int GO_SetUp();
@@ -21,6 +22,7 @@ int _stdcall XQ_Event(char * selfID, int mseeageType, int subType, char * groupI
 
 int _stdcall XQ_SetUp()
 {
+	MessageBox(NULL, TEXT("总有人问为什么点击设置插件没有反应，所以就有了这个窗口"), TEXT("OneBot-YaYa"), 0);
 	return GO_DestroyPlugin();
 }
 
