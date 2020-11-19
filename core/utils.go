@@ -2,6 +2,7 @@ package core
 
 import "C"
 import "strconv"
+import "unsafe"
 import sc "golang.org/x/text/encoding/simplifiedchinese"
 
 func CString(str string) *C.char {
@@ -21,6 +22,17 @@ func CBool(b bool) C.int {
 	return 0
 }
 
+func GoBool(b C.int) bool {
+	if b == 1 {
+		return true
+	}
+	return false
+}
+
+func CByte(bt []byte) *C.char {
+	return (*C.char)(unsafe.Pointer(&bt))
+}
+
 func Str2Int(str string) int64 {
 	val, _ := strconv.ParseInt(str, 10, 64)
 	return val
@@ -32,6 +44,9 @@ func Int2Str(val int64) string {
 }
 
 func GoInt2CStr(val int64) *C.char {
+	if val == 0 {
+		return CString("")
+	}
 	return CString(Int2Str(val))
 }
 

@@ -1,4 +1,4 @@
-module github.com/Yiwen-Chan/OneBot-YaYa
+module yaya
 
 go 1.14
 
