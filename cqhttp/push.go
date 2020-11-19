@@ -13,14 +13,13 @@ func WSCPush(bot int64, e Event) {
 		}
 	}()
 
-	if CQHttpOK {
-		send, _ := json.Marshal(e)
-		for _, c := range WSCs {
-			if bot == c.Bot {
-				c.Send <- []byte(string(send))
-			}
+	send, _ := json.Marshal(e)
+	for _, c := range WSCs {
+		if bot == c.Bot && c.Status == 1 {
+			c.Send <- []byte(string(send))
 		}
 	}
+
 }
 
 func OnPrivateMessage(xe XEvent) {
@@ -103,6 +102,117 @@ func OnEnable(xe XEvent) {
 		"post_type":       "meta_event",
 		"meta_event_type": "lifecycle",
 		"sub_type":        "connect",
+	}
+	WSCPush(xe.selfID, e)
+}
+
+func OnFileUpload(xe XEvent) {
+	e := Event{
+		"time":        xe.time,
+		"self_id":     xe.selfID,
+		"post_type":   "notice",
+		"notice_type": "group_upload",
+		"group_id":    xe.groupID,
+		"user_id":     xe.userID,
+		"file": Event{
+			"id":    "unknow",
+			"name":  xe.message,
+			"size":  "unknow",
+			"busid": "unknow",
+		},
+	}
+	WSCPush(xe.selfID, e)
+}
+
+func OnAdminChange(xe XEvent, typ string) {
+	e := Event{
+		"time":        xe.time,
+		"self_id":     xe.selfID,
+		"post_type":   "notice",
+		"notice_type": "group_admin",
+		"sub_type":    typ,
+		"group_id":    xe.groupID,
+		"user_id":     xe.userID,
+	}
+	WSCPush(xe.selfID, e)
+}
+
+func OnGroupMenberDecrease(xe XEvent, typ string) {
+	e := Event{
+		"time":        xe.time,
+		"self_id":     xe.selfID,
+		"post_type":   "notice",
+		"notice_type": "group_decrease",
+		"sub_type":    typ,
+		"group_id":    xe.groupID,
+		"operator_id": xe.userID,
+		"user_id":     xe.noticID,
+	}
+	WSCPush(xe.selfID, e)
+}
+
+func OnGroupMenberIncrease(xe XEvent, typ string) {
+	e := Event{
+		"time":        xe.time,
+		"self_id":     xe.selfID,
+		"post_type":   "notice",
+		"notice_type": "group_increase",
+		"sub_type":    "unknow",
+		"group_id":    xe.groupID,
+		"operator_id": xe.userID,
+		"user_id":     xe.noticID,
+	}
+	WSCPush(xe.selfID, e)
+}
+
+func OnGroupBan(xe XEvent, typ string) {
+	e := Event{
+		"time":        xe.time,
+		"self_id":     xe.selfID,
+		"post_type":   "notice",
+		"notice_type": "group_ban",
+		"sub_type":    typ,
+		"group_id":    xe.groupID,
+		"operator_id": xe.userID,
+		"user_id":     xe.noticID,
+		"duration":    "unknow",
+	}
+	WSCPush(xe.selfID, e)
+}
+
+func OnFriendAdd(xe XEvent) {
+	e := Event{
+		"time":        xe.time,
+		"self_id":     xe.selfID,
+		"post_type":   "notice",
+		"notice_type": "friend_add",
+		"user_id":     xe.userID,
+	}
+	WSCPush(xe.selfID, e)
+}
+
+func OnGroupDelete(xe XEvent) {
+	e := Event{
+		"time":        xe.time,
+		"self_id":     xe.selfID,
+		"post_type":   "notice",
+		"notice_type": "group_recall",
+		"group_id":    xe.groupID,
+		"user_id":     xe.noticID,
+		"operator_id": xe.userID,
+		"message_id":  0,
+	}
+	WSCPush(xe.selfID, e)
+}
+
+func OnPrivateDelete(xe XEvent) {
+	e := Event{
+		"time":        xe.time,
+		"self_id":     xe.selfID,
+		"post_type":   "notice",
+		"notice_type": "friend_recall",
+		"user_id":     xe.noticID,
+		"message_id":  0,
 	}
 	WSCPush(xe.selfID, e)
 }
