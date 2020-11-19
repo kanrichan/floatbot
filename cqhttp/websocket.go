@@ -11,19 +11,19 @@ import (
 )
 
 var WSCs []*WSC
-var CQHttpOK bool
 
 type WSC struct {
 	Enable    bool
 	Bot       int64
+	Status    int64
 	Url       string
 	Token     string
 	Reconnect int64
 	HeratBeat int64
 	Conn      *websocket.Conn
 	Send      chan []byte
+	Heart     chan []byte
 	Api       chan []byte
-	Quit      chan bool
 }
 
 func WSCInit(conf *Yaml) {
@@ -35,20 +35,20 @@ func WSCInit(conf *Yaml) {
 			heartbeat = c.HeratBeatConf.Interval
 		}
 		newWSC := &WSC{
-			Bot:       c.Bot,
 			Enable:    c.WSCConf.Enable,
+			Bot:       c.Bot,
+			Status:    0,
 			Url:       c.WSCConf.Url,
 			Token:     c.WSCConf.AccessToken,
 			Reconnect: c.WSCConf.ReconnectInterval,
 			HeratBeat: heartbeat,
 			Conn:      &websocket.Conn{},
 			Send:      make(chan []byte, 100),
+			Heart:     make(chan []byte, 1),
 			Api:       make(chan []byte, 100),
-			Quit:      make(chan bool),
 		}
 		WSCs = append(WSCs, newWSC)
 	}
-	CQHttpOK = true
 }
 
 func WSCStarts() {
@@ -58,9 +58,9 @@ func WSCStarts() {
 		}
 	}()
 	for i, _ := range WSCs {
-		go WSCs[i].WSCStart()
-		go WSCs[i].WSCApi()
-		go WSCs[i].WSCHeartBeat()
+		if WSCs[i].Status == 0 {
+			go WSCs[i].WSCStart()
+		}
 	}
 }
 
@@ -74,10 +74,11 @@ func (c *WSC) WSCStart() {
 	if !c.Enable {
 		return
 	}
-	if c.Url != "" {
-		c.WSCConnect()
+	if c.Url != "" && c.Status == 0 {
 		go c.WSCListen()
 		go c.WSCSend()
+		go c.WSCHeartBeat()
+		go c.WSCApi()
 	}
 }
 
@@ -90,6 +91,7 @@ func (c *WSC) WSCConnect() {
 			continue
 		} else {
 			c.Conn = conn
+			c.Status = 1
 			c.WSCHandShake()
 			INFO("[反向WS] Bot %v 与 %v 服务器连接成功", c.Bot, c.Url)
 			break
@@ -118,8 +120,8 @@ func (c *WSC) WSCHandShake() {
 		"sub_type":        "connect",
 		"time":            fmt.Sprint(time.Now().Unix()),
 	}
-	send, _ := json.Marshal(handshake)
-	c.Send <- []byte(string(send))
+	heart, _ := json.Marshal(handshake)
+	c.Heart <- []byte(string(heart))
 }
 
 func (c *WSC) WSCHeartBeat() {
@@ -134,26 +136,30 @@ func (c *WSC) WSCHeartBeat() {
 				"status":          "null",
 				"time":            fmt.Sprint(time.Now().Unix()),
 			}
-			send, _ := json.Marshal(heartbeat)
-			c.Send <- []byte(string(send))
+			heart, _ := json.Marshal(heartbeat)
+			if c.Status == 1 {
+				c.Heart <- []byte(string(heart))
+			}
 		}
 	}
 }
 
 func (c *WSC) WSCListen() {
 	defer func() {
-		go c.WSCStart()
-		DEBUG("[监听服务] Bot %v 服务开始自闭并重新启动...... ", c.Bot)
-	}()
-
-	defer func() {
-		c.Quit <- true
-		_ = c.Conn.Close()
 		if err := recover(); err != nil {
+			c.Status = 0
 			ERROR("[监听服务] Bot %v 服务发生错误，正在自动恢复中...... %v，", c.Bot, err)
+			c.WSCListen()
 		}
 	}()
-
+	c.WSCConnect()
+	// 等待wsc连接成功
+	for {
+		if c.Status == 1 {
+			break
+		}
+	}
+	// 监听wsc
 	DEBUG("[监听服务] Bot %v 开始监听...... ", c.Bot)
 	for {
 		_, buf, err := c.Conn.ReadMessage()
@@ -168,17 +174,18 @@ func (c *WSC) WSCSend() {
 	defer func() {
 		if err := recover(); err != nil {
 			ERROR("[上报服务] Bot %v 服务发生错误，正在自动恢复中...... %v，", c.Bot, err)
+			c.WSCSend()
 		}
 	}()
-
+	// 等待wsc连接成功
+	for {
+		if c.Status == 1 {
+			break
+		}
+	}
 	DEBUG("[上报服务] Bot %v 服务开始启动...... ", c.Bot)
 	for {
 		select {
-		case quit := <-c.Quit:
-			if quit {
-				DEBUG("[上报服务] Bot %v 服务被动自闭...... ", c.Bot)
-				return
-			}
 		case send := <-c.Send:
 			_ = c.Conn.SetWriteDeadline(time.Now().Add(time.Second * 15))
 			err := c.Conn.WriteMessage(websocket.TextMessage, send)
@@ -186,6 +193,14 @@ func (c *WSC) WSCSend() {
 				panic(err)
 			} else {
 				DEBUG("[上报服务] Bot %v 上报至 %v ：%v", c.Bot, c.Url, string(send))
+			}
+		case heart := <-c.Heart:
+			_ = c.Conn.SetWriteDeadline(time.Now().Add(time.Second * 15))
+			err := c.Conn.WriteMessage(websocket.TextMessage, heart)
+			if err != nil {
+				panic(err)
+			} else {
+				DEBUG("[心跳服务] Bot %v 连接至 %v ：%v", c.Bot, c.Url, string(heart))
 			}
 		}
 	}
