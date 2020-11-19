@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 
-	"github.com/Yiwen-Chan/OneBot-YaYa/cqhttp"
+	"yaya/cqhttp"
 )
 
 // 插件信息
@@ -18,7 +18,7 @@ type AppInfo struct {
 func newAppInfo() *AppInfo {
 	return &AppInfo{
 		Name:   "OneBot-YaYa",
-		Pver:   "1.0.1",
+		Pver:   "1.0.2 beta",
 		Sver:   3,
 		Author: "kanri",
 		Desc:   "http://github.com/Yiwen-Chan/OneBot-YaYa",
