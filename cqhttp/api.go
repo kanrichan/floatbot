@@ -40,28 +40,25 @@ func (c *WSC) WSCApi() {
 		}
 	}
 	DEBUG("[响应服务] Bot %v 服务开始启动...... ", c.Bot)
-	for {
-		select {
-		case api := <-c.Api:
-			req := gjson.ParseBytes(api)
-			action := strings.ReplaceAll(req.Get("action").Str, "_async", "")
-			params := req.Get("params")
-			echo := req.Get("echo.seq").Int()
+	for api := range c.Api {
+		req := gjson.ParseBytes(api)
+		action := strings.ReplaceAll(req.Get("action").Str, "_async", "")
+		params := req.Get("params")
+		echo := req.Get("echo.seq").Int()
 
-			DEBUG("[响应服务] Bot %v 接收到API调用: %v 参数: %v", c.Bot, req.Get("action").Str, string(api))
-			if f, ok := wsApi[action]; ok {
-				ret := f(c.Bot, params)
-				ret.Echo.Seq = echo
-				send, _ := json.Marshal(ret)
+		DEBUG("[响应服务] Bot %v 接收到API调用: %v 参数: %v", c.Bot, req.Get("action").Str, string(api))
+		if f, ok := wsApi[action]; ok {
+			ret := f(c.Bot, params)
+			ret.Echo.Seq = echo
+			send, _ := json.Marshal(ret)
 
-				c.Send <- []byte(string(send))
-			} else {
-				ret := ResultFail()
-				ret.Echo.Seq = echo
-				send, _ := json.Marshal(ret)
+			c.Send <- send
+		} else {
+			ret := resultFail(Data{})
+			ret.Echo.Seq = echo
+			send, _ := json.Marshal(ret)
 
-				c.Send <- []byte(string(send))
-			}
+			c.Send <- send
 		}
 	}
 }
@@ -95,24 +92,36 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 		messages := p.Get("message")
 		return SendMessage(bot, 2, group_id, 0, messages)
 	},
+	"delete_msg": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"get_msg": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"get_forward_msg": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "先驱好像不支持"})
+	},
 	"send_like": func(bot int64, p gjson.Result) Result {
 		user_id := p.Get("user_id").Int()
 		core.UpVote(bot, user_id)
-		return ResultOK(Data{"message_id": 0})
+		return resultOK(Data{"message_id": 0})
 	},
 	"set_group_kick": func(bot int64, p gjson.Result) Result {
 		group_id := p.Get("group_id").Int()
 		user_id := p.Get("user_id").Int()
 		reject_add_request := p.Get("reject_add_request").Bool()
 		core.KickGroupMBR(bot, group_id, user_id, reject_add_request)
-		return ResultOK(Data{"message_id": 0})
+		return resultOK(Data{"message_id": 0})
 	},
 	"set_group_ban": func(bot int64, p gjson.Result) Result {
 		group_id := p.Get("group_id").Int()
 		user_id := p.Get("user_id").Int()
 		duration := p.Get("duration").Int()
 		core.ShutUP(bot, group_id, user_id, duration)
-		return ResultOK(Data{"message_id": 0})
+		return resultOK(Data{"message_id": 0})
+	},
+	"set_group_anonymous_ban": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
 	},
 	"set_group_whole_ban": func(bot int64, p gjson.Result) Result {
 		group_id := p.Get("group_id").Int()
@@ -122,36 +131,107 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 		} else {
 			core.ShutUP(bot, group_id, 0, 0)
 		}
-		return ResultOK(Data{"message_id": 0})
+		return resultOK(Data{"message_id": 0})
+	},
+	"set_group_admin": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "先驱好像不支持"})
 	},
 	"set_group_anonymous": func(bot int64, p gjson.Result) Result {
 		group_id := p.Get("group_id").Int()
 		enable := p.Get("enable").Bool()
 		core.SetAnon(bot, group_id, enable)
-		return ResultOK(Data{"message_id": 0})
+		return resultOK(Data{"message_id": 0})
 	},
 	"set_group_card": func(bot int64, p gjson.Result) Result {
 		group_id := p.Get("group_id").Int()
 		user_id := p.Get("user_id").Int()
 		card := p.Get("card").Str
 		core.SetGroupCard(bot, group_id, user_id, card)
-		return ResultOK(Data{"message_id": 0})
+		return resultOK(Data{"message_id": 0})
+	},
+	"set_group_name": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "先驱好像不支持"})
 	},
 	"set_group_leave": func(bot int64, p gjson.Result) Result {
 		group_id := p.Get("group_id").Int()
 		core.QuitGroup(bot, group_id)
-		return ResultOK(Data{"message_id": 0})
+		return resultOK(Data{"message_id": 0})
 	},
-	"out_put_log": func(bot int64, p gjson.Result) Result {
-		text := p.Get("text").Str
-		return OutPutLog(text)
+	"set_group_special_title": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "先驱好像不支持"})
+	},
+	"set_friend_add_request": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"set_group_add_request": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
 	},
 	"get_login_info": func(bot int64, p gjson.Result) Result {
-		return GetLoginInfo(bot)
+		nickname := core.GetNick(bot, bot)
+		return resultOK(Data{"user_id": bot, "nickname": nickname})
+	},
+	"get_stranger_info": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	// 测试
+	"get_friend_list": func(bot int64, p gjson.Result) Result {
+		list := core.GetFriendList(bot)
+		return resultOK(Data{"data": list})
+	},
+	"get_group_info": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"get_group_list": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"get_group_member_info": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"get_group_honor_info": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"get_cookies": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"get_csrf_token": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"get_record": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"get_image": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"can_send_image": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"yes": true})
+	},
+	"can_send_record": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"yes": true})
+	},
+	"get_status": func(bot int64, p gjson.Result) Result {
+		online := core.IsOnline(bot, bot)
+		return resultFail(Data{"online": online, "good": true})
+	},
+	"get_version_info": func(bot int64, p gjson.Result) Result {
+		app_info := gjson.Parse(AppInfoJson)
+		app_version := app_info.Get("pver")
+		return resultFail(Data{"app_name": "OneBot-YaYa", "app_version": app_version, "protocol_version": "v11"})
+	},
+	"set_restart": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	"clean_cache": func(bot int64, p gjson.Result) Result {
+		return resultFail(Data{"data": "还没写，催更去GitHub提issue"})
+	},
+	// 先驱新增
+	"out_put_log": func(bot int64, p gjson.Result) Result {
+		text := p.Get("text").Str
+		core.OutPutLog(text)
+		return resultOK(Data{})
 	},
 }
 
-func ResultOK(data map[string]interface{}) Result {
+func resultOK(data map[string]interface{}) Result {
 	return Result{
 		Status:  "ok",
 		Retcode: 200,
@@ -162,7 +242,7 @@ func ResultOK(data map[string]interface{}) Result {
 	}
 }
 
-func ResultFail() Result {
+func resultFail(data map[string]interface{}) Result {
 	return Result{
 		Status:  "failed",
 		Retcode: 100,
@@ -175,7 +255,7 @@ func ResultFail() Result {
 
 func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, messages gjson.Result) Result {
 	out := ""
-	messages = ApiToArray(messages)
+	messages = cqCode2Array(messages)
 	for _, message := range messages.Array() {
 		switch message.Get("type").Str {
 		case "text":
@@ -227,7 +307,7 @@ func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, m
 		case "dice":
 			out += "[no such element]"
 		case "shake":
-			out += "[no such element]"
+			core.ShakeWindow(selfID, userID)
 		case "poke":
 			out += "[no such element]"
 		case "anonymous":
@@ -275,7 +355,7 @@ func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, m
 	if out != "" {
 		messageID = core.SendMsgEX_V2(selfID, messageType, groupID, userID, out, 0, false, " ")
 	}
-	return ResultOK(Data{"message_id": messageID})
+	return resultOK(Data{"message_id": messageID})
 }
 
 func Base64SaveImage(res string) string {
@@ -365,17 +445,4 @@ func SendCustomMusic(url string, audio string, title string, content string, ima
 	}
 	data, _ := json.Marshal(music)
 	return string(data)
-}
-
-func GetLoginInfo(selfID int64) Result {
-	nickname := core.GetNick(selfID, selfID)
-	return ResultOK(Data{
-		"user_id":  selfID,
-		"nickname": nickname,
-	})
-}
-
-func OutPutLog(text string) Result {
-	core.OutPutLog(text)
-	return ResultOK(Data{})
 }
