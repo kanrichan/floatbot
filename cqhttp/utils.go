@@ -4,29 +4,31 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	"yaya/core"
 )
 
 func INFO(s string, v ...interface{}) {
-	OutPutLog("[INFO] " + fmt.Sprintf(s, v...))
+	core.OutPutLog("[INFO] " + fmt.Sprintf(s, v...))
 }
 
 func WARN(s string, v ...interface{}) {
-	OutPutLog("[WARN] " + fmt.Sprintf(s, v...))
+	core.OutPutLog("[WARN] " + fmt.Sprintf(s, v...))
 }
 
 func DEBUG(s string, v ...interface{}) {
 	if Conf.Debug {
-		OutPutLog("[DEBUG] " + fmt.Sprintf(s, v...))
+		core.OutPutLog("[DEBUG] " + fmt.Sprintf(s, v...))
 	}
 }
 
 func ERROR(s string, v ...interface{}) {
-	OutPutLog("[ERROR] " + fmt.Sprintf(s, v...))
+	core.OutPutLog("[ERROR] " + fmt.Sprintf(s, v...))
 }
 
 func TEST(s string, v ...interface{}) {
 	if Conf.Debug {
-		OutPutLog("[TEST] " + fmt.Sprintf(s, v...))
+		core.OutPutLog("[TEST] " + fmt.Sprintf(s, v...))
 	}
 }
 

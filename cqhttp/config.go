@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	//"strings"
 	"time"
 
 	"yaya/core"
@@ -136,7 +137,7 @@ func (c *Yaml) Save(p string) {
 	WriteAllText(p, string(data))
 }
 
-func CommandHandle(e XEvent) {
+func commandHandle(e XEvent) {
 	if e.message == "/master" {
 		if Conf.Master == 12345678 {
 			Conf.Master = e.userID
@@ -247,3 +248,89 @@ func setWSCurl(e XEvent) {
 		}
 	}
 }
+
+/*
+// 命令解析器
+func commandParse(e XEvent) {
+	commands := strings.Split(e.message, "/n")
+	for _, command := range commands {
+		if strings.Contains(command, "$") {
+
+		}
+	}
+}
+
+func selectCommandType(command string) bool {
+	whereSapce := strings.Index(command, " ")
+	if whereSapce == 0 {
+		commandType := command[1:]
+	} else {
+		commandType := command[1:whereSapce]
+	}
+	switch commandType {
+	case "夜夜":
+		isYaYaOK(e)
+	case "master":
+		Conf := masterLogin(Conf, e)
+	case "debug":
+		commandParm := command[1:whereSapce]
+		if
+	case "wsc-url":
+	}
+}
+
+// isYaYaOK 查看夜夜是否在线
+func isYaYaOK(e XEvent) {
+	core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "夜夜一直在你身边！", 0)
+}
+
+// masterLogin 变更主人
+func masterLogin(conf *Yaml, e XEvent) *Yaml {
+	if conf.Master == 12345678 {
+		conf.Master = e.userID
+		conf.Save(AppPath + "config.yml")
+		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "登录完毕", 0)
+	} else {
+		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
+	}
+	return conf
+}
+
+// debugEnable 开启debug
+func debugEnable(conf *Yaml, e XEvent) *Yaml {
+	if e.userID == conf.Master {
+		Conf.Debug = false
+		Conf.Save(AppPath + "config.yml")
+		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!Debug Off", 0)
+	} else {
+		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
+	}
+	return conf
+}
+
+// debugDisable 关闭debug
+func debugDisable(conf *Yaml, e XEvent) *Yaml {
+	if e.userID == conf.Master {
+		Conf.Debug = false
+		Conf.Save(AppPath + "config.yml")
+		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!Debug Off", 0)
+	} else {
+		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
+	}
+	return conf
+}
+
+func isDebugCmd(command string) bool {
+	if strings.ToLower(command) == "$master" {
+		return true
+	}
+	return false
+}
+
+func isMasterCmd(command string) bool {
+	if strings.ToLower(command) == "$master" {
+		return true
+	}
+	return false
+}
+*/

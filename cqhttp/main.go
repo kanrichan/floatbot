@@ -14,7 +14,7 @@ func init() {
 func Main() {
 }
 
-func OnStart() {
+func onStart() {
 	if FirstStart {
 		CreatePath(AppPath)
 		CreatePath(ImagePath)
@@ -33,6 +33,6 @@ func OnStart() {
 	FirstStart = false
 }
 
-func OnDisable() {
+func onDisable() {
 	//
 }
