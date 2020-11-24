@@ -20,14 +20,14 @@ func SetAuthId(id int64, addr int64) {
 // 取得好友列表，返回获取到的原始JSON格式信息，需自行解析，http模式
 // selfID  响应QQ  文本型  机器人QQ
 func GetFriendList(selfID int64) string {
-	return GoString(C.S3_Api_GetFriendList(
+	return CPtr2GoStr(C.S3_Api_GetFriendList(
 		GoInt2CStr(selfID),
 	))
 }
 
 // 取机器人在线账号列表
 func GetOnLineList() string {
-	return GoString(C.S3_Api_GetOnLineList())
+	return CPtr2GoStr(C.S3_Api_GetOnLineList())
 }
 
 // 取机器人账号是否在线
@@ -42,7 +42,7 @@ func Getbotisonline(selfID int64) bool {
 // selfID  响应QQ  文本型  机器人QQ
 // groupID  群号  文本型  欲取群成员列表群号
 func GetGroupMemberList(selfID int64, groupID int64) string {
-	return GoString(C.S3_Api_GetGroupMemberList(
+	return CPtr2GoStr(C.S3_Api_GetGroupMemberList(
 		GoInt2CStr(selfID), GoInt2CStr(groupID),
 	))
 }
@@ -52,7 +52,7 @@ func GetGroupMemberList(selfID int64, groupID int64) string {
 // groupID  群号  文本型  欲取群成员列表群号
 // userID  对象QQ  文本型  无
 func GetGroupCard(selfID int64, groupID int64, userID int64) string {
-	return GoString(C.S3_Api_GetGroupCard(
+	return CPtr2GoStr(C.S3_Api_GetGroupCard(
 		GoInt2CStr(selfID), GoInt2CStr(groupID), GoInt2CStr(userID),
 	))
 }
@@ -76,7 +76,7 @@ func SendMsg(selfID int64, messageType int64, groupID int64, userID int64, messa
 // userID  参考对象  文本型  上传该图片所属的群号或QQ
 // file  图片数据  字节集  图片字节集数据
 func UpLoadPic(selfID int64, postType int64, userID int64, file []byte) string {
-	return GoString(C.S3_Api_UpLoadPic(
+	return CPtr2GoStr(C.S3_Api_UpLoadPic(
 		GoInt2CStr(selfID), C.int(postType), GoInt2CStr(userID), CByte(file),
 	))
 }
@@ -85,7 +85,7 @@ func UpLoadPic(selfID int64, postType int64, userID int64, file []byte) string {
 // selfID  响应QQ  文本型  机器人QQ
 // groupID  群号  文本型  欲取管理员列表群号
 func GetGroupAdmin(selfID int64, groupID int64) string {
-	return GoString(C.S3_Api_GetGroupAdmin(
+	return CPtr2GoStr(C.S3_Api_GetGroupAdmin(
 		GoInt2CStr(selfID), GoInt2CStr(groupID),
 	))
 }
@@ -127,7 +127,7 @@ func KickGroupMBR(selfID int64, groupID int64, userID int64, reject_add_request 
 // selfID  响应QQ  文本型  机器人QQ
 // groupID  群号  文本型  欲取得公告的群号
 func GetNotice(selfID int64, groupID int64) string {
-	return GoString(C.S3_Api_GetNotice(
+	return CPtr2GoStr(C.S3_Api_GetNotice(
 		GoInt2CStr(selfID), GoInt2CStr(groupID),
 	))
 }
@@ -164,7 +164,7 @@ func SetRInf(selfID int64, subType int64, text string) {
 // 取得QQ群页面操作用参数P_skey
 // selfID  响应QQ  文本型  机器人QQ
 func GetGroupPsKey(selfID int64) string {
-	return GoString(C.S3_Api_GetGroupPsKey(
+	return CPtr2GoStr(C.S3_Api_GetGroupPsKey(
 		GoInt2CStr(selfID),
 	))
 }
@@ -172,7 +172,7 @@ func GetGroupPsKey(selfID int64) string {
 // 取得QQ空间页面操作用参数P_skey
 // selfID  响应QQ  文本型  机器人QQ
 func GetZonePsKey(selfID int64) string {
-	return GoString(C.S3_Api_GetZonePsKey(
+	return CPtr2GoStr(C.S3_Api_GetZonePsKey(
 		GoInt2CStr(selfID),
 	))
 }
@@ -180,7 +180,7 @@ func GetZonePsKey(selfID int64) string {
 // 取得机器人网页操作用的Cookies
 // selfID  响应QQ  文本型  机器人QQ
 func GetCookies(selfID int64) string {
-	return GoString(C.S3_Api_GetCookies(
+	return CPtr2GoStr(C.S3_Api_GetCookies(
 		GoInt2CStr(selfID),
 	))
 }
@@ -202,7 +202,7 @@ func PBGroupNotic(selfID int64, groupID int64, title string, message string) boo
 // messageNum  消息序号  文本型  需撤回消息序号
 // messageID  消息ID  文本型  需撤回消息ID
 func WithdrawMsg(selfID int64, groupID int64, messageNum int64, messageID int64) string {
-	return GoString(C.S3_Api_WithdrawMsg(
+	return CPtr2GoStr(C.S3_Api_WithdrawMsg(
 		GoInt2CStr(selfID), GoInt2CStr(groupID), GoInt2CStr(messageNum), GoInt2CStr(messageID),
 	))
 }
@@ -219,7 +219,7 @@ func OutPutLog(message string) {
 // selfID  响应QQ  文本型  机器人QQ
 // file  图片数据  字节集  图片数据
 func OcrPic(selfID int64, file []byte) string {
-	return GoString(C.S3_Api_OcrPic(
+	return CPtr2GoStr(C.S3_Api_OcrPic(
 		GoInt2CStr(selfID), CByte(file),
 	))
 }
@@ -238,7 +238,7 @@ func JoinGroup(selfID int64, groupID int64, reason string) {
 // selfID  响应QQ  文本型  机器人QQ
 // userID  被赞QQ  文本型  填写被赞人QQ
 func UpVote(selfID int64, userID int64) string {
-	return GoString(C.S3_Api_UpVote(
+	return CPtr2GoStr(C.S3_Api_UpVote(
 		GoInt2CStr(selfID), GoInt2CStr(userID),
 	))
 }
@@ -247,7 +247,7 @@ func UpVote(selfID int64, userID int64) string {
 // selfID  响应QQ  文本型  机器人QQ
 // userID  被赞QQ  文本型  填写被赞人QQ
 func UpVote_temp(selfID int64, userID int64) string {
-	return GoString(C.S3_Api_UpVote_temp(
+	return CPtr2GoStr(C.S3_Api_UpVote_temp(
 		GoInt2CStr(selfID), GoInt2CStr(userID),
 	))
 }
@@ -293,7 +293,7 @@ func HandleGroupEvent(selfID int64, sub_type int64, userID int64, groupID int64,
 
 // 取所有QQ列表
 func GetQQList() string {
-	return GoString(C.S3_Api_GetQQList())
+	return CPtr2GoStr(C.S3_Api_GetQQList())
 }
 
 // 向框架添加一个QQ
@@ -301,7 +301,7 @@ func GetQQList() string {
 // password  密码  文本型  无
 // enable  自动登录  逻辑型  真 为自动登录
 func AddQQ(account string, password string, enable bool) string {
-	return GoString(C.S3_Api_AddQQ(
+	return CPtr2GoStr(C.S3_Api_AddQQ(
 		CString(account), CString(password), CBool(enable),
 	))
 }
@@ -325,7 +325,7 @@ func OffLineQQ(selfID int64) {
 // 删除指定QQ
 // selfID  响应QQ  文本型  无
 func DelQQ(selfID int64) string {
-	return GoString(C.S3_Api_DelQQ(
+	return CPtr2GoStr(C.S3_Api_DelQQ(
 		GoInt2CStr(selfID),
 	))
 }
@@ -343,7 +343,7 @@ func DelFriend(selfID int64, userID int64) bool {
 // selfID  响应QQ  文本型  机器人QQ
 // userID  对象QQ  文本型  欲取得的QQ的号码
 func GetNick(selfID int64, userID int64) string {
-	return GoString(C.S3_Api_GetNick(
+	return CPtr2GoStr(C.S3_Api_GetNick(
 		GoInt2CStr(selfID), GoInt2CStr(userID),
 	))
 }
@@ -352,7 +352,7 @@ func GetNick(selfID int64, userID int64) string {
 // selfID  响应QQ  文本型  机器人QQ
 // userID  对象QQ  文本型  需获取对象好友QQ
 func GetFriendsRemark(selfID int64, userID int64) string {
-	return GoString(C.S3_Api_GetFriendsRemark(
+	return CPtr2GoStr(C.S3_Api_GetFriendsRemark(
 		GoInt2CStr(selfID), GoInt2CStr(userID),
 	))
 }
@@ -360,7 +360,7 @@ func GetFriendsRemark(selfID int64, userID int64) string {
 // 取短Clientkey
 // selfID  响应QQ  文本型  机器人QQ
 func GetClientkey(selfID int64) string {
-	return GoString(C.S3_Api_GetClientkey(
+	return CPtr2GoStr(C.S3_Api_GetClientkey(
 		GoInt2CStr(selfID),
 	))
 }
@@ -368,7 +368,7 @@ func GetClientkey(selfID int64) string {
 // 取bkn
 // selfID  响应QQ  文本型  机器人QQ
 func GetBkn(selfID int64) string {
-	return GoString(C.S3_Api_GetBkn(
+	return CPtr2GoStr(C.S3_Api_GetBkn(
 		GoInt2CStr(selfID),
 	))
 }
@@ -407,7 +407,7 @@ func InviteGroupMember(selfID int64, groupID int64, targetID int64, userID int64
 // 创建群 组包模式
 // selfID  响应QQ  文本型  机器人
 func CreateDisGroup(selfID int64) string {
-	return GoString(C.S3_Api_CreateDisGroup(
+	return CPtr2GoStr(C.S3_Api_CreateDisGroup(
 		GoInt2CStr(selfID),
 	))
 }
@@ -416,7 +416,7 @@ func CreateDisGroup(selfID int64) string {
 // selfID  响应QQ  文本型  机器人QQ
 // nickname  群昵称  文本型  预创建的群名称
 func CreateGroup(selfID int64, nickname string) string {
-	return GoString(C.S3_Api_CreateGroup(
+	return CPtr2GoStr(C.S3_Api_CreateGroup(
 		GoInt2CStr(selfID), CString(nickname),
 	))
 }
@@ -433,7 +433,7 @@ func QuitGroup(selfID int64, groupID int64) {
 // 封包模式获取群号列表(最多可以取得999)
 // selfID  响应QQ  文本型  机器人QQ
 func GetGroupList_B(selfID int64) string {
-	return GoString(C.S3_Api_GetGroupList_B(
+	return CPtr2GoStr(C.S3_Api_GetGroupList_B(
 		GoInt2CStr(selfID),
 	))
 }
@@ -441,7 +441,7 @@ func GetGroupList_B(selfID int64) string {
 // 封包模式取好友列表(与封包模式取群列表同源)
 // selfID  响应QQ  文本型  机器人QQ
 func GetFriendList_B(selfID int64) string {
-	return GoString(C.S3_Api_GetFriendList_B(
+	return CPtr2GoStr(C.S3_Api_GetFriendList_B(
 		GoInt2CStr(selfID),
 	))
 }
@@ -449,7 +449,7 @@ func GetFriendList_B(selfID int64) string {
 // 取登录二维码base64
 // key  key  字节集  无
 func GetQrcode(key []byte) string {
-	return GoString(C.S3_Api_GetQrcode(
+	return CPtr2GoStr(C.S3_Api_GetQrcode(
 		CByte(key),
 	))
 }
@@ -466,7 +466,7 @@ func CheckQrcode(key []byte) int64 {
 // selfID  响应QQ  文本型  无
 // groupID  群号  文本型  无
 func GetGroupName(selfID int64, groupID int64) string {
-	return GoString(C.S3_Api_GetGroupName(
+	return CPtr2GoStr(C.S3_Api_GetGroupName(
 		GoInt2CStr(selfID), GoInt2CStr(groupID),
 	))
 }
@@ -475,7 +475,7 @@ func GetGroupName(selfID int64, groupID int64) string {
 // selfID  响应QQ  文本型  机器人QQ
 // groupID  群号  文本型  需查询的群号
 func GetGroupMemberNum(selfID int64, groupID int64) string {
-	return GoString(C.S3_Api_GetGroupMemberNum(
+	return CPtr2GoStr(C.S3_Api_GetGroupMemberNum(
 		GoInt2CStr(selfID), GoInt2CStr(groupID),
 	))
 }
@@ -503,7 +503,7 @@ func SetShieldedGroup(selfID int64, groupID int64, enable bool) {
 // selfID  响应QQ  文本型  机器人QQ
 // groupID  群号  文本型  欲取群成员列表群号
 func GetGroupMemberList_B(selfID int64, groupID int64) string {
-	return GoString(C.S3_Api_GetGroupMemberList_B(
+	return CPtr2GoStr(C.S3_Api_GetGroupMemberList_B(
 		GoInt2CStr(selfID), GoInt2CStr(groupID),
 	))
 }
@@ -512,7 +512,7 @@ func GetGroupMemberList_B(selfID int64, groupID int64) string {
 // selfID  响应QQ  文本型  机器人QQ
 // groupID  群号  文本型  欲取群成员列表群号
 func GetGroupMemberList_C(selfID int64, groupID int64) string {
-	return GoString(C.S3_Api_GetGroupMemberList_C(
+	return CPtr2GoStr(C.S3_Api_GetGroupMemberList_C(
 		GoInt2CStr(selfID), GoInt2CStr(groupID),
 	))
 }
@@ -529,7 +529,7 @@ func IsOnline(selfID int64, userID int64) bool {
 // 取机器人账号在线信息
 // selfID  响应QQ  文本型  无
 func GetRInf(selfID int64) string {
-	return GoString(C.S3_Api_GetRInf(
+	return CPtr2GoStr(C.S3_Api_GetRInf(
 		GoInt2CStr(selfID),
 	))
 }
@@ -634,7 +634,7 @@ func SendXML(selfID int64, anonymous int64, messageType int64, groupID int64, us
 // groupID  接收群号  文本型  需上传的群号
 // file  语音数据  字节集  语音字节集数据（AMR Silk编码）
 func UpLoadVoice(selfID int64, postType int64, groupID int64, file []byte) string {
-	return GoString(C.S3_Api_UpLoadVoice(
+	return CPtr2GoStr(C.S3_Api_UpLoadVoice(
 		GoInt2CStr(selfID), C.int(postType), GoInt2CStr(groupID), CByte(file),
 	))
 }
@@ -657,7 +657,7 @@ func SendMsgEX(selfID int64, messageType int64, groupID int64, userID int64, mes
 // selfID  响应QQ  文本型  机器人QQ
 // recordUUID  语音GUID  文本型  [IR:Voi={xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx}.amr]
 func GetVoiLink(selfID int64, recordUUID string) string {
-	return GoString(C.S3_Api_GetVoiLink(
+	return CPtr2GoStr(C.S3_Api_GetVoiLink(
 		GoInt2CStr(selfID), CString(recordUUID),
 	))
 }
@@ -684,7 +684,7 @@ func SetAnon(selfID int64, groupID int64, enable bool) bool {
 // 取得机器人网页操作用的长Clientkey
 // selfID  响应QQ  文本型  机器人QQ
 func GetLongClientkey(selfID int64) string {
-	return GoString(C.S3_Api_GetLongClientkey(
+	return CPtr2GoStr(C.S3_Api_GetLongClientkey(
 		GoInt2CStr(selfID),
 	))
 }
@@ -692,7 +692,7 @@ func GetLongClientkey(selfID int64) string {
 // 取得腾讯微博页面操作用参数P_skey
 // selfID  响应QQ  文本型  机器人QQ
 func GetBlogPsKey(selfID int64) string {
-	return GoString(C.S3_Api_GetBlogPsKey(
+	return CPtr2GoStr(C.S3_Api_GetBlogPsKey(
 		GoInt2CStr(selfID),
 	))
 }
@@ -700,7 +700,7 @@ func GetBlogPsKey(selfID int64) string {
 // 取得腾讯课堂页面操作用参数P_skey
 // selfID  响应QQ  文本型  机器人QQ
 func GetClassRoomPsKey(selfID int64) string {
-	return GoString(C.S3_Api_GetClassRoomPsKey(
+	return CPtr2GoStr(C.S3_Api_GetClassRoomPsKey(
 		GoInt2CStr(selfID),
 	))
 }
@@ -708,7 +708,7 @@ func GetClassRoomPsKey(selfID int64) string {
 // 取得QQ举报页面操作用参数P_skey
 // selfID  响应QQ  文本型  机器人QQ
 func GetRepPsKey(selfID int64) string {
-	return GoString(C.S3_Api_GetRepPsKey(
+	return CPtr2GoStr(C.S3_Api_GetRepPsKey(
 		GoInt2CStr(selfID),
 	))
 }
@@ -716,7 +716,7 @@ func GetRepPsKey(selfID int64) string {
 // 取得财付通页面操作用参数P_skey
 // selfID  响应QQ  文本型  机器人QQ
 func GetTenPayPsKey(selfID int64) string {
-	return GoString(C.S3_Api_GetTenPayPsKey(
+	return CPtr2GoStr(C.S3_Api_GetTenPayPsKey(
 		GoInt2CStr(selfID),
 	))
 }
@@ -736,7 +736,7 @@ func SetHeadPic(selfID int64, data []byte) bool {
 // subType  参考类型  整数型  无
 // recordUUID  语音GUID  文本型  无
 func VoiToText(selfID int64, userID int64, subType int64, recordUUID string) string {
-	return GoString(C.S3_Api_VoiToText(
+	return CPtr2GoStr(C.S3_Api_VoiToText(
 		GoInt2CStr(selfID), GoInt2CStr(userID), C.int(subType), CString(recordUUID),
 	))
 }
@@ -758,14 +758,14 @@ func SignIn(selfID int64, groupID int64, place string, message string) bool {
 // userID  参考对象  文本型  图片所属对应的群号（可随意乱填写，只有群图片需要填写）
 // imageUUID  图片GUID  文本型  例如[IR:pic={xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}.jpg]
 func GetPicLink(selfID int64, imageType int64, userID int64, imageUUID string) string {
-	return GoString(C.S3_Api_GetPicLink(
+	return CPtr2GoStr(C.S3_Api_GetPicLink(
 		GoInt2CStr(selfID), C.int(imageType), GoInt2CStr(userID), CString(imageUUID),
 	))
 }
 
 // 获取框架版本号
 func GetVer() string {
-	return GoString(C.S3_Api_GetVer())
+	return CPtr2GoStr(C.S3_Api_GetVer())
 }
 
 // 获取指定QQ个人资料的年龄
@@ -805,7 +805,7 @@ func ShakeWindow(selfID int64, userID int64) bool {
 // anonymous  匿名模式  逻辑型  是否使用匿名模式
 // jsonData  附加JSON参数  文本型  以后信息发送参数增加都是依靠这个json文本
 func SendMsgEX_V2(selfID int64, messageType int64, groupID int64, userID int64, message string, bubble int64, anonymous bool, jsonData string) string {
-	return GoString(C.S3_Api_SendMsgEX_V2(
+	return CPtr2GoStr(C.S3_Api_SendMsgEX_V2(
 		GoInt2CStr(selfID), C.int(messageType), GoInt2CStr(groupID), GoInt2CStr(userID), CString(message), C.int(bubble), CBool(anonymous), CString(jsonData),
 	))
 }
@@ -819,7 +819,7 @@ func SendMsgEX_V2(selfID int64, messageType int64, groupID int64, userID int64, 
 // messageID  消息ID  文本型  需撤回消息ID
 // time  消息时间  文本型  私聊消息需要群聊时3可留空
 func WithdrawMsgEX(selfID int64, sub_type int64, groupID int64, userID int64, messageNum int64, messageID int64, time int64) string {
-	return GoString(C.S3_Api_WithdrawMsgEX(
+	return CPtr2GoStr(C.S3_Api_WithdrawMsgEX(
 		GoInt2CStr(selfID), C.int(sub_type), GoInt2CStr(groupID), GoInt2CStr(userID), GoInt2CStr(messageNum), GoInt2CStr(messageID), GoInt2CStr(time),
 	))
 }
@@ -831,7 +831,7 @@ func Reload() bool {
 
 // 返回框架加载的所有插件列表(包含本插件)的json文本
 func GetPluginList() string {
-	return GoString(C.S3_Api_GetPluginList())
+	return CPtr2GoStr(C.S3_Api_GetPluginList())
 }
 
 // 查询指定对象是否允许发送在线状态临时会话 获取失败返回0 允许返回1 禁止返回2

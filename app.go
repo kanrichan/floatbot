@@ -18,7 +18,7 @@ type AppInfo struct {
 func newAppInfo() *AppInfo {
 	return &AppInfo{
 		Name:   "OneBot-YaYa",
-		Pver:   "1.0.2 beta",
+		Pver:   "1.0.4 beta",
 		Sver:   3,
 		Author: "kanri",
 		Desc:   "http://github.com/Yiwen-Chan/OneBot-YaYa",

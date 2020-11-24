@@ -173,6 +173,7 @@ func commandHandle(e XEvent) {
 	setWSCurl(e)
 	setWSCon(e)
 	setWSCoff(e)
+	setWSCtoken(e)
 }
 
 func setWSCon(e XEvent) {
@@ -243,6 +244,32 @@ func setWSCurl(e XEvent) {
 				}
 			}
 			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!WebSocket Reverse Url Updated", 0)
+		} else {
+			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
+		}
+	}
+}
+
+func setWSCtoken(e XEvent) {
+	wscTokenR := regexp.MustCompile(`\/wsc token (.*)`)
+	if len(wscTokenR.FindStringSubmatch(e.message)) != 0 {
+		if Conf.Master == e.userID {
+			for i, conf := range Conf.BotConfs {
+				if conf.Bot == e.selfID {
+					Conf.BotConfs[i].WSCConf.AccessToken = wscTokenR.FindStringSubmatch(e.message)[1]
+					Conf.Save(AppPath + "config.yml")
+
+					break
+				}
+				if i+1 == len(Conf.BotConfs) {
+					newBotConf := DefaultBotConfig()
+					newBotConf.Bot = e.selfID
+					newBotConf.WSCConf.AccessToken = wscTokenR.FindStringSubmatch(e.message)[1]
+					Conf.BotConfs = append(Conf.BotConfs, newBotConf)
+					Conf.Save(AppPath + "config.yml")
+				}
+			}
+			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!WebSocket Reverse Token Updated", 0)
 		} else {
 			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
 		}
