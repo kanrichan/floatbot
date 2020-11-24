@@ -2,6 +2,7 @@ package cqhttp
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"yaya/core"
@@ -186,9 +187,9 @@ func onPrivateMessage(xe XEvent) {
 		"font":         0,
 		"sender": Event{
 			"user_id":  xe.userID,
-			"nickname": "unkown",
-			"sex":      "unkown",
-			"age":      "unkown",
+			"nickname": "unknown",
+			"sex":      "unknown",
+			"age":      "unknown",
 		},
 	}
 	WSCPush(xe.selfID, e)
@@ -213,18 +214,20 @@ func onGroupMessage(xe XEvent) {
 		"message_id":   xe.messageID,
 		"group_id":     xe.groupID,
 		"user_id":      xe.userID,
-		"anonymous": Event{
-			"id":   0,
-			"name": "none",
-			"flag": "none"},
-		"message":     xq2cqCode(xe.message),
-		"raw_message": xq2cqCode(xe.message),
-		"font":        0,
+		"anonymous":    nil,
+		"message":      xq2cqCode(xe.message),
+		"raw_message":  xq2cqCode(xe.message),
+		"font":         0,
 		"sender": Event{
 			"user_id":  xe.userID,
-			"nickname": "unkown",
-			"sex":      "unkown",
-			"age":      "unkown",
+			"nickname": "unknown",
+			"sex":      "unknown",
+			"age":      0,
+			"area":     "",
+			"card":     "",
+			"level":    "",
+			"role":     "admin",
+			"title":    "unknown",
 		},
 	}
 	WSCPush(xe.selfID, e)
@@ -390,7 +393,7 @@ func requestGroupAdd(xe XEvent, typ string) {
 		"group_id":  xe.groupID,
 		"user_id":   xe.noticID,
 		"comment":   xe.message,
-		"flag":      xe.rawMessage,
+		"flag":      fmt.Sprintf("%v|%v|%v", xe.subType, xe.groupID, xe.rawMessage),
 	}
 	WSCPush(xe.selfID, e)
 }
