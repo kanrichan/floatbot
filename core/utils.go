@@ -1,5 +1,13 @@
 package core
 
+/*
+char * eStrPtr2CStrPtr(char * str) {
+	if (!str) {
+		return NULL;
+	}
+	return str + 4;
+}
+*/
 import "C"
 import "strconv"
 import "unsafe"
@@ -13,6 +21,15 @@ func CString(str string) *C.char {
 func GoString(str *C.char) string {
 	utf8str, _ := sc.GB18030.NewDecoder().String(C.GoString(str))
 	return utf8str
+}
+
+func CPtr2GoStr(str *C.char) string {
+	ptr := C.eStrPtr2CStrPtr(str)
+	if ptr != nil {
+		utf8str, _ := sc.GB18030.NewDecoder().String(C.GoString(ptr))
+		return utf8str
+	}
+	return ""
 }
 
 func CBool(b bool) C.int {
