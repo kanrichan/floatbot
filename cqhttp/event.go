@@ -3,7 +3,7 @@ package cqhttp
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
+	//"strings"
 
 	"yaya/core"
 )
@@ -69,15 +69,15 @@ func XQEvent(selfID int64, mseeageType int64, subType int64, groupID int64, user
 	// 0：临时会话 1：好友会话 4：群临时会话 7：好友验证会话
 	case 0, 1, 4, 5, 7:
 		go ProtectRun(func() { onPrivateMessage(xe) }, "onPrivateMessage()")
-		if strings.Contains(message, "/") {
+		/*if strings.Contains(message, "/") {
 			go ProtectRun(func() { commandHandle(xe) }, "commandHandle()")
-		}
+		}*/
 	// 2：群聊信息
 	case 2, 3:
 		go ProtectRun(func() { onGroupMessage(xe) }, "onGroupMessage()")
-		if strings.Contains(message, "/") {
+		/*if strings.Contains(message, "/") {
 			go ProtectRun(func() { commandHandle(xe) }, "commandHandle()")
-		}
+		}*/
 
 	// 通知事件
 	// 群文件接收
@@ -142,17 +142,31 @@ func XQSetUp() int64 {
 	return 0
 }
 
-func WSCPush(bot int64, e Event) {
+func WSCPush(bot int64, e Event, c *Yaml) {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[推送服务] Bot %v 服务发生错误 %v，将忽略本次推送......", bot, err)
+			ERROR("[推送服务] Bot %v 服务发生错误，将忽略本次推送...... %v", bot, err)
 		}
 	}()
 
 	send, _ := json.Marshal(e)
-	for _, c := range WSCs {
-		if bot == c.Bot && c.Status == 1 {
-			c.Send <- []byte(string(send))
+	for i, _ := range c.BotConfs {
+		if bot == c.BotConfs[i].Bot {
+			for j, _ := range c.BotConfs[i].WSSConf {
+				if c.BotConfs[i].WSSConf[j].Status == 1 && c.BotConfs[i].WSSConf[j].Enable == true && c.BotConfs[i].WSSConf[j].Host != "" {
+					c.BotConfs[i].WSSConf[j].Event <- send
+				}
+			}
+			for k, _ := range c.BotConfs[i].WSCConf {
+				if c.BotConfs[i].WSCConf[k].Status == 1 && c.BotConfs[i].WSCConf[k].Enable == true && c.BotConfs[i].WSCConf[k].Url != "" {
+					c.BotConfs[i].WSCConf[k].Event <- send
+				}
+			}
+			for l, _ := range c.BotConfs[i].HTTPConf {
+				if c.BotConfs[i].HTTPConf[l].Status == 1 && c.BotConfs[i].HTTPConf[l].Enable == true && c.BotConfs[i].HTTPConf[l].Host != "" {
+					c.BotConfs[i].HTTPConf[l].Event <- send
+				}
+			}
 		}
 	}
 
@@ -192,7 +206,7 @@ func onPrivateMessage(xe XEvent) {
 			"age":      "unknown",
 		},
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 func onGroupMessage(xe XEvent) {
@@ -230,7 +244,7 @@ func onGroupMessage(xe XEvent) {
 			"title":    "unknown",
 		},
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 func onEnable(xe XEvent) {
@@ -241,7 +255,7 @@ func onEnable(xe XEvent) {
 		"meta_event_type": "lifecycle",
 		"sub_type":        "connect",
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 // 群文件上传
@@ -260,7 +274,7 @@ func noticeFileUpload(xe XEvent) {
 			"busid": "unknow",
 		},
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 // 管理员变动
@@ -274,7 +288,7 @@ func noticeAdminChange(xe XEvent, typ string) {
 		"group_id":    xe.groupID,
 		"user_id":     xe.userID,
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 // 群成员减少
@@ -289,7 +303,7 @@ func noticeGroupMenberDecrease(xe XEvent, typ string) {
 		"operator_id": xe.userID,
 		"user_id":     xe.noticID,
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 // 群成员增加
@@ -304,7 +318,7 @@ func noticeGroupMenberIncrease(xe XEvent, typ string) {
 		"operator_id": xe.userID,
 		"user_id":     xe.noticID,
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 // 群禁言
@@ -320,7 +334,7 @@ func noticeGroupBan(xe XEvent, typ string) {
 		"user_id":     xe.noticID,
 		"duration":    "unknow",
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 // 好友添加
@@ -332,7 +346,7 @@ func noticeFriendAdd(xe XEvent) {
 		"notice_type": "friend_add",
 		"user_id":     xe.userID,
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 // 群消息撤回
@@ -347,7 +361,7 @@ func noticGroupMsgDelete(xe XEvent) {
 		"operator_id": xe.userID,
 		"message_id":  0,
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 // 好友消息撤回
@@ -360,7 +374,7 @@ func noticFriendMsgDelete(xe XEvent) {
 		"user_id":     xe.noticID,
 		"message_id":  0,
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 // 群内戳一戳
@@ -380,7 +394,7 @@ func requestFriendAdd(xe XEvent) {
 		"comment":      xe.message,
 		"flag":         xe.userID,
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
 
 // 加群请求
@@ -395,5 +409,5 @@ func requestGroupAdd(xe XEvent, typ string) {
 		"comment":   xe.message,
 		"flag":      fmt.Sprintf("%v|%v|%v", xe.subType, xe.groupID, xe.rawMessage),
 	}
-	WSCPush(xe.selfID, e)
+	WSCPush(xe.selfID, e, Conf)
 }
