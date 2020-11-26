@@ -3,31 +3,31 @@ package cqhttp
 import (
 	"gopkg.in/yaml.v2"
 	"os"
-	"regexp"
+	//"regexp"
 	"strconv"
 	//"strings"
 	"time"
+	//"yaya/core"
 
-	"yaya/core"
+	"github.com/gorilla/websocket"
 )
 
 var Conf *Yaml
 
 type Yaml struct {
-	Version  string     `yaml:"version"`
-	Master   int64      `yaml:"master"`
-	Debug    bool       `yaml:"debug"`
-	BotConfs []*BotYaml `yaml:"bots"`
+	Version       string         `yaml:"version"`
+	Master        int64          `yaml:"master"`
+	Debug         bool           `yaml:"debug"`
+	HeratBeatConf *HeratBeatYaml `yaml:"heratbeat"`
+	Cache         *CacheYaml     `yaml:"cache"`
+	BotConfs      []*BotYaml     `yaml:"bots"`
 }
 
-type BotYaml struct {
-	Bot           int64          `yaml:"bot"`
-	CacheImage    bool           `yaml:"cacheImage"`
-	CacheRecord   bool           `yaml:"cacheRrcord"`
-	HeratBeatConf *HeratBeatYaml `yaml:"heratbeat"`
-	WSSConf       *WSSYaml       `yaml:"websocket"`
-	WSCConf       *WSCYaml       `yaml:"websocket_reverse"`
-	HTTPConf      *HTTPYaml      `yaml:"http"`
+type CacheYaml struct {
+	DataBase bool `yaml:"database"`
+	Image    bool `yaml:"image"`
+	Record   bool `yaml:"record"`
+	Video    bool `yaml:"video"`
 }
 
 type HeratBeatYaml struct {
@@ -35,78 +35,108 @@ type HeratBeatYaml struct {
 	Interval int64 `yaml:"interval"`
 }
 
+type BotYaml struct {
+	Bot      int64       `yaml:"bot"`
+	WSSConf  []*WSSYaml  `yaml:"websocket"`
+	WSCConf  []*WSCYaml  `yaml:"websocket_reverse"`
+	HTTPConf []*HTTPYaml `yaml:"http"`
+}
+
 type HTTPYaml struct {
-	Enable            bool   `yaml:"enable"`
-	Host              string `yaml:"host"`
-	Port              int64  `yaml:"port"`
-	PostUrl           string `yaml:"post_url"`
-	Secret            string `yaml:"secret"`
-	TimeOut           int64  `yaml:"time_out"`
-	PostMessageFormat string `yaml:"post_message_format"`
+	Enable            bool        `yaml:"enable"`
+	Host              string      `yaml:"host"`
+	Port              int64       `yaml:"port"`
+	AccessToken       string      `yaml:"token"`
+	PostUrl           string      `yaml:"post_url"`
+	Secret            string      `yaml:"secret"`
+	TimeOut           int64       `yaml:"time_out"`
+	PostMessageFormat string      `yaml:"post_message_format"`
+	BotID             int64       `yaml:"-"`
+	Status            int64       `yaml:"-"`
+	Event             chan []byte `yaml:"-"`
 }
 
 type WSCYaml struct {
-	Enable             bool   `yaml:"enable"`
-	Url                string `yaml:"url"`
-	ApiUrl             string `yaml:"api_url"`
-	EventUrl           string `yaml:"event_url"`
-	UseUniversalClient bool   `yaml:"use_universal_client"`
-	AccessToken        string `yaml:"access_token"`
-	PostMessageFormat  string `yaml:"post_message_format"`
-	ReconnectInterval  int64  `yaml:"reconnect_interval"`
+	Enable             bool            `yaml:"enable"`
+	Url                string          `yaml:"url"`
+	ApiUrl             string          `yaml:"api_url"`
+	EventUrl           string          `yaml:"event_url"`
+	UseUniversalClient bool            `yaml:"use_universal_client"`
+	AccessToken        string          `yaml:"access_token"`
+	PostMessageFormat  string          `yaml:"post_message_format"`
+	ReconnectInterval  int64           `yaml:"reconnect_interval"`
+	BotID              int64           `yaml:"-"`
+	Status             int64           `yaml:"-"`
+	Conn               *websocket.Conn `yaml:"-"`
+	Event              chan []byte     `yaml:"-"`
 }
 
 type WSSYaml struct {
-	Enable            bool   `yaml:"enable"`
-	Host              string `yaml:"host"`
-	Port              int64  `yaml:"port"`
-	AccessToken       string `yaml:"access_token"`
-	PostMessageFormat string `yaml:"post_message_format"`
+	Enable            bool              `yaml:"enable"`
+	Host              string            `yaml:"host"`
+	Port              int64             `yaml:"port"`
+	AccessToken       string            `yaml:"access_token"`
+	PostMessageFormat string            `yaml:"post_message_format"`
+	BotID             int64             `yaml:"-"`
+	Status            int64             `yaml:"-"`
+	Conn              []*websocket.Conn `yaml:"-"`
+	Event             chan []byte       `yaml:"-"`
 }
 
 func DefaultConfig() *Yaml {
 	return &Yaml{
-		Version:  "1.0.1",
-		Master:   12345678,
-		Debug:    true,
+		Version: "1.0.5",
+		Master:  12345678,
+		Debug:   true,
+		Cache: &CacheYaml{
+			DataBase: false,
+			Image:    false,
+			Record:   false,
+			Video:    false,
+		},
+		HeratBeatConf: &HeratBeatYaml{
+			Enable:   true,
+			Interval: 10000,
+		},
 		BotConfs: []*BotYaml{DefaultBotConfig()},
 	}
 }
 
 func DefaultBotConfig() *BotYaml {
 	return &BotYaml{
-		Bot:         0,
-		CacheImage:  false,
-		CacheRecord: false,
-		HeratBeatConf: &HeratBeatYaml{
-			Enable:   true,
-			Interval: 10000,
+		Bot: 0,
+		WSSConf: []*WSSYaml{
+			&WSSYaml{
+				Enable:            false,
+				Host:              "127.0.0.1",
+				Port:              6700,
+				AccessToken:       "",
+				PostMessageFormat: "string",
+			},
 		},
-		WSSConf: &WSSYaml{
-			Enable:            false,
-			Host:              "127.0.0.1",
-			Port:              6700,
-			AccessToken:       "",
-			PostMessageFormat: "string",
+		WSCConf: []*WSCYaml{
+			&WSCYaml{
+				Enable:             false,
+				Url:                "ws://127.0.0.1:8080/ws",
+				ApiUrl:             "ws://127.0.0.1:8080/api",
+				EventUrl:           "ws://127.0.0.1:8080/event",
+				UseUniversalClient: true,
+				AccessToken:        "",
+				PostMessageFormat:  "string",
+				ReconnectInterval:  3000,
+			},
 		},
-		WSCConf: &WSCYaml{
-			Enable:             false,
-			Url:                "ws://127.0.0.1:8080/ws",
-			ApiUrl:             "ws://127.0.0.1:8080/api",
-			EventUrl:           "ws://127.0.0.1:8080/event",
-			UseUniversalClient: true,
-			AccessToken:        "",
-			PostMessageFormat:  "string",
-			ReconnectInterval:  3000,
-		},
-		HTTPConf: &HTTPYaml{
-			Enable:            false,
-			Host:              "127.0.0.1",
-			Port:              5700,
-			PostUrl:           "http://127.0.0.1:5705/",
-			Secret:            "",
-			TimeOut:           0,
-			PostMessageFormat: "string",
+		HTTPConf: []*HTTPYaml{
+			&HTTPYaml{
+				Enable:            false,
+				Host:              "127.0.0.1",
+				Port:              5700,
+				AccessToken:       "",
+				PostUrl:           "http://127.0.0.1:5705/",
+				Secret:            "",
+				TimeOut:           0,
+				PostMessageFormat: "string",
+			},
 		},
 	}
 }
@@ -123,9 +153,15 @@ func Load(p string) *Yaml {
 		os.Rename(p, p+".backup"+strconv.FormatInt(time.Now().Unix(), 10))
 		c := DefaultConfig()
 		c.Save(p)
-		return nil
+	}
+	if c.Version != "1.0.5" {
+		WARN("!!!!!!!!配置文件版本更新了，请重新配置配置文件")
+		os.Rename(p, p+".backup"+strconv.FormatInt(time.Now().Unix(), 10))
+		c := DefaultConfig()
+		c.Save(p)
 	}
 	INFO("おはようございます。")
+	c.InitConf()
 	return &c
 }
 
@@ -137,6 +173,27 @@ func (c *Yaml) Save(p string) {
 	WriteAllText(p, string(data))
 }
 
+func (conf *Yaml) InitConf() {
+	for i, _ := range conf.BotConfs {
+		for j, _ := range conf.BotConfs[i].WSSConf {
+			conf.BotConfs[i].WSSConf[j].Status = 0
+			conf.BotConfs[i].WSSConf[j].BotID = conf.BotConfs[i].Bot
+			conf.BotConfs[i].WSSConf[j].Event = make(chan []byte, 100)
+		}
+		for k, _ := range conf.BotConfs[i].WSCConf {
+			conf.BotConfs[i].WSCConf[k].Status = 0
+			conf.BotConfs[i].WSCConf[k].BotID = conf.BotConfs[i].Bot
+			conf.BotConfs[i].WSCConf[k].Event = make(chan []byte, 100)
+		}
+		for l, _ := range conf.BotConfs[i].HTTPConf {
+			conf.BotConfs[i].HTTPConf[l].Status = 0
+			conf.BotConfs[i].HTTPConf[l].BotID = conf.BotConfs[i].Bot
+			conf.BotConfs[i].HTTPConf[l].Event = make(chan []byte, 100)
+		}
+	}
+}
+
+/*
 func commandHandle(e XEvent) {
 	if e.message == "/master" {
 		if Conf.Master == 12345678 {
@@ -275,7 +332,7 @@ func setWSCtoken(e XEvent) {
 		}
 	}
 }
-
+*/
 /*
 // 命令解析器
 func commandParse(e XEvent) {
@@ -361,3 +418,5 @@ func isMasterCmd(command string) bool {
 	return false
 }
 */
+
+// 兼容 Mirai CQHTTP
