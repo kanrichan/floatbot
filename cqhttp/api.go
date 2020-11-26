@@ -61,46 +61,146 @@ type CQFriendInfo struct {
 	Remark   string `json:"remark"`
 }
 
-func (c *WSC) WSCApi() {
+func (c *WSCYaml) wscApi(api []byte) {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[响应服务] Bot %v 服务发生错误 %v，正在自动恢复中......", c.Bot, err)
-			c.WSCApi()
+			ERROR("[响应服务] Bot %v 响应 %v 发生错误，忽略本次响应...... %v", c.BotID, c.Url, err)
 		}
 	}()
-	for {
-		if c.Status == 1 {
-			break
-		}
-	}
-	DEBUG("[响应服务] Bot %v 服务开始启动...... ", c.Bot)
-	for api := range c.Api {
-		req := gjson.ParseBytes(api)
-		action := strings.ReplaceAll(req.Get("action").Str, "_async", "")
-		params := req.Get("params")
 
-		DEBUG("[响应服务] Bot %v 接收到API调用: %v 参数: %v", c.Bot, req.Get("action").Str, string(api))
-		if f, ok := wsApi[action]; ok {
-			ret := f(c.Bot, params)
-			if req.Get("echo").Str != "" {
-				ret.Echo = req.Get("echo").Str
-			} else {
-				ret.Echo, _ = req.Get("echo").Value().(map[string]interface{})
-			}
-			send, _ := json.Marshal(ret)
-			c.Send <- send
+	req := gjson.ParseBytes(api)
+	action := strings.ReplaceAll(req.Get("action").Str, "_async", "")
+	params := req.Get("params")
+	DEBUG("[响应服务] Bot %v 接收 %v 到API调用: %v 参数: %v", c.BotID, c.Url, req.Get("action").Str, string(api))
+
+	if f, ok := wsApi[action]; ok {
+		ret := f(c.BotID, params)
+		if req.Get("echo").Int() != 0 {
+			ret.Echo = req.Get("echo").Int()
+		} else if req.Get("echo").Str != "" {
+			ret.Echo = req.Get("echo").Str
 		} else {
-			ret := resultFail("no such api")
-			TEST("%v", ret)
-			if req.Get("echo").Str != "" {
-				ret.Echo = req.Get("echo").Str
-			} else {
-				ret.Echo, _ = req.Get("echo").Value().(map[string]interface{})
-			}
-			TEST("%v", ret)
-			send, _ := json.Marshal(ret)
-			TEST("%v", send)
-			c.Send <- send
+			ret.Echo, _ = req.Get("echo").Value().(map[string]interface{})
+		}
+		send, _ := json.Marshal(ret)
+		c.Event <- send
+	} else {
+		ret := resultFail("no such api")
+		if req.Get("echo").Int() != 0 {
+			ret.Echo = req.Get("echo").Int()
+		} else if req.Get("echo").Str != "" {
+			ret.Echo = req.Get("echo").Str
+		} else {
+			ret.Echo, _ = req.Get("echo").Value().(map[string]interface{})
+		}
+		send, _ := json.Marshal(ret)
+		c.Event <- send
+	}
+}
+
+func (s *WSSYaml) wscApi(api []byte) {
+	defer func() {
+		if err := recover(); err != nil {
+			ERROR("[响应服务] Bot %v 响应 %v:%v 发生错误，忽略本次响应...... %v", s.BotID, s.Host, s.Port, err)
+		}
+	}()
+
+	req := gjson.ParseBytes(api)
+	action := strings.ReplaceAll(req.Get("action").Str, "_async", "")
+	params := req.Get("params")
+	DEBUG("[响应服务] Bot %v 接收 %v:%v 到API调用: %v 参数: %v", s.BotID, s.Host, s.Port, req.Get("action").Str, string(api))
+
+	if f, ok := wsApi[action]; ok {
+		ret := f(s.BotID, params)
+		if req.Get("echo").Int() != 0 {
+			ret.Echo = req.Get("echo").Int()
+		} else if req.Get("echo").Str != "" {
+			ret.Echo = req.Get("echo").Str
+		} else {
+			ret.Echo, _ = req.Get("echo").Value().(map[string]interface{})
+		}
+		send, _ := json.Marshal(ret)
+		s.Event <- send
+	} else {
+		ret := resultFail("no such api")
+		if req.Get("echo").Int() != 0 {
+			ret.Echo = req.Get("echo").Int()
+		} else if req.Get("echo").Str != "" {
+			ret.Echo = req.Get("echo").Str
+		} else {
+			ret.Echo, _ = req.Get("echo").Value().(map[string]interface{})
+		}
+		send, _ := json.Marshal(ret)
+		s.Event <- send
+	}
+}
+
+func (h *HTTPYaml) wscApi(path string, api []byte) []byte {
+	defer func() {
+		if err := recover(); err != nil {
+			ERROR("[响应服务] Bot %v 响应 %v:%v 发生错误，忽略本次响应...... %v", h.BotID, h.Host, h.Port, err)
+		}
+	}()
+
+	action := strings.ReplaceAll(path, "/", "")
+	TEST("%v", action)
+	req := gjson.ParseBytes(api)
+	params := req.Get("params")
+	DEBUG("[响应服务] Bot %v 接收 %v:%v 到API调用: %v 参数: %v", h.BotID, h.Host, h.Port, req.Get("action").Str, string(api))
+
+	if f, ok := wsApi[action]; ok {
+		ret := f(h.BotID, params)
+		if req.Get("echo").Int() != 0 {
+			ret.Echo = req.Get("echo").Int()
+		} else if req.Get("echo").Str != "" {
+			ret.Echo = req.Get("echo").Str
+		} else {
+			ret.Echo, _ = req.Get("echo").Value().(map[string]interface{})
+		}
+		send, _ := json.Marshal(ret)
+		return send
+	} else {
+		ret := resultFail("no such api")
+		if req.Get("echo").Int() != 0 {
+			ret.Echo = req.Get("echo").Int()
+		} else if req.Get("echo").Str != "" {
+			ret.Echo = req.Get("echo").Str
+		} else {
+			ret.Echo, _ = req.Get("echo").Value().(map[string]interface{})
+		}
+		send, _ := json.Marshal(ret)
+		return send
+	}
+}
+
+func (h *HTTPYaml) reply(send []byte, reply []byte) {
+	defer func() {
+		if err := recover(); err != nil {
+			ERROR("[HTTP POST][快速回复] Bot %v 响应 %v 发生错误，忽略本次响应...... %v", h.PostUrl, h.Port, err)
+		}
+	}()
+	DEBUG("[HTTP POST][快速回复] Bot %v 接收 %v 到API调用: %v", h.BotID, h.Host, h.Port, string(reply))
+	senddata := gjson.ParseBytes(send)
+	replydata := gjson.ParseBytes(reply)
+	messageType := senddata.Get("message_type").Str
+	userID := senddata.Get("user_id").Int()
+	groupID := senddata.Get("group_id").Int()
+	atSender := replydata.Get("at_sender").Bool()
+	messages := replydata.Get("reply")
+	msg := ""
+	if atSender {
+		msg = fmt.Sprintf("[@%v]", userID)
+	}
+	switch messageType {
+	case "group":
+		SendMessage(h.BotID, 2, groupID, 0, messages, msg)
+	case "private":
+		SendMessage(h.BotID, 1, 0, userID, messages, msg)
+	default:
+		if groupID != 0 {
+			SendMessage(h.BotID, 2, groupID, 0, messages, msg)
+		} else {
+			SendMessage(h.BotID, 1, 0, userID, messages, msg)
 		}
 	}
 }
@@ -113,26 +213,26 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 		messages := p.Get("message")
 		switch message_type {
 		case "group":
-			return SendMessage(bot, 2, group_id, 0, messages)
+			return SendMessage(bot, 2, group_id, 0, messages, "")
 		case "private":
-			return SendMessage(bot, 1, 0, user_id, messages)
+			return SendMessage(bot, 1, 0, user_id, messages, "")
 		default:
 			if group_id != 0 {
-				return SendMessage(bot, 2, group_id, 0, messages)
+				return SendMessage(bot, 2, group_id, 0, messages, "")
 			} else {
-				return SendMessage(bot, 1, 0, user_id, messages)
+				return SendMessage(bot, 1, 0, user_id, messages, "")
 			}
 		}
 	},
 	"send_private_msg": func(bot int64, p gjson.Result) Result {
 		user_id := p.Get("user_id").Int()
 		messages := p.Get("message")
-		return SendMessage(bot, 1, 0, user_id, messages)
+		return SendMessage(bot, 1, 0, user_id, messages, "")
 	},
 	"send_group_msg": func(bot int64, p gjson.Result) Result {
 		group_id := p.Get("group_id").Int()
 		messages := p.Get("message")
-		return SendMessage(bot, 2, group_id, 0, messages)
+		return SendMessage(bot, 2, group_id, 0, messages, "")
 	},
 	"delete_msg": func(bot int64, p gjson.Result) Result {
 		return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
@@ -366,8 +466,7 @@ func resultFail(data interface{}) Result {
 	}
 }
 
-func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, messages gjson.Result) Result {
-	out := ""
+func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, messages gjson.Result, out string) Result {
 	messages = cqCode2Array(messages)
 	for _, message := range messages.Array() {
 		switch message.Get("type").Str {
@@ -376,7 +475,8 @@ func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, m
 		case "face":
 			out += fmt.Sprintf("[Face%s.gif]", message.Get("data.*").Str)
 		case "image":
-			image := message.Get("data.*").Str
+			image := message.Get("data.file").Str
+			image = strings.ReplaceAll(image, `\/`, `/`)
 			if strings.Contains(image, "base64://") {
 				path := Base64SaveImage(strings.ReplaceAll(image, "base64://", ""))
 				out += fmt.Sprintf("[pic=%s]", path)
