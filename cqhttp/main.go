@@ -3,10 +3,10 @@ package cqhttp
 var FirstStart bool = true
 
 var XQPath = PathExecute()
-var AppPath = XQPath + "data/app/onebot-yaya/"
-var ImagePath = XQPath + "data/image/onebot-yaya/"
-var RecordPath = XQPath + "data/record/onebot-yaya/"
-var VideoPath = XQPath + "data/video/onebot-yaya/"
+var AppPath = XQPath + "onebot/"
+var ImagePath = XQPath + "onebot/image/"
+var RecordPath = XQPath + "onebot/record/"
+var VideoPath = XQPath + "onebot/video/"
 
 func init() {
 }
@@ -26,9 +26,8 @@ func onStart() {
 			ERROR("晚安~")
 			return
 		}
-		WSCInit(Conf)
-
-		go WSCStarts()
+		go Conf.runOnebot()
+		go Conf.heartBeat()
 	}
 	FirstStart = false
 }
