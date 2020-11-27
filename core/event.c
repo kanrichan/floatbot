@@ -22,7 +22,7 @@ int _stdcall XQ_Event(char * selfID, int mseeageType, int subType, char * groupI
 
 int _stdcall XQ_SetUp()
 {
-	MessageBox(NULL, TEXT("总有人问为什么点击设置插件没有反应，所以就有了这个窗口"), TEXT("OneBot-YaYa"), 0);
+	MessageBox(NULL, TEXT("在做了在做了，新建文件夹了，现在请在 XQ/OneBot/config.yml 修改配置"), TEXT("OneBot-YaYa"), 0);
 	return GO_DestroyPlugin();
 }
 

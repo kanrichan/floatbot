@@ -3,11 +3,11 @@ package cqhttp
 import (
 	"gopkg.in/yaml.v2"
 	"os"
-	//"regexp"
 	"strconv"
-	//"strings"
+	"strings"
 	"time"
-	//"yaya/core"
+
+	"yaya/core"
 
 	"github.com/gorilla/websocket"
 )
@@ -18,6 +18,7 @@ type Yaml struct {
 	Version       string         `yaml:"version"`
 	Master        int64          `yaml:"master"`
 	Debug         bool           `yaml:"debug"`
+	Meta          bool           `yaml:"-"`
 	HeratBeatConf *HeratBeatYaml `yaml:"heratbeat"`
 	Cache         *CacheYaml     `yaml:"cache"`
 	BotConfs      []*BotYaml     `yaml:"bots"`
@@ -43,6 +44,7 @@ type BotYaml struct {
 }
 
 type HTTPYaml struct {
+	Name              string      `yaml:"name"`
 	Enable            bool        `yaml:"enable"`
 	Host              string      `yaml:"host"`
 	Port              int64       `yaml:"port"`
@@ -54,9 +56,11 @@ type HTTPYaml struct {
 	BotID             int64       `yaml:"-"`
 	Status            int64       `yaml:"-"`
 	Event             chan []byte `yaml:"-"`
+	Heart             chan []byte `yaml:"-"`
 }
 
 type WSCYaml struct {
+	Name               string          `yaml:"name"`
 	Enable             bool            `yaml:"enable"`
 	Url                string          `yaml:"url"`
 	ApiUrl             string          `yaml:"api_url"`
@@ -69,9 +73,11 @@ type WSCYaml struct {
 	Status             int64           `yaml:"-"`
 	Conn               *websocket.Conn `yaml:"-"`
 	Event              chan []byte     `yaml:"-"`
+	Heart              chan []byte     `yaml:"-"`
 }
 
 type WSSYaml struct {
+	Name              string            `yaml:"name"`
 	Enable            bool              `yaml:"enable"`
 	Host              string            `yaml:"host"`
 	Port              int64             `yaml:"port"`
@@ -81,6 +87,7 @@ type WSSYaml struct {
 	Status            int64             `yaml:"-"`
 	Conn              []*websocket.Conn `yaml:"-"`
 	Event             chan []byte       `yaml:"-"`
+	Heart             chan []byte       `yaml:"-"`
 }
 
 func DefaultConfig() *Yaml {
@@ -102,11 +109,20 @@ func DefaultConfig() *Yaml {
 	}
 }
 
+func DefaultQQ() int64 {
+	botList := strings.Split(core.GetQQList(), "/n")
+	if len(botList) < 0 {
+		return 0
+	}
+	return core.Str2Int(botList[0])
+}
+
 func DefaultBotConfig() *BotYaml {
 	return &BotYaml{
-		Bot: 0,
+		Bot: DefaultQQ(),
 		WSSConf: []*WSSYaml{
 			&WSSYaml{
+				Name:              "WSS EXAMPLE",
 				Enable:            false,
 				Host:              "127.0.0.1",
 				Port:              6700,
@@ -116,6 +132,7 @@ func DefaultBotConfig() *BotYaml {
 		},
 		WSCConf: []*WSCYaml{
 			&WSCYaml{
+				Name:               "WSC EXAMPLE",
 				Enable:             false,
 				Url:                "ws://127.0.0.1:8080/ws",
 				ApiUrl:             "ws://127.0.0.1:8080/api",
@@ -128,11 +145,12 @@ func DefaultBotConfig() *BotYaml {
 		},
 		HTTPConf: []*HTTPYaml{
 			&HTTPYaml{
+				Name:              "HTTP EXAMPLE",
 				Enable:            false,
 				Host:              "127.0.0.1",
 				Port:              5700,
 				AccessToken:       "",
-				PostUrl:           "http://127.0.0.1:5705/",
+				PostUrl:           "http://127.0.0.1/plugin",
 				Secret:            "",
 				TimeOut:           0,
 				PostMessageFormat: "string",
@@ -174,249 +192,25 @@ func (c *Yaml) Save(p string) {
 }
 
 func (conf *Yaml) InitConf() {
+	conf.Meta = false
 	for i, _ := range conf.BotConfs {
 		for j, _ := range conf.BotConfs[i].WSSConf {
 			conf.BotConfs[i].WSSConf[j].Status = 0
 			conf.BotConfs[i].WSSConf[j].BotID = conf.BotConfs[i].Bot
 			conf.BotConfs[i].WSSConf[j].Event = make(chan []byte, 100)
+			conf.BotConfs[i].WSSConf[j].Heart = make(chan []byte, 1)
 		}
 		for k, _ := range conf.BotConfs[i].WSCConf {
 			conf.BotConfs[i].WSCConf[k].Status = 0
 			conf.BotConfs[i].WSCConf[k].BotID = conf.BotConfs[i].Bot
 			conf.BotConfs[i].WSCConf[k].Event = make(chan []byte, 100)
+			conf.BotConfs[i].WSCConf[k].Heart = make(chan []byte, 1)
 		}
 		for l, _ := range conf.BotConfs[i].HTTPConf {
 			conf.BotConfs[i].HTTPConf[l].Status = 0
 			conf.BotConfs[i].HTTPConf[l].BotID = conf.BotConfs[i].Bot
 			conf.BotConfs[i].HTTPConf[l].Event = make(chan []byte, 100)
+			conf.BotConfs[i].HTTPConf[l].Heart = make(chan []byte, 1)
 		}
 	}
 }
-
-/*
-func commandHandle(e XEvent) {
-	if e.message == "/master" {
-		if Conf.Master == 12345678 {
-			Conf.Master = e.userID
-			Conf.Save(AppPath + "config.yml")
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "登录完毕", 0)
-		} else {
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
-		}
-	} else if e.message == "/debug on" {
-		if Conf.Master == e.userID {
-			Conf.Debug = true
-			Conf.Save(AppPath + "config.yml")
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!Debug On", 0)
-		} else {
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
-		}
-	} else if e.message == "/debug off" {
-		if Conf.Master == e.userID {
-			Conf.Debug = false
-			Conf.Save(AppPath + "config.yml")
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!Debug Off", 0)
-		} else {
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
-		}
-	} else if e.message == "/夜夜" {
-		if Conf.Master == e.userID {
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "在！", 0)
-		} else {
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
-		}
-	}
-
-	setWSCurl(e)
-	setWSCon(e)
-	setWSCoff(e)
-	setWSCtoken(e)
-}
-
-func setWSCon(e XEvent) {
-	if e.message == "/wsc enable" {
-		if Conf.Master == e.userID {
-			for i, conf := range Conf.BotConfs {
-				if conf.Bot == e.selfID {
-					Conf.BotConfs[i].WSCConf.Enable = true
-					Conf.Save(AppPath + "config.yml")
-					break
-				}
-				if i+1 == len(Conf.BotConfs) {
-					newBotConf := DefaultBotConfig()
-					newBotConf.Bot = e.selfID
-					newBotConf.WSCConf.Enable = true
-					Conf.BotConfs = append(Conf.BotConfs, newBotConf)
-					Conf.Save(AppPath + "config.yml")
-				}
-			}
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!WebSocket Reverse Enable", 0)
-		} else {
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
-		}
-	}
-}
-
-func setWSCoff(e XEvent) {
-	if e.message == "/wsc disable" {
-		if Conf.Master == e.userID {
-			for i, conf := range Conf.BotConfs {
-				if conf.Bot == e.selfID {
-					Conf.BotConfs[i].WSCConf.Enable = false
-					Conf.Save(AppPath + "config.yml")
-					break
-				}
-				if i+1 == len(Conf.BotConfs) {
-					newBotConf := DefaultBotConfig()
-					newBotConf.Bot = e.selfID
-					newBotConf.WSCConf.Enable = false
-					Conf.BotConfs = append(Conf.BotConfs, newBotConf)
-					Conf.Save(AppPath + "config.yml")
-				}
-			}
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!WebSocket Reverse Disable", 0)
-		} else {
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
-		}
-	}
-}
-
-func setWSCurl(e XEvent) {
-	wscUrlR := regexp.MustCompile(`\/wsc url (.*)`)
-	if len(wscUrlR.FindStringSubmatch(e.message)) != 0 {
-		if Conf.Master == e.userID {
-			for i, conf := range Conf.BotConfs {
-				if conf.Bot == e.selfID {
-					Conf.BotConfs[i].WSCConf.Url = wscUrlR.FindStringSubmatch(e.message)[1]
-					Conf.Save(AppPath + "config.yml")
-
-					break
-				}
-				if i+1 == len(Conf.BotConfs) {
-					newBotConf := DefaultBotConfig()
-					newBotConf.Bot = e.selfID
-					newBotConf.WSCConf.Url = wscUrlR.FindStringSubmatch(e.message)[1]
-					Conf.BotConfs = append(Conf.BotConfs, newBotConf)
-					Conf.Save(AppPath + "config.yml")
-				}
-			}
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!WebSocket Reverse Url Updated", 0)
-		} else {
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
-		}
-	}
-}
-
-func setWSCtoken(e XEvent) {
-	wscTokenR := regexp.MustCompile(`\/wsc token (.*)`)
-	if len(wscTokenR.FindStringSubmatch(e.message)) != 0 {
-		if Conf.Master == e.userID {
-			for i, conf := range Conf.BotConfs {
-				if conf.Bot == e.selfID {
-					Conf.BotConfs[i].WSCConf.AccessToken = wscTokenR.FindStringSubmatch(e.message)[1]
-					Conf.Save(AppPath + "config.yml")
-
-					break
-				}
-				if i+1 == len(Conf.BotConfs) {
-					newBotConf := DefaultBotConfig()
-					newBotConf.Bot = e.selfID
-					newBotConf.WSCConf.AccessToken = wscTokenR.FindStringSubmatch(e.message)[1]
-					Conf.BotConfs = append(Conf.BotConfs, newBotConf)
-					Conf.Save(AppPath + "config.yml")
-				}
-			}
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!WebSocket Reverse Token Updated", 0)
-		} else {
-			core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
-		}
-	}
-}
-*/
-/*
-// 命令解析器
-func commandParse(e XEvent) {
-	commands := strings.Split(e.message, "/n")
-	for _, command := range commands {
-		if strings.Contains(command, "$") {
-
-		}
-	}
-}
-
-func selectCommandType(command string) bool {
-	whereSapce := strings.Index(command, " ")
-	if whereSapce == 0 {
-		commandType := command[1:]
-	} else {
-		commandType := command[1:whereSapce]
-	}
-	switch commandType {
-	case "夜夜":
-		isYaYaOK(e)
-	case "master":
-		Conf := masterLogin(Conf, e)
-	case "debug":
-		commandParm := command[1:whereSapce]
-		if
-	case "wsc-url":
-	}
-}
-
-// isYaYaOK 查看夜夜是否在线
-func isYaYaOK(e XEvent) {
-	core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "夜夜一直在你身边！", 0)
-}
-
-// masterLogin 变更主人
-func masterLogin(conf *Yaml, e XEvent) *Yaml {
-	if conf.Master == 12345678 {
-		conf.Master = e.userID
-		conf.Save(AppPath + "config.yml")
-		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "登录完毕", 0)
-	} else {
-		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
-	}
-	return conf
-}
-
-// debugEnable 开启debug
-func debugEnable(conf *Yaml, e XEvent) *Yaml {
-	if e.userID == conf.Master {
-		Conf.Debug = false
-		Conf.Save(AppPath + "config.yml")
-		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!Debug Off", 0)
-	} else {
-		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
-	}
-	return conf
-}
-
-// debugDisable 关闭debug
-func debugDisable(conf *Yaml, e XEvent) *Yaml {
-	if e.userID == conf.Master {
-		Conf.Debug = false
-		Conf.Save(AppPath + "config.yml")
-		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "!Debug Off", 0)
-	} else {
-		core.SendMsg(e.selfID, e.mseeageType, e.groupID, e.userID, "???", 0)
-	}
-	return conf
-}
-
-func isDebugCmd(command string) bool {
-	if strings.ToLower(command) == "$master" {
-		return true
-	}
-	return false
-}
-
-func isMasterCmd(command string) bool {
-	if strings.ToLower(command) == "$master" {
-		return true
-	}
-	return false
-}
-*/
-
-// 兼容 Mirai CQHTTP

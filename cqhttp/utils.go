@@ -26,6 +26,12 @@ func ERROR(s string, v ...interface{}) {
 	core.OutPutLog("[ERROR] " + fmt.Sprintf(s, v...))
 }
 
+func META(s string, v ...interface{}) {
+	if Conf.Meta {
+		core.OutPutLog("[META] " + fmt.Sprintf(s, v...))
+	}
+}
+
 func TEST(s string, v ...interface{}) {
 	if Conf.Debug {
 		core.OutPutLog("[TEST] " + fmt.Sprintf(s, v...))
