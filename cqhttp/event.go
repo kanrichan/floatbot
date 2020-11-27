@@ -64,7 +64,6 @@ func XQEvent(selfID int64, mseeageType int64, subType int64, groupID int64, user
 		go ProtectRun(func() { onStart() }, "onStart()")
 	case 12002:
 		go ProtectRun(func() { onDisable() }, "onDisable()")
-
 	// 消息事件
 	// 0：临时会话 1：好友会话 4：群临时会话 7：好友验证会话
 	case 0, 1, 4, 5, 7:
@@ -145,7 +144,7 @@ func XQSetUp() int64 {
 func WSCPush(bot int64, e Event, c *Yaml) {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[推送服务] Bot %v 服务发生错误，将忽略本次推送...... %v", bot, err)
+			ERROR("[推送][%v] BOT =X=> =X=> OneBot Error: %v", bot, err)
 		}
 	}()
 
