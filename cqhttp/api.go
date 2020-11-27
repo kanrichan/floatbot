@@ -64,14 +64,14 @@ type CQFriendInfo struct {
 func (c *WSCYaml) wscApi(api []byte) {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[响应服务] Bot %v 响应 %v 发生错误，忽略本次响应...... %v", c.BotID, c.Url, err)
+			ERROR("[响应][HTTP][%v] BOT X %v Error: %v", c.BotID, c.Url, err)
 		}
 	}()
 
 	req := gjson.ParseBytes(api)
 	action := strings.ReplaceAll(req.Get("action").Str, "_async", "")
 	params := req.Get("params")
-	DEBUG("[响应服务] Bot %v 接收 %v 到API调用: %v 参数: %v", c.BotID, c.Url, req.Get("action").Str, string(api))
+	DEBUG("[响应][HTTP][%v] BOT <- %v API: %v Params: %v", c.BotID, c.Url, action, string(api))
 
 	if f, ok := wsApi[action]; ok {
 		ret := f(c.BotID, params)
@@ -101,14 +101,14 @@ func (c *WSCYaml) wscApi(api []byte) {
 func (s *WSSYaml) wscApi(api []byte) {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[响应服务] Bot %v 响应 %v:%v 发生错误，忽略本次响应...... %v", s.BotID, s.Host, s.Port, err)
+			ERROR("[响应][HTTP][%v] BOT X %v:%v Error: %v", s.BotID, s.Host, s.Port, err)
 		}
 	}()
 
 	req := gjson.ParseBytes(api)
 	action := strings.ReplaceAll(req.Get("action").Str, "_async", "")
 	params := req.Get("params")
-	DEBUG("[响应服务] Bot %v 接收 %v:%v 到API调用: %v 参数: %v", s.BotID, s.Host, s.Port, req.Get("action").Str, string(api))
+	ERROR("[响应][HTTP][%v] BOT <- %v:%v API: %v Params: %v", s.BotID, s.Host, s.Port, action, string(api))
 
 	if f, ok := wsApi[action]; ok {
 		ret := f(s.BotID, params)
@@ -135,39 +135,24 @@ func (s *WSSYaml) wscApi(api []byte) {
 	}
 }
 
-func (h *HTTPYaml) wscApi(path string, api []byte) []byte {
+func (h *HTTPYaml) apiReply(path string, api []byte) []byte {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[响应服务] Bot %v 响应 %v:%v 发生错误，忽略本次响应...... %v", h.BotID, h.Host, h.Port, err)
+			ERROR("[响应][HTTP][%v] BOT X %v:%v Error: %v", h.BotID, h.Host, h.Port, err)
 		}
 	}()
 
 	action := strings.ReplaceAll(path, "/", "")
 	TEST("%v", action)
-	req := gjson.ParseBytes(api)
-	params := req.Get("params")
-	DEBUG("[响应服务] Bot %v 接收 %v:%v 到API调用: %v 参数: %v", h.BotID, h.Host, h.Port, req.Get("action").Str, string(api))
+	params := gjson.ParseBytes(api)
+	DEBUG("[响应][HTTP][%v] BOT <- %v:%v API: %v Params: %v", h.BotID, h.Host, h.Port, action, string(api))
 
 	if f, ok := wsApi[action]; ok {
 		ret := f(h.BotID, params)
-		if req.Get("echo").Int() != 0 {
-			ret.Echo = req.Get("echo").Int()
-		} else if req.Get("echo").Str != "" {
-			ret.Echo = req.Get("echo").Str
-		} else {
-			ret.Echo, _ = req.Get("echo").Value().(map[string]interface{})
-		}
 		send, _ := json.Marshal(ret)
 		return send
 	} else {
 		ret := resultFail("no such api")
-		if req.Get("echo").Int() != 0 {
-			ret.Echo = req.Get("echo").Int()
-		} else if req.Get("echo").Str != "" {
-			ret.Echo = req.Get("echo").Str
-		} else {
-			ret.Echo, _ = req.Get("echo").Value().(map[string]interface{})
-		}
 		send, _ := json.Marshal(ret)
 		return send
 	}
@@ -176,10 +161,11 @@ func (h *HTTPYaml) wscApi(path string, api []byte) []byte {
 func (h *HTTPYaml) reply(send []byte, reply []byte) {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[HTTP POST][快速回复] Bot %v 响应 %v 发生错误，忽略本次响应...... %v", h.PostUrl, h.Port, err)
+			ERROR("[快速回复][HTTP][%v] BOT X %v:%v Error: %v", h.BotID, h.Host, err)
 		}
 	}()
-	DEBUG("[HTTP POST][快速回复] Bot %v 接收 %v 到API调用: %v", h.BotID, h.Host, h.Port, string(reply))
+	DEBUG("[快速回复][HTTP][%v] BOT <- %v:%v API: %v", h.BotID, h.Host, h.Port, string(reply))
+
 	senddata := gjson.ParseBytes(send)
 	replydata := gjson.ParseBytes(reply)
 	messageType := senddata.Get("message_type").Str
@@ -328,7 +314,7 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 		return resultOK(map[string]interface{}{})
 	},
 	"get_login_info": func(bot int64, p gjson.Result) Result {
-		nickname := core.GetNick(bot, bot)
+		nickname := strings.Split(core.GetNick(bot, bot), "/n")[0]
 		return resultOK(map[string]interface{}{"user_id": bot, "nickname": nickname})
 	},
 	"get_stranger_info": func(bot int64, p gjson.Result) Result {
@@ -451,7 +437,7 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 func resultOK(data interface{}) Result {
 	return Result{
 		Status:  "ok",
-		Retcode: 200,
+		Retcode: 0,
 		Data:    data,
 		Echo:    nil,
 	}
@@ -514,7 +500,7 @@ func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, m
 				out += fmt.Sprintf("[Voi=%s]", "error")
 			}
 		case "at":
-			out += fmt.Sprintf("[@%s]", message.Get("data.*").Str)
+			out += fmt.Sprintf("[@%s] ", message.Get("data.*").Str)
 		case "rps":
 			out += "[no such element]"
 		case "dice":
