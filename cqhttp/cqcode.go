@@ -216,7 +216,8 @@ func xq2cqCode(message string) string {
 	pic := regexp.MustCompile(`\[pic={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(\..*?),(.*?)\]`)
 	for _, p := range pic.FindAllStringSubmatch(message, -1) {
 		oldpic := p[0]
-		newpic := fmt.Sprintf("[CQ:image,file=%s%s%s%s%s%s]", p[1], p[2], p[3], p[4], p[5], p[6])
+		md5 := strings.ToUpper(fmt.Sprintf("%s%s%s%s%s", p[1], p[2], p[3], p[4], p[5]))
+		newpic := fmt.Sprintf("[CQ:image,file=%s%s,url=http://gchat.qpic.cn/gchatpic_new//--%s/0]", md5, p[6], md5)
 		message = strings.ReplaceAll(message, oldpic, newpic)
 	}
 
