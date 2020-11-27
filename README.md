@@ -3,8 +3,8 @@
 # 兼容性
 
 ### 接口
-- [ ] HTTP API
-- [ ] 正向Websocket
+- [x] HTTP API
+- [x] 正向Websocket
 - [x] 反向Websocket
 
 ### 实现
