@@ -3,10 +3,10 @@ package cqhttp
 var FirstStart bool = true
 
 var XQPath = PathExecute()
-var AppPath = XQPath + "onebot/"
-var ImagePath = XQPath + "onebot/image/"
-var RecordPath = XQPath + "onebot/record/"
-var VideoPath = XQPath + "onebot/video/"
+var AppPath = XQPath + "OneBot/"
+var ImagePath = XQPath + "OneBot/image/"
+var RecordPath = XQPath + "OneBot/record/"
+var VideoPath = XQPath + "OneBot/video/"
 
 func init() {
 }
@@ -27,11 +27,9 @@ func onStart() {
 			return
 		}
 		go Conf.runOnebot()
-		go Conf.heartBeat()
 	}
 	FirstStart = false
 }
 
 func onDisable() {
-	//
 }
