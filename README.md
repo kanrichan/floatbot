@@ -1,4 +1,4 @@
-![OneBot-YaYa](https://socialify.git.ci/Yiwen-Chan/OneBot-YaYa/image?description=1&descriptionEditable=OneBot%20base%20on%20XQ&font=Inter&logo=https%3A%2F%2Fgithub.com%2Fhowmanybots%2Fonebot%2Fraw%2Fmaster%2Fassets%2Flogo-256.png&owner=1&pattern=Circuit%20Board&theme=Light)
+![OneBot-YaYa](https://socialify.git.ci/Yiwen-Chan/OneBot-YaYa/image?description=1&descriptionEditable=OneBot%20(CQHTTP)%20%E5%85%88%E9%A9%B1%E5%B9%B3%E5%8F%B0%E7%9A%84%E5%AE%9E%E7%8E%B0&font=Raleway&forks=1&issues=1&logo=https%3A%2F%2Fgithub.com%2Fhowmanybots%2Fonebot%2Fraw%2Fmaster%2Fassets%2Flogo-256.png&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Light)
 
 # 兼容性
 
