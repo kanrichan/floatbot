@@ -4,7 +4,11 @@
 
 OneBot-YaYa是基于GO和C语言混合编程开发的QQ机器人HTTP API，[OneBot标准](https://github.com/howmanybots/onebot)的先驱QQ机器人平台实现
 
-![Badge](https://img.shields.io/badge/OneBot-v11-black)[![License](https://img.shields.io/github/license/Yiwen-Chan/OneBot-YaYa.svg)](https://raw.githubusercontent.com/Yiwen-Chan/OneBot-YaYa/master/LICENSE)[![](https://img.shields.io/badge/QQ%20gorup-1048452984-brightgreen)](https://jq.qq.com/?_wv=1027&k=QMb7x1mM)[![Release](https://img.shields.io/github/v/release/Yiwen-Chan/OneBot-YaYa?include_prereleases)](https://github.com/Yiwen-Chan/OneBot-YaYa/releases)[![Downloads @latest](https://img.shields.io/github/downloads-pre/Yiwen-Chan/OneBot-YaYa/latest/total)](https://github.com/Yiwen-Chan/OneBot-YaYa/releases)
+![Badge](https://img.shields.io/badge/OneBot-v11-black)
+[![License](https://img.shields.io/github/license/Yiwen-Chan/OneBot-YaYa.svg)](https://raw.githubusercontent.com/Yiwen-Chan/OneBot-YaYa/master/LICENSE)
+[![](https://img.shields.io/badge/QQ%20gorup-1048452984-brightgreen)](https://jq.qq.com/?_wv=1027&k=QMb7x1mM)
+[![Release](https://img.shields.io/github/v/release/Yiwen-Chan/OneBot-YaYa?include_prereleases)](https://github.com/Yiwen-Chan/OneBot-YaYa/releases)
+[![Downloads @latest](https://img.shields.io/github/downloads-pre/Yiwen-Chan/OneBot-YaYa/latest/total)](https://github.com/Yiwen-Chan/OneBot-YaYa/releases)
 
 ### 开始使用
 
@@ -268,7 +272,7 @@ bots:
 | C#                 | HTTP, 正向 WS, 反向 WS | [frank-bots/cqhttp.Cyan](https://github.com/frank-bots/cqhttp.Cyan) | frankli0324            |
 | Java Kotlin Groovy | 反向 WS                | [lz1998/Spring-CQ](https://github.com/lz1998/Spring-CQ)（[教程](https://www.bilibili.com/video/av89649630/)） | lz1998                 |
 
-[More](https://github.com/Yiwen-Chan/OneBot-YaYa/blob/master/docs/sdk.md)
+[More](https://github.com/Yiwen-Chan/OneBot-YaYa/blob/master/docs/ecosystem.md)
 
 #### 应用案例
 
@@ -281,7 +285,7 @@ bots:
 | [Quan666/ELF_RSS](https://github.com/Quan666/ELF_RSS)        | RSS                                                          | [nonebot](https://github.com/nonebot/nonebot) | [Quan666](https://github.com/Quan666)         |
 | [Bluefissure/OtterBot](https://github.com/Bluefissure/OtterBot) | FF14 玩家BOT                                                 | 云BOT                                         | [Bluefissure](https://github.com/Bluefissure) |
 
-[More](https://github.com/Yiwen-Chan/OneBot-YaYa/blob/master/docs/plugin.md)
+[More](https://github.com/Yiwen-Chan/OneBot-YaYa/blob/master/docs/ecosystem.md)
 
 ### 特别感谢
 
