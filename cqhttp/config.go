@@ -179,6 +179,7 @@ func Load(p string) *Yaml {
 		c.Save(p)
 	}
 	INFO("おはようございます。")
+	c.Save(p)
 	c.InitConf()
 	return &c
 }
