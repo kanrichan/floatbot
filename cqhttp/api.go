@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 
@@ -461,62 +464,78 @@ func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, m
 		case "face":
 			out += fmt.Sprintf("[Face%s.gif]", message.Get("data.*").Str)
 		case "image":
-			image := message.Get("data.file").Str
-			image = strings.ReplaceAll(image, `\/`, `/`)
-			if strings.Contains(image, "base64://") {
-				path := Base64SaveImage(strings.ReplaceAll(image, "base64://", ""))
-				out += fmt.Sprintf("[pic=%s]", path)
-			} else if strings.Contains(image, "file:///") {
-				out += fmt.Sprintf("[pic=%s]", strings.ReplaceAll(image, "file:///", ""))
-			} else if strings.Contains(image, "http://") {
-				out += fmt.Sprintf("[pic=%s]", image)
-			} else if strings.Contains(image, "https://") {
-				out += fmt.Sprintf("[pic=%s]", image)
+			url := message.Get("data.url").Str
+			url = strings.ReplaceAll(url, `\/`, `/`)
+			if url != "" {
+				out += fmt.Sprintf("[pic=%s]", UrlImage(url))
 			} else {
-				out += fmt.Sprintf("[pic=%s]", "error")
+				image := message.Get("data.file").Str
+				image = strings.ReplaceAll(image, `\/`, `/`)
+				if strings.Contains(image, "base64://") {
+					path := Base64SaveImage(strings.ReplaceAll(image, "base64://", ""))
+					out += fmt.Sprintf("[pic=%s]", path)
+				} else if strings.Contains(image, "file:///") {
+					out += fmt.Sprintf("[pic=%s]", strings.ReplaceAll(image, "file:///", ""))
+				} else if strings.Contains(image, "http://") {
+					out += fmt.Sprintf("[pic=%s]", image)
+				} else if strings.Contains(image, "https://") {
+					out += fmt.Sprintf("[pic=%s]", image)
+				} else {
+					out += fmt.Sprintf("[pic=%s]", "error")
+				}
 			}
 		case "record":
-			record := message.Get("data.*").Str
-			if strings.Contains(record, "base64://") {
-				path := Base64SaveRecord(strings.ReplaceAll(record, "base64://", ""))
-				out += fmt.Sprintf("[Voi=%s]", path)
-			} else if strings.Contains(record, "file:///") {
-				out += fmt.Sprintf("[Voi=%s]", strings.ReplaceAll(record, "file:///", ""))
-			} else if strings.Contains(record, "http://") {
-				out += fmt.Sprintf("[Voi=%s]", record)
+			url := message.Get("data.url").Str
+			url = strings.ReplaceAll(url, `\/`, `/`)
+			if url != "" {
+				out += fmt.Sprintf("[Voi=%s]", url)
 			} else {
-				out += fmt.Sprintf("[Voi=%s]", "error")
+				record := message.Get("data.file").Str
+				record = strings.ReplaceAll(record, `\/`, `/`)
+				if strings.Contains(record, "base64://") {
+					path := Base64SaveRecord(strings.ReplaceAll(record, "base64://", ""))
+					out += fmt.Sprintf("[Voi=%s]", path)
+				} else if strings.Contains(record, "file:///") {
+					out += fmt.Sprintf("[Voi=%s]", strings.ReplaceAll(record, "file:///", ""))
+				} else if strings.Contains(record, "http://") {
+					out += fmt.Sprintf("[Voi=%s]", record)
+				} else {
+					out += fmt.Sprintf("[Voi=%s]", "error")
+				}
 			}
 		case "video":
-			video := message.Get("data.*").Str
-			if strings.Contains(video, "base64://") {
-				path := Base64SaveVideo(strings.ReplaceAll(video, "base64://", ""))
-				out += fmt.Sprintf("[Voi=%s]", path)
-			} else if strings.Contains(video, "file:///") {
-				out += fmt.Sprintf("[Voi=%s]", strings.ReplaceAll(video, "file:///", ""))
-			} else if strings.Contains(video, "http://") {
-				out += fmt.Sprintf("[Voi=%s]", video)
+			DEBUG("[CQ码解析] %v 暂未实现", message.Str)
+			if message.Get("data.url").Str != "" {
+				out += fmt.Sprintf("视频：%s", message.Get("data.url").Str)
 			} else {
-				out += fmt.Sprintf("[Voi=%s]", "error")
+				out += fmt.Sprintf("视频：%s", message.Get("data.file").Str)
 			}
 		case "at":
 			out += fmt.Sprintf("[@%s] ", message.Get("data.*").Str)
 		case "rps":
-			out += "[no such element]"
+			out += "[猜拳]"
 		case "dice":
-			out += "[no such element]"
+			out += "[骰子]"
 		case "shake":
 			core.ShakeWindow(selfID, userID)
 		case "poke":
-			out += "[no such element]"
+			DEBUG("[CQ码解析] %v 不支持", message.Str)
+			out += fmt.Sprintf("%s/n%s", message.Get("data.*").Str)
 		case "anonymous":
 			out += "[no such element]"
 		case "share":
-			out += "[no such element]"
+			DEBUG("[CQ码解析] %v 暂未实现", message.Str)
+			out += fmt.Sprintf("%s/n%s", message.Get("data.title").Str, message.Get("data.url").Str)
 		case "contact":
-			out += "[no such element]"
+			DEBUG("[CQ码解析] %v 暂未实现", message.Str)
+			if message.Get("data.type").Str == "group" {
+				out += fmt.Sprintf("分享群：%s", message.Get("data.id").Str)
+			} else {
+				out += fmt.Sprintf("分享好友：%s", message.Get("data.id").Str)
+			}
 		case "location":
-			out += "[no such element]"
+			DEBUG("[CQ码解析] %v 暂未实现", message.Str)
+			out += fmt.Sprintf("位置分享：%s/n%s/n经度：%s 纬度：%s", message.Get("data.title").Str, message.Get("data.content").Str, message.Get("data.lon").Str, message.Get("data.lat").Str)
 		case "music":
 			typ := message.Get("data.type").Str
 			if typ == "custom" {
@@ -526,17 +545,20 @@ func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, m
 				content := message.Get("data.content").Str
 				image := message.Get("data.image").Str
 				music := SendCustomMusic(url, audio, title, content, image)
-				TEST("json格式为%v", music)
 				core.SendXML(selfID, 1, messageType, groupID, userID, music, 0)
 			} else {
-				out += "[no such element]"
+				DEBUG("[CQ码解析] %v 暂未实现", message.Str)
+				out += fmt.Sprintf("音乐分享：%s %s", message.Get("data.type").Str, message.Get("data.id").Str)
 			}
 		case "reply":
-			out += "[no such element]"
+			DEBUG("[CQ码解析] %v 不支持", message.Str)
+			out += fmt.Sprintf(message.Str)
 		case "forward":
-			out += "[no such element]"
+			DEBUG("[CQ码解析] %v 不支持", message.Str)
+			out += fmt.Sprintf(message.Str)
 		case "node":
-			out += "[no such element]"
+			DEBUG("[CQ码解析] %v 不支持", message.Str)
+			out += fmt.Sprintf(message.Str)
 		case "xml":
 			xml := message.Get("data.*").Str
 			core.SendJSON(selfID, 1, 2, groupID, userID, xml)
@@ -546,15 +568,14 @@ func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, m
 		case "emoji":
 			out += fmt.Sprintf("[emoji=%s]", message.Get("data.*").Str)
 		default:
-			WARN("CQ码解析失败，将以原格式返回：%v", message.Str)
-			out += message.Str
+			DEBUG("[CQ码解析] %v 不支持", message.Str)
+			out += fmt.Sprintf(message.Str)
 		}
 	}
-	messageID := "0"
 	if out != "" {
-		messageID = core.SendMsgEX_V2(selfID, messageType, groupID, userID, out, 0, false, " ")
+		core.SendMsgEX_V2(selfID, messageType, groupID, userID, out, 0, false, " ")
 	}
-	return resultOK(map[string]interface{}{"message_id": messageID})
+	return resultOK(map[string]interface{}{"message_id": 0})
 }
 
 func Base64SaveImage(res string) string {
@@ -562,7 +583,7 @@ func Base64SaveImage(res string) string {
 	if err != nil {
 		ERROR("base64编码解码失败")
 	}
-	name := fmt.Sprintf("%x", md5.Sum(data))
+	name := strings.ToUpper(fmt.Sprintf("%x", md5.Sum(data)))
 	path := ImagePath + name + ".jpg"
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
 	defer f.Close()
@@ -582,7 +603,7 @@ func Base64SaveRecord(res string) string {
 	if err != nil {
 		ERROR("base64编码解码失败")
 	}
-	name := fmt.Sprintf("%x", md5.Sum(data))
+	name := strings.ToUpper(fmt.Sprintf("%x", md5.Sum(data)))
 	path := RecordPath + name + ".mp3"
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
 	defer f.Close()
@@ -602,7 +623,7 @@ func Base64SaveVideo(res string) string {
 	if err != nil {
 		ERROR("base64编码解码失败")
 	}
-	name := fmt.Sprintf("%x", md5.Sum(data))
+	name := strings.ToUpper(fmt.Sprintf("%x", md5.Sum(data)))
 	path := VideoPath + name + ".mp4"
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
 	defer f.Close()
@@ -615,6 +636,47 @@ func Base64SaveVideo(res string) string {
 		}
 	}
 	return path
+}
+
+func UrlImage(url string) string {
+	client := &http.Client{}
+	reqest, err := http.NewRequest("GET", url, nil)
+	reqest.Header.Add("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
+	reqest.Header.Add("Net-Type", "Wifi")
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器图片%s下载失败", url)
+		return "error"
+	}
+	resp, err := client.Do(reqest)
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器图片%s下载失败", url)
+		return "error"
+	}
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器图片%s下载失败", url)
+		return "error"
+	}
+	name := byte2md5(data)
+	path := ImagePath + name + ".jpg"
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	defer f.Close()
+	if err == nil {
+		_, err = f.Write(data)
+		if err != nil {
+			ERROR("[CQ码解析] 从TX服务器图片%s保存失败", url)
+		}
+	} else {
+		ERROR("[CQ码解析] 从TX服务器图片%s保存失败", url)
+	}
+	return path
+}
+
+func byte2md5(data []byte) string {
+	m := md5.New()
+	m.Write(data)
+	return strings.ToUpper(hex.EncodeToString(m.Sum(nil)))
 }
 
 func SendCustomMusic(url string, audio string, title string, content string, image string) string {
