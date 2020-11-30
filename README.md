@@ -2,11 +2,11 @@
 
 # OneBot-YaYa
 
-OneBot-YaYa是基于GO和C语言混合编程开发的QQ机器人HTTP API，**[OneBot标准](https://github.com/howmanybots/onebot)**的先驱QQ机器人平台实现
+OneBot-YaYa是基于GO和C语言混合编程开发的QQ机器人HTTP API，[OneBot标准](https://github.com/howmanybots/onebot)的先驱QQ机器人平台实现
 
 ![Badge](https://img.shields.io/badge/OneBot-v11-black)
 [![License](https://img.shields.io/github/license/Yiwen-Chan/OneBot-YaYa.svg)](https://raw.githubusercontent.com/Yiwen-Chan/OneBot-YaYa/master/LICENSE)
-[![QQ 群](https://img.shields.io/badge/QQ %E7%BE%A4-1048452984-green.svg)](https://jq.qq.com/?_wv=1027&k=QMb7x1mM)
+[![qq 群](https://img.shields.io/badge/qq%E7%BE%A4-1048452984-green.svg)](https://jq.qq.com/?_wv=1027&k=QMb7x1mM)
 
 
 
@@ -106,34 +106,6 @@ bots:
 
 - 注：不要使用`重载插件`功能，否则会导致框架闪退，此为框架与go不兼容问题
 
-### OneBot 生态环境
-
-#### SDK／开发框架
-
-| 语言               | 通信方式               | 地址                                                         | 核心作者               |
-| ------------------ | ---------------------- | ------------------------------------------------------------ | ---------------------- |
-| Python             | HTTP, 反向 WS          | [nonebot/nonebot](https://github.com/nonebot/nonebot)        | richardchien yanyongyu |
-| Go                 | 正向 WS                | [wdvxdr1123/ZeroBot](https://github.com/wdvxdr1123/ZeroBot)  | wdvxdr1123             |
-| Node.js            | HTTP, 正向 WS, 反向 WS | [koishijs/koishi](https://github.com/koishijs/koishi)        | Shigma                 |
-| PHP                | 反向 WS                | [zhamao-robot/zhamao-framework](https://github.com/zhamao-robot/zhamao-framework) | crazywhalecc           |
-| C#                 | HTTP, 正向 WS, 反向 WS | [frank-bots/cqhttp.Cyan](https://github.com/frank-bots/cqhttp.Cyan) | frankli0324            |
-| Java Kotlin Groovy | 反向 WS                | [lz1998/Spring-CQ](https://github.com/lz1998/Spring-CQ)（[教程](https://www.bilibili.com/video/av89649630/)） | lz1998                 |
-
-[More](https://github.com/Yiwen-Chan/OneBot-YaYa/blob/master/docs/sdk.md)
-
-#### 应用案例
-
-| 项目地址                                                     | 简介或功能                                                   | 依赖                                          | 核心作者                                      |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | --------------------------------------------- | --------------------------------------------- |
-| [Kyomotoi/ATRI](https://github.com/Kyomotoi/ATRI/tree/master) | 名为 [ATRI](https://atri-mdm.com/) 的BOT                     | [nonebot](https://github.com/nonebot/nonebot) | [Kyomotoi](https://github.com/Kyomotoi)       |
-| [fz6m/nonebot-plugin](https://github.com/fz6m/nonebot-plugin) | 各种即开即用、良好兼容的插件                                 | [nonebot](https://github.com/nonebot/nonebot) | [fz6m](https://github.com/fz6m)               |
-| [mnixry/coolQPythonBot](https://github.com/mnixry/coolQPythonBot) | 识图识番搜图涩图 番剧查询 B站视频解析 RSS 维基百科 广播 欢迎 一言 嘴臭 身份生成 | [nonebot](https://github.com/nonebot/nonebot) | [mnixry](https://github.com/mnixry)           |
-| [cleoold/sendo-erika](https://github.com/cleoold/sendo-erika) | 自定义回复 点歌 签到 运势 谷歌搜索 百度热搜 碧蓝建造         | [nonebot](https://github.com/nonebot/nonebot) | [cleoold](https://github.com/cleoold)         |
-| [Quan666/ELF_RSS](https://github.com/Quan666/ELF_RSS)        | RSS                                                          | [nonebot](https://github.com/nonebot/nonebot) | [Quan666](https://github.com/Quan666)         |
-| [Bluefissure/OtterBot](https://github.com/Bluefissure/OtterBot) | FF14 玩家BOT                                                 | 云BOT                                         | [Bluefissure](https://github.com/Bluefissure) |
-
-[More](https://github.com/Yiwen-Chan/OneBot-YaYa/blob/master/docs/plugin.md)
-
 ### 支持的标准
 
 ##### 通信方式
@@ -147,63 +119,61 @@ bots:
 <summary>消息段类型</summary>
 
 
-- 纯文本
+- [纯文本](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#纯文本)
 
   ```
   纯文本内容
   ```
 
-- QQ表情
+- [QQ表情](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#qq-表情)
 
   ```
   [CQ:face,id=123]
   ```
 
-- 图片
+- [图片](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#图片)
 
   ```
   [CQ:image,file=http://baidu.com/1.jpg]
   ```
 
-- 语音
+- [语音](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#语音)
 
   ```
   [CQ:record,file=http://baidu.com/1.mp3]
   ```
 
-- @某人
+- [@某人](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#@某人)
 
   ```
   [CQ:at,qq=10001000]
   ```
 
-- 窗口抖动
+- [窗口抖动](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#窗口抖动)
 
   ```
   [CQ:shake]
   ```
 
-- 自定义音乐分享
+- [自定义音乐分享](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#自定义音乐分享)
 
   ```
   [CQ:music,type=custom,url=http://baidu.com,audio=http://baidu.com/1.mp3,title=音乐标题]
   ```
 
-- XML消息
+- [XML消息](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#xml-消息)
 
   ```
   [CQ:xml,data=<?xml ...]
   ```
 
-- JSON消息
+- [JSON消息](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#json-消息)
 
   ```
   [CQ:json,data={"app": ...]
   ```
 
 </details>
-
-
 
 <details>
 <summary>API</summary>
@@ -288,6 +258,34 @@ bots:
 | [心跳](https://github.com/howmanybots/onebot/blob/master/v11/specs/event/meta.md) |  |
 
 </details>
+
+### OneBot 生态环境
+
+#### SDK／开发框架
+
+| 语言               | 通信方式               | 地址                                                         | 核心作者               |
+| ------------------ | ---------------------- | ------------------------------------------------------------ | ---------------------- |
+| Python             | HTTP, 反向 WS          | [nonebot/nonebot](https://github.com/nonebot/nonebot)        | richardchien yanyongyu |
+| Go                 | 正向 WS                | [wdvxdr1123/ZeroBot](https://github.com/wdvxdr1123/ZeroBot)  | wdvxdr1123             |
+| Node.js            | HTTP, 正向 WS, 反向 WS | [koishijs/koishi](https://github.com/koishijs/koishi)        | Shigma                 |
+| PHP                | 反向 WS                | [zhamao-robot/zhamao-framework](https://github.com/zhamao-robot/zhamao-framework) | crazywhalecc           |
+| C#                 | HTTP, 正向 WS, 反向 WS | [frank-bots/cqhttp.Cyan](https://github.com/frank-bots/cqhttp.Cyan) | frankli0324            |
+| Java Kotlin Groovy | 反向 WS                | [lz1998/Spring-CQ](https://github.com/lz1998/Spring-CQ)（[教程](https://www.bilibili.com/video/av89649630/)） | lz1998                 |
+
+[More](https://github.com/Yiwen-Chan/OneBot-YaYa/blob/master/docs/sdk.md)
+
+#### 应用案例
+
+| 项目地址                                                     | 简介或功能                                                   | 依赖                                          | 核心作者                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | --------------------------------------------- | --------------------------------------------- |
+| [Kyomotoi/ATRI](https://github.com/Kyomotoi/ATRI/tree/master) | 名为 [ATRI](https://atri-mdm.com/) 的BOT                     | [nonebot](https://github.com/nonebot/nonebot) | [Kyomotoi](https://github.com/Kyomotoi)       |
+| [fz6m/nonebot-plugin](https://github.com/fz6m/nonebot-plugin) | 各种即开即用、良好兼容的插件                                 | [nonebot](https://github.com/nonebot/nonebot) | [fz6m](https://github.com/fz6m)               |
+| [mnixry/coolQPythonBot](https://github.com/mnixry/coolQPythonBot) | 识图识番搜图涩图 番剧查询 B站视频解析 RSS 维基百科 广播 欢迎 一言 嘴臭 身份生成 | [nonebot](https://github.com/nonebot/nonebot) | [mnixry](https://github.com/mnixry)           |
+| [cleoold/sendo-erika](https://github.com/cleoold/sendo-erika) | 自定义回复 点歌 签到 运势 谷歌搜索 百度热搜 碧蓝建造         | [nonebot](https://github.com/nonebot/nonebot) | [cleoold](https://github.com/cleoold)         |
+| [Quan666/ELF_RSS](https://github.com/Quan666/ELF_RSS)        | RSS                                                          | [nonebot](https://github.com/nonebot/nonebot) | [Quan666](https://github.com/Quan666)         |
+| [Bluefissure/OtterBot](https://github.com/Bluefissure/OtterBot) | FF14 玩家BOT                                                 | 云BOT                                         | [Bluefissure](https://github.com/Bluefissure) |
+
+[More](https://github.com/Yiwen-Chan/OneBot-YaYa/blob/master/docs/plugin.md)
 
 ### 特别感谢
 
