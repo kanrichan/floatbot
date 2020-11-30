@@ -4,6 +4,7 @@ var FirstStart bool = true
 
 var XQPath = PathExecute()
 var AppPath = XQPath + "OneBot/"
+var DatabasePath = XQPath + "OneBot/database/"
 var ImagePath = XQPath + "OneBot/image/"
 var RecordPath = XQPath + "OneBot/record/"
 var VideoPath = XQPath + "OneBot/video/"
@@ -17,6 +18,7 @@ func Main() {
 func onStart() {
 	if FirstStart {
 		CreatePath(AppPath)
+		CreatePath(DatabasePath)
 		CreatePath(ImagePath)
 		CreatePath(RecordPath)
 		CreatePath(VideoPath)
