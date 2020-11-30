@@ -4,11 +4,7 @@
 
 OneBot-YaYa是基于GO和C语言混合编程开发的QQ机器人HTTP API，[OneBot标准](https://github.com/howmanybots/onebot)的先驱QQ机器人平台实现
 
-![Badge](https://img.shields.io/badge/OneBot-v11-black)
-[![License](https://img.shields.io/github/license/Yiwen-Chan/OneBot-YaYa.svg)](https://raw.githubusercontent.com/Yiwen-Chan/OneBot-YaYa/master/LICENSE)
-[![qq 群](https://img.shields.io/badge/qq%E7%BE%A4-1048452984-green.svg)](https://jq.qq.com/?_wv=1027&k=QMb7x1mM)
-
-
+![Badge](https://img.shields.io/badge/OneBot-v11-black)[![License](https://img.shields.io/github/license/Yiwen-Chan/OneBot-YaYa.svg)](https://raw.githubusercontent.com/Yiwen-Chan/OneBot-YaYa/master/LICENSE)[![](https://img.shields.io/badge/QQ%20gorup-1048452984-brightgreen)](https://jq.qq.com/?_wv=1027&k=QMb7x1mM)[![Release](https://img.shields.io/github/v/release/Yiwen-Chan/OneBot-YaYa?include_prereleases)](https://github.com/Yiwen-Chan/OneBot-YaYa/releases)[![Downloads @latest](https://img.shields.io/github/downloads-pre/Yiwen-Chan/OneBot-YaYa/latest/total)](https://github.com/Yiwen-Chan/OneBot-YaYa/releases)
 
 ### 开始使用
 
