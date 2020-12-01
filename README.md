@@ -208,10 +208,10 @@ bots:
 | /get_group_list | [获取群列表](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_list-获取群列表) |  |
 | /get_group_member_info | [获取群成员信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_member_info-获取群成员信息) | 暂未实现 |
 | /get_group_member_list | [获取群成员列表](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_member_list-获取群成员列表) |  |
-| /get_group_honor_info | [获取群荣誉信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_honor_info-获取群荣誉信息) | 先驱不支持 |
-| /get_cookies | [获取 Cookies](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_cookies-获取-cookies) | 暂未实现 |
-| /get_csrf_token | [获取 CSRF Token](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_csrf_token-获取-csrf-token) | 暂未实现 |
-| /get_credentials | [获取 QQ 相关接口凭证](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_credentials-获取-qq-相关接口凭证) | 暂未实现 |
+| /get_group_honor_info | [获取群荣誉信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_honor_info-获取群荣誉信息) |  |
+| /get_cookies | [获取 Cookies](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_cookies-获取-cookies) | 支持 "qun.qq.com" "qzone.qq.com" |
+| /get_csrf_token | [获取 CSRF Token](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_csrf_token-获取-csrf-token) | 先驱不支持 |
+| /get_credentials | [获取 QQ 相关接口凭证](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_credentials-获取-qq-相关接口凭证) | 只实现 /get_cookies 部分 |
 | /get_record | [获取语音](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_image-获取语音) | 暂未实现 |
 | /get_image | [获取图片](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_image-获取图片) | 暂未实现 |
 | /can_send_image | [检查是否可以发送图片](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#can_send_image-检查是否可以发送图片) |  |
