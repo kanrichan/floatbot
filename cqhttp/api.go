@@ -64,6 +64,32 @@ type CQFriendInfo struct {
 	Remark   string `json:"remark"`
 }
 
+type GroupHonorInfo struct {
+	GroupCode        string            `json:"gc"`
+	Uin              string            `json:"uin"`
+	Type             int64             `json:"type"`
+	TalkativeList    []HonorMemberInfo `json:"talkativeList"`
+	CurrentTalkative CurrentTalkative  `json:"currentTalkative"`
+	ActorList        []HonorMemberInfo `json:"actorList"`
+	LegendList       []HonorMemberInfo `json:"legendList"`
+	StrongNewbieList []HonorMemberInfo `json:"strongnewbieList"`
+	EmotionList      []HonorMemberInfo `json:"emotionList"`
+}
+
+type HonorMemberInfo struct {
+	Uin    int64  `json:"uin"`
+	Avatar string `json:"avatar"`
+	Name   string `json:"name"`
+	Desc   string `json:"desc"`
+}
+
+type CurrentTalkative struct {
+	Uin      int64  `json:"uin"`
+	DayCount int32  `json:"day_count"`
+	Avatar   string `json:"avatar"`
+	Name     string `json:"nick"`
+}
+
 func (c *WSCYaml) wscApi(api []byte) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -146,7 +172,6 @@ func (h *HTTPYaml) apiReply(path string, api []byte) []byte {
 	}()
 
 	action := strings.ReplaceAll(path, "/", "")
-	TEST("%v", action)
 	params := gjson.ParseBytes(api)
 	DEBUG("[响应][HTTP][%v] BOT <- %v:%v API: %v Params: %v", h.BotID, h.Host, h.Port, action, string(api))
 
@@ -321,7 +346,18 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 		return resultOK(map[string]interface{}{"user_id": bot, "nickname": nickname})
 	},
 	"get_stranger_info": func(bot int64, p gjson.Result) Result {
-		return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+		sex := "unknown"
+		if core.GetGender(bot, p.Get("user_id").Int()) == 1 {
+			sex = "male"
+		} else if core.GetGender(bot, p.Get("user_id").Int()) == 2 {
+			sex = "female"
+		}
+		return resultOK(map[string]interface{}{
+			"user_id":  p.Get("user_id").Int(),
+			"nickname": core.GetNick(bot, p.Get("user_id").Int()),
+			"sex":      sex,
+			"age":      core.GetAge(bot, p.Get("user_id").Int()),
+		})
 	},
 	"get_friend_list": func(bot int64, p gjson.Result) Result {
 		list := core.GetFriendList_B(bot)
@@ -332,8 +368,8 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 		for _, xqFriend := range strings.Split(list, "/n") {
 			cqFriendInfo := CQFriendInfo{
 				UserID:   core.Str2Int(xqFriend),
-				Nickname: "unknow",
-				Remark:   "unknow",
+				Nickname: "unknown",
+				Remark:   "unknown",
 			}
 			cqFriendList = append(cqFriendList, cqFriendInfo)
 		}
@@ -360,7 +396,29 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 		return resultOK(cqGroupList)
 	},
 	"get_group_member_info": func(bot int64, p gjson.Result) Result {
-		return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+		sex := "unknown"
+		if core.GetGender(bot, p.Get("user_id").Int()) == 1 {
+			sex = "male"
+		} else if core.GetGender(bot, p.Get("user_id").Int()) == 2 {
+			sex = "female"
+		}
+		return resultOK(map[string]interface{}{
+			"group_id":          p.Get("group_id").Int(),
+			"user_id":           p.Get("user_id").Int(),
+			"nickname":          core.GetNick(bot, p.Get("user_id").Int()),
+			"card":              core.GetNick(bot, p.Get("user_id").Int()),
+			"sex":               sex,
+			"age":               core.GetAge(bot, p.Get("user_id").Int()),
+			"area":              "unknown",
+			"join_time":         0,
+			"last_sent_time":    0,
+			"level":             "unknown",
+			"role":              "unknown",
+			"unfriendly":        false,
+			"title":             "unknown",
+			"title_expire_time": 0,
+			"card_changeable":   true,
+		})
 	},
 	"get_group_member_list": func(bot int64, p gjson.Result) Result {
 		group_id := p.Get("group_id").Int()
@@ -375,17 +433,17 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 			cqMember := CQGroupMember{
 				GroupID:         group_id,
 				UserID:          xqMember.QQ,
-				Nickname:        "unknow",
-				Card:            "unknow",
-				Sex:             "unknow",
+				Nickname:        "unknown",
+				Card:            "unknown",
+				Sex:             "unknown",
 				Age:             0,
-				Area:            "unknow",
+				Area:            "unknown",
 				JoinTime:        0,
 				LastSentTime:    0,
 				Level:           core.Int2Str(xqMember.Lv),
-				Role:            "unknow",
+				Role:            "unknown",
 				Unfriendly:      false,
-				Title:           "unknow",
+				Title:           "unknown",
 				TitleExpireTime: 0,
 				CardChangeable:  true,
 			}
@@ -394,13 +452,54 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 		return resultOK(cqGroupMemberList)
 	},
 	"get_group_honor_info": func(bot int64, p gjson.Result) Result {
-		return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+		groupID := p.Get("group_id").Int()
+		cookie := fmt.Sprintf("%s%s", core.GetCookies(bot), core.GetGroupPsKey(bot))
+		var honorType int64 = 1
+		switch p.Get("type").Str {
+		case "talkative":
+			honorType = 1
+		case "performer":
+			honorType = 2
+		case "legend":
+			honorType = 3
+		case "strong_newbie":
+			honorType = 5
+		case "emotion":
+			honorType = 6
+		}
+		data := groupHonor(groupID, honorType, cookie)
+		if data != nil {
+			data = data[bytes.Index(data, []byte(`window.__INITIAL_STATE__=`))+25:]
+			data = data[:bytes.Index(data, []byte("</script>"))]
+			ret := GroupHonorInfo{}
+			json.Unmarshal(data, &ret)
+			return resultOK(ret)
+		} else {
+			return resultFail(map[string]interface{}{"data": "error"})
+		}
 	},
 	"get_cookies": func(bot int64, p gjson.Result) Result {
-		return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+		switch p.Get("domain").Str {
+		case "qun.qq.com":
+			return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetGroupPsKey(bot)})
+		case "qzone.qq.com":
+			return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetZonePsKey(bot)})
+		default:
+			return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot)})
+		}
 	},
 	"get_csrf_token": func(bot int64, p gjson.Result) Result {
 		return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+	},
+	"get_credentials": func(bot int64, p gjson.Result) Result {
+		switch p.Get("domain").Str {
+		case "qun.qq.com":
+			return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetGroupPsKey(bot)})
+		case "qzone.qq.com":
+			return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetZonePsKey(bot)})
+		default:
+			return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot)})
+		}
 	},
 	"get_record": func(bot int64, p gjson.Result) Result {
 		return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
@@ -689,4 +788,29 @@ func XmlEscape(c string) string {
 	buf := new(bytes.Buffer)
 	_ = xml.EscapeText(buf, []byte(c))
 	return buf.String()
+}
+
+func groupHonor(groupID int64, honorType int64, cookie string) []byte {
+	url := fmt.Sprintf("https://qun.qq.com/interactive/honorlist?gc=%d&type=%d", groupID, honorType)
+	client := &http.Client{}
+	reqest, err := http.NewRequest("GET", url, nil)
+	reqest.Header.Add("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
+	reqest.Header.Add("Net-Type", "Wifi")
+	reqest.Header.Add("Cookie", cookie)
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器图片%s下载失败", url)
+		return nil
+	}
+	resp, err := client.Do(reqest)
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器图片%s下载失败", url)
+		return nil
+	}
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器图片%s下载失败", url)
+		return nil
+	}
+	return data
 }
