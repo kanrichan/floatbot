@@ -202,11 +202,11 @@ bots:
 | /set_friend_add_request  | [处理加好友请求](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_friend_add_request-处理加好友请求) |  |
 | /set_group_add_request   | [处理加群请求/邀请](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_add_request-处理加群请求邀请) |            |
 | /get_login_info | [获取登录号信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_login_info-获取登录号信息) |  |
-| /get_stranger_info | [获取陌生人信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_stranger_info-获取陌生人信息) | 暂未实现 |
+| /get_stranger_info | [获取陌生人信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_stranger_info-获取陌生人信息) |  |
 | /get_friend_list         | [获取好友列表](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_friend_list-获取好友列表) |  |
 | /get_group_info | [获取群信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_info-获取群信息) | 暂未实现 |
 | /get_group_list | [获取群列表](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_list-获取群列表) |  |
-| /get_group_member_info | [获取群成员信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_member_info-获取群成员信息) | 暂未实现 |
+| /get_group_member_info | [获取群成员信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_member_info-获取群成员信息) | 实现了 昵称 性别 年龄 的获取 |
 | /get_group_member_list | [获取群成员列表](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_member_list-获取群成员列表) |  |
 | /get_group_honor_info | [获取群荣誉信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_honor_info-获取群荣誉信息) |  |
 | /get_cookies | [获取 Cookies](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_cookies-获取-cookies) | 支持 "qun.qq.com" "qzone.qq.com" |
