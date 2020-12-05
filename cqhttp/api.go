@@ -58,6 +58,7 @@ type CQGroupInfo struct {
 	MemberCount    int64  `json:"member_count"`
 	MaxMemberCount int64  `json:"max_member_count"`
 }
+
 type CQFriendInfo struct {
 	UserID   int64  `json:"user_id"`
 	Nickname string `json:"nickname"`
@@ -137,7 +138,7 @@ func (s *WSSYaml) wscApi(api []byte) {
 	req := gjson.ParseBytes(api)
 	action := strings.ReplaceAll(req.Get("action").Str, "_async", "")
 	params := req.Get("params")
-	ERROR("[响应][HTTP][%v] BOT <- %v:%v API: %v Params: %v", s.BotID, s.Host, s.Port, action, string(api))
+	DEBUG("[响应][HTTP][%v] BOT <- %v:%v API: %v Params: %v", s.BotID, s.Host, s.Port, action, string(api))
 
 	if f, ok := wsApi[action]; ok {
 		ret := f(s.BotID, params)
@@ -360,34 +361,37 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 		})
 	},
 	"get_friend_list": func(bot int64, p gjson.Result) Result {
-		list := core.GetFriendList_B(bot)
+		list := core.GetFriendList(bot)
 		if list == "" {
 			return resultFail(map[string]interface{}{"data": "ERROR"})
 		}
+		g := gjson.Parse(list)
 		cqFriendList := []CQFriendInfo{}
-		for _, xqFriend := range strings.Split(list, "/n") {
+		for _, xqfriend := range g.Get("result.0.mems").Array() {
 			cqFriendInfo := CQFriendInfo{
-				UserID:   core.Str2Int(xqFriend),
-				Nickname: "unknown",
+				UserID:   xqfriend.Get("uin").Int(),
+				Nickname: unicode2chinese(xqfriend.Get("name").Str),
 				Remark:   "unknown",
 			}
 			cqFriendList = append(cqFriendList, cqFriendInfo)
 		}
 		return resultOK(cqFriendList)
 	},
+
 	"get_group_info": func(bot int64, p gjson.Result) Result {
 		return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
 	},
 	"get_group_list": func(bot int64, p gjson.Result) Result {
-		list := core.GetGroupList_B(bot)
+		list := core.GetGroupList(bot)
 		if list == "" {
 			return resultFail(map[string]interface{}{"data": "ERROR"})
 		}
+		g := gjson.Parse(list)
 		cqGroupList := []CQGroupInfo{}
-		for _, xqGroup := range strings.Split(list, "/n") {
+		for _, xqfriend := range g.Get("join").Array() {
 			cqGroupInfo := CQGroupInfo{
-				GroupID:        core.Str2Int(xqGroup),
-				GroupName:      "unknow",
+				GroupID:        xqfriend.Get("gc").Int(),
+				GroupName:      unicode2chinese(xqfriend.Get("gn").Str),
 				MemberCount:    0,
 				MaxMemberCount: 0,
 			}
