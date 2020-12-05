@@ -432,6 +432,14 @@ func QuitGroup(selfID int64, groupID int64) {
 
 // 封包模式获取群号列表(最多可以取得999)
 // selfID  响应QQ  文本型  机器人QQ
+func GetGroupList(selfID int64) string {
+	return CPtr2GoStr(C.S3_Api_GetGroupList(
+		GoInt2CStr(selfID),
+	))
+}
+
+// 封包模式获取群号列表(最多可以取得999)
+// selfID  响应QQ  文本型  机器人QQ
 func GetGroupList_B(selfID int64) string {
 	return CPtr2GoStr(C.S3_Api_GetGroupList_B(
 		GoInt2CStr(selfID),

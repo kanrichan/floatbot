@@ -58,6 +58,7 @@ XQAPI(int, S3_Api_InviteGroupMember, char *, char *, char *, char *);
 XQAPI(char *, S3_Api_CreateDisGroup, char *);
 XQAPI(char *, S3_Api_CreateGroup, char *, char *);
 XQAPI(void, S3_Api_QuitGroup, char *, char *);
+XQAPI(char *, S3_Api_GetGroupList, char *);
 XQAPI(char *, S3_Api_GetGroupList_B, char *);
 XQAPI(char *, S3_Api_GetFriendList_B, char *);
 XQAPI(char *, S3_Api_GetQrcode, char *);
@@ -159,6 +160,7 @@ extern void __stdcall XQ_AuthId(int ID, int IMAddr){
     LoadAPI(S3_Api_CreateDisGroup);
     LoadAPI(S3_Api_CreateGroup);
     LoadAPI(S3_Api_QuitGroup);
+    LoadAPI(S3_Api_GetGroupList);
     LoadAPI(S3_Api_GetGroupList_B);
     LoadAPI(S3_Api_GetFriendList_B);
     LoadAPI(S3_Api_GetQrcode);
@@ -686,6 +688,14 @@ void S3_Api_QuitGroup(char * selfID, char * groupID){
     free(selfID);
     free(groupID);
 
+}
+
+// 封包模式获取群号列表(最多可以取得999)
+// selfID  响应QQ  文本型  机器人QQ
+char * S3_Api_GetGroupList(char * selfID){
+    char * ret = S3_Api_GetGroupList_Ptr(authid, selfID);
+    free(selfID);
+    return ret;
 }
 
 // 封包模式获取群号列表(最多可以取得999)
