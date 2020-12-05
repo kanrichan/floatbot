@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
 
 	"yaya/core"
 )
@@ -78,4 +80,26 @@ func ProtectRun(entry func(), label string) {
 		}
 	}()
 	entry()
+}
+
+func unicode2chinese(text string) string {
+	if !strings.Contains(text, "\\u") {
+		return text
+	}
+	t := strings.Split(text, "\\u")
+	var out string
+	for _, v := range t {
+		if len(v) < 1 {
+			continue
+		}
+		if len(v) == 4 {
+			temp, _ := strconv.ParseInt(v, 16, 32)
+			out += fmt.Sprintf("%c", temp)
+		} else {
+			temp, _ := strconv.ParseInt(v[:3], 16, 32)
+			out += fmt.Sprintf("%c", temp)
+			out += fmt.Sprintf("%s", v[4:])
+		}
+	}
+	return out
 }
