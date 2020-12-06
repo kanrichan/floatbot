@@ -32,6 +32,8 @@
 
 | 项目地址                                                     | 简介或功能                                                   | 依赖                                                         | 核心作者                                              |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ----------------------------------------------------- |
+| [pcrbot/HoshinoBot-plugins](https://github.com/pcrbot/HoshinoBot-plugins-index) | 公主连结 玩家BOT 插件仓库                                    | [HoshinoBot](https://github.com/Ice-Cirno/HoshinoBot)        | [pcrbot](https://github.com/pcrbot)                   |
+|                                                              |                                                              |                                                              |                                                       |
 | [Kyomotoi/ATRI](https://github.com/Kyomotoi/ATRI)            | 名为 [ATRI](https://atri-mdm.com/) 的BOT                     | [nonebot2](https://github.com/nonebot/nonebot2)              | [Kyomotoi](https://github.com/Kyomotoi)               |
 | [he0119/CoolQBot](https://github.com/he0119/CoolQBot)        | FF14 PCR 点歌 等                                             | [nonebot2](https://github.com/nonebot/nonebot2)              | [he0119](https://github.com/he0119)                   |
 | [Lancercmd/rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman) | 功能授权管理                                                 | [nonebot2](https://github.com/nonebot/nonebot2)              | [Lancercmd](https://github.com/Lancercmd)             |
