@@ -269,7 +269,15 @@ func cqCodeParm(codeParm string, field string) string {
 	temp := codeParm[p:]
 	s := strings.Index(temp, ",")
 	if s == -1 {
-		return temp
+		return escape(temp)
 	}
-	return temp[:s]
+	return escape(temp[:s])
+}
+
+func escape(text string) string {
+	text = strings.ReplaceAll(text, "&#44;", ",")
+	text = strings.ReplaceAll(text, "&amp;", "&")
+	text = strings.ReplaceAll(text, "&#91;", "[")
+	text = strings.ReplaceAll(text, "&#93;", "]")
+	return text
 }
