@@ -159,6 +159,7 @@ func (c *WSCYaml) listen() {
 		if c.Status == 1 {
 			break
 		}
+		time.Sleep(time.Second * 1)
 	}
 	// 监听wsc
 	INFO("[监听][反向WS][%v] BOT ==> ==> %v ", c.BotID, c.Url)
@@ -183,6 +184,7 @@ func (c *WSCYaml) send() {
 		if c.Status == 1 {
 			break
 		}
+		time.Sleep(time.Second * 1)
 	}
 	INFO("[上报][反向WS][%v] BOT ==> ==> %v ", c.BotID, c.Url)
 	for {
@@ -252,6 +254,7 @@ func (s *WSSYaml) listen() {
 	defer func() {
 		if err := recover(); err != nil {
 			ERROR("[监听][正向WS][%v] BOT =X=> ==> %v:%v Error: %v", s.BotID, s.Host, s.Port, err)
+			s.Status = 0
 			s.listen()
 		}
 	}()
@@ -259,6 +262,7 @@ func (s *WSSYaml) listen() {
 		if s.Status == 1 {
 			break
 		}
+		time.Sleep(time.Second * 1)
 	}
 	INFO("[监听][正向WS][%v] BOT ==> ==> %v:%v", s.BotID, s.Host, s.Port)
 	for {
@@ -280,6 +284,7 @@ func (s *WSSYaml) send() {
 	defer func() {
 		if err := recover(); err != nil {
 			ERROR("[上报][正向WS][%v] BOT =X=> ==> %v:%v Error: %v", s.BotID, s.Host, s.Port, err)
+			s.Status = 0
 			s.send()
 		}
 	}()
@@ -287,6 +292,7 @@ func (s *WSSYaml) send() {
 		if s.Status == 1 {
 			break
 		}
+		time.Sleep(time.Second * 1)
 	}
 	INFO("[上报][正向WS][%v] BOT ==> ==> %v:%v", s.BotID, s.Host, s.Port)
 	for {
@@ -364,7 +370,6 @@ func (h *HTTPYaml) send() {
 			DisableKeepAlives: true,
 		},
 	}
-	h.Status = 1
 	INFO("[上报][HTTP][%v] BOT ==> ==> %v", h.BotID, h.PostUrl)
 	for {
 		select {
