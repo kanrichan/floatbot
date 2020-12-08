@@ -623,12 +623,12 @@ func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, m
 			core.ShakeWindow(selfID, userID)
 		case "poke":
 			DEBUG("[CQ码解析] %v 不支持", message.Str)
-			out += fmt.Sprintf("%s/n%s", message.Get("data.*").Str)
+			out += fmt.Sprintf("%s\n%s", message.Get("data.*").Str)
 		case "anonymous":
 			out += "[no such element]"
 		case "share":
 			DEBUG("[CQ码解析] %v 暂未实现", message.Str)
-			out += fmt.Sprintf("%s/n%s", message.Get("data.title").Str, message.Get("data.url").Str)
+			out += fmt.Sprintf("%s\n%s", message.Get("data.title").Str, message.Get("data.url").Str)
 		case "contact":
 			DEBUG("[CQ码解析] %v 暂未实现", message.Str)
 			if message.Get("data.type").Str == "group" {
