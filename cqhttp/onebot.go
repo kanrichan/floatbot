@@ -348,13 +348,23 @@ func (h *HTTPYaml) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if r.Header.Get("Authorization") == h.AccessToken || h.AccessToken == "" {
-		h.Status = 1
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(r.Body)
-		w.Write(h.apiReply(r.URL.Path, buf.Bytes()))
+		if r.Header.Get("Content-Type") == "application/json" {
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(r.Body)
+			w.Write(h.apiReply(r.URL.Path, buf.Bytes()))
+		} else {
+			r.ParseForm()
+			dataMap := make(map[string]interface{})
+			for k, v := range r.Form {
+				dataMap[k] = v[0]
+			}
+			data, _ := json.Marshal(dataMap)
+			w.Write(h.apiReply(r.URL.Path, data))
+		}
 	} else {
 		WARN("[监听][HTTP][%v] BOT X Secret X %v:%v", h.BotID, h.Host, h.Port)
 	}
+	h.Status = 1
 }
 
 func (h *HTTPYaml) send() {
