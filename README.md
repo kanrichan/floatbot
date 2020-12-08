@@ -110,7 +110,7 @@ bots:
 
 ##### 通信方式
 
-- [x] HTTP (暂时只支持 POST 方式上报 json 数据)
+- [x] HTTP
 - [x] HTTP POST
 - [x] 正向Websocket
 - [x] 反向Websocket
