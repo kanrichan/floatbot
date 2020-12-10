@@ -1,0 +1,23 @@
+on:
+  release:
+    types: [created]
+
+jobs:
+  releases-matrix:
+    name: Build OneBot-YaYa 🚀
+    runs-on: ubuntu-latest
+            
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set RELEASE_VERSION env
+        run: echo "RELEASE_VERSION=${GITHUB_REF:10}" >> $GITHUB_ENV
+      - uses: pcrbot/go-release-action@master
+        env:
+          CGO_LDFLAGS: -Wl,--kill-at
+          CGO_ENABLED: 1
+          GOOS: windows
+          GOARCH: "386"
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goversion: "https://golang.org/dl/go1.15.3.linux-amd64.tar.gz"
+          ldflags: -w -s -buildmode=c-shared -o "OneBot-YaYa.XQ.dll"
