@@ -35,8 +35,7 @@ jobs:
         CGO_LDFLAGS: -Wl,--kill-at
         GOOS: windows
         GOARCH: 386
-        GOGCCFLAGS: -m32
-      run: go build -ldflags "-s -w" -buildmode=c-shared -o output/OneBot-YaYa.XQ.dll
+      run: go build -ldflags "-s -w" -buildmode=c-shared -o output/OneBot-YaYa.XQ.dll -gccgoflags "-m32"
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v2
