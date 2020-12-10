@@ -31,6 +31,8 @@ jobs:
       
     - name: Build
       env:
+        CGO_ENABLED: 1
+        CGO_LDFLAGS: -Wl,--kill-at
         GOOS: windows
         GOARCH: 386
       run: go build -ldflags "-s -w" -buildmode=c-shared -o output/OneBot-YaYa.XQ.dll
