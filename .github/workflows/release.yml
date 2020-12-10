@@ -11,14 +11,13 @@ jobs:
       - uses: actions/checkout@v2
       - name: Set RELEASE_VERSION env
         run: echo "RELEASE_VERSION=${GITHUB_REF:10}" >> $GITHUB_ENV
-      - uses: pcrbot/go-release-action@master
+      - uses: Yiwen-Chan/go-release-action@master
         env:
           CGO_LDFLAGS: -Wl,--kill-at
           CGO_ENABLED: 1
-          GOGCCFLAGS: -pthread
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goversion: "https://golang.org/dl/go1.15.3.linux-amd64.tar.gz"
           goos: windows
           goarch: 386
-          ldflags: -w -s -buildmode=c-shared -o OneBot-YaYa.XQ.dll
+          ldflags: -w -s
