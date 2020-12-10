@@ -20,4 +20,4 @@ jobs:
           goversion: "https://golang.org/dl/go1.15.3.linux-amd64.tar.gz"
           goos: windows
           goarch: 386
-          ldflags: -w -s -buildmode=c-shared -o "OneBot-YaYa.XQ.dll"
+          ldflags: -w -s -buildmode=c-shared -o OneBot-YaYa.XQ.dll -gccgoflags "-pthread"
