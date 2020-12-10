@@ -1,23 +1,38 @@
+name: Compile OneBot-YaYa
 on:
+  push:
+    branches: [ master ]
   release:
     types: [created]
 
 jobs:
-  releases-matrix:
+  my-job:
     name: Build OneBot-YaYa 🚀
-    runs-on: ubuntu-latest
-            
+    runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set RELEASE_VERSION env
-        run: echo "RELEASE_VERSION=${GITHUB_REF:10}" >> $GITHUB_ENV
-      - uses: Yiwen-Chan/go-release-action@master
-        env:
-          CGO_LDFLAGS: -Wl,--kill-at
-          CGO_ENABLED: 1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          goversion: "https://golang.org/dl/go1.15.3.linux-amd64.tar.gz"
-          goos: windows
-          goarch: 386
-          ldflags: -w -s
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.13
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: |
+        go get -v -t -d ./...
+        if [ -f Gopkg.toml ]; then
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            dep ensure
+        fi
+
+    - name: Build
+      run: GOOS=windows GOARCH=386 go build -ldflags "-s -w" -buildmode=c-shared -o output/OneBot-YaYa.XQ.dll .
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        # Artifact name
+        name: OneBot-YaYa DLL
+        # A file, directory or wildcard pattern that describes what to upload
+        path: "output"
