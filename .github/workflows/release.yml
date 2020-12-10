@@ -15,9 +15,9 @@ jobs:
         env:
           CGO_LDFLAGS: -Wl,--kill-at
           CGO_ENABLED: 1
-          GOOS: windows
-          GOARCH: "386"
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goversion: "https://golang.org/dl/go1.15.3.linux-amd64.tar.gz"
+          goos: windows
+          goarch: 386
           ldflags: -w -s -buildmode=c-shared -o "OneBot-YaYa.XQ.dll"
