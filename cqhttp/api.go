@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	xml "encoding/xml"
+
 	"github.com/tidwall/gjson"
 
 	"yaya/core"
@@ -397,6 +398,24 @@ var wsApi = map[string]func(int64, gjson.Result) Result{
 			}
 			cqGroupList = append(cqGroupList, cqGroupInfo)
 		}
+		for _, xqfriend := range g.Get("manage").Array() {
+			cqGroupInfo := CQGroupInfo{
+				GroupID:        xqfriend.Get("gc").Int(),
+				GroupName:      unicode2chinese(xqfriend.Get("gn").Str),
+				MemberCount:    0,
+				MaxMemberCount: 0,
+			}
+			cqGroupList = append(cqGroupList, cqGroupInfo)
+		}
+		for _, xqfriend := range g.Get("create").Array() {
+			cqGroupInfo := CQGroupInfo{
+				GroupID:        xqfriend.Get("gc").Int(),
+				GroupName:      unicode2chinese(xqfriend.Get("gn").Str),
+				MemberCount:    0,
+				MaxMemberCount: 0,
+			}
+			cqGroupList = append(cqGroupList, cqGroupInfo)
+		}
 		return resultOK(cqGroupList)
 	},
 	"get_group_member_info": func(bot int64, p gjson.Result) Result {
@@ -664,10 +683,10 @@ func SendMessage(selfID int64, messageType int64, groupID int64, userID int64, m
 			out += fmt.Sprintf(message.Str)
 		case "xml":
 			xml := message.Get("data.*").Str
-			core.SendJSON(selfID, 1, 2, groupID, userID, xml)
+			core.SendXML(selfID, 1, messageType, groupID, userID, xml, 0)
 		case "json":
 			json := message.Get("data.*").Str
-			core.SendJSON(selfID, 1, 2, groupID, userID, json)
+			core.SendJSON(selfID, 1, messageType, groupID, userID, json)
 		case "emoji":
 			out += fmt.Sprintf("[emoji=%s]", message.Get("data.*").Str)
 		default:

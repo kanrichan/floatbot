@@ -228,9 +228,11 @@ func (s *WSSYaml) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		s.Conn = append(s.Conn, conn)
-		s.Status = 1
-		s.handShake()
+		if r.URL.Path != "/api" {
+			s.Conn = append(s.Conn, conn)
+			s.Status = 1
+			s.handShake()
+		}
 	} else {
 		ERROR("[连接][正向WS][%v] BOT X Token X %v:%v", s.BotID, s.Host, s.Port)
 	}
