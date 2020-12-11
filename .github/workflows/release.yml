@@ -1,7 +1,8 @@
 name: Compile OneBot-YaYa
 on:
-  push:
-    branches: [ master ]
+  release:
+    types: 
+      - created
 
 env:
   GITHUB_TOKEN: ${{ github.token }}
