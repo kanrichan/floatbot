@@ -1,4 +1,4 @@
-package cqhttp
+package onebot
 
 var FirstStart bool = true
 

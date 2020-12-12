@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 
-	"yaya/cqhttp"
+	"yaya/onebot"
 )
 
 // 插件信息
@@ -27,7 +27,7 @@ func newAppInfo() *AppInfo {
 
 func init() {
 	data, _ := json.Marshal(newAppInfo())
-	cqhttp.AppInfoJson = string(data)
+	onebot.AppInfoJson = string(data)
 }
 
-func main() { cqhttp.Main() }
+func main() { onebot.Main() }
