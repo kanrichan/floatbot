@@ -1,14 +1,18 @@
 package onebot
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/tidwall/gjson"
 
 	"yaya/core"
 )
+
+var Split bool
 
 type cq2xqMsgToWhere struct {
 	BotID   int64
@@ -37,8 +41,20 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 		GroupID: p.Get("group_id").Int(),
 		UserID:  p.Get("user_id").Int(),
 	}
-	out := ""
-	for _, message := range cqCode2Array(p.Get("message")).Array() {
+
+	var out string = ""
+	var bubble int64 = 0
+	var msg gjson.Result
+
+	if len(p.Get("message.#.type").Array()) == 0 {
+		b, _ := json.Marshal(cqCode2Array(p.Get("message").Str))
+		msg = gjson.ParseBytes(b)
+		TEST("%v", msg)
+	} else {
+		msg = p.Get("message")
+	}
+
+	for _, message := range msg.Array() {
 		switch message.Get("type").Str {
 		// 文字
 		case "text":
@@ -53,6 +69,9 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 			out += target.cq2xqRps(message)
 		case "dice":
 			out += target.cq2xqDice(message)
+		case "bubble":
+			bubble = message.Get("data.id").Int()
+			TEST("id %v", bubble)
 		// 媒体
 		case "image":
 			out += target.cq2xqImage(message)
@@ -91,16 +110,67 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 		}
 	}
 	if out != "" {
-		core.SendMsgEX_V2(
+		data := core.SendMsgEX_V2(
 			target.BotID,
 			target.Type_,
 			target.GroupID,
 			target.UserID,
 			out,
-			0,
+			bubble,
 			false,
 			" ",
 		)
+		if data != "" {
+			p = gjson.Parse(data[:strings.LastIndex(data, "}")])
+			if p.Get("sendok").Bool() {
+				var xe XEvent
+				xe.messageID = p.Get("msgid").Int()
+				xe.messageNum = p.Get("msgno").Int()
+				xe.cqID = 0
+				for i, _ := range Conf.BotConfs {
+					if bot == Conf.BotConfs[i].Bot && bot != 0 && Conf.BotConfs[i].DB != nil {
+						time.Sleep(time.Millisecond * 100)
+						xe.xq2cqid(Conf.BotConfs[i].DB)
+						return resultOK(map[string]interface{}{"message_id": xe.cqID})
+					}
+				}
+			}
+		}
+		send := ""
+		for i, o := range strings.Split(out, "\n") {
+			if (i%3) != 0 && i != 0 {
+				send = send + o + "\n"
+			} else {
+				send = send + o + "[Next]"
+			}
+		}
+		data = core.SendMsgEX_V2(
+			target.BotID,
+			target.Type_,
+			target.GroupID,
+			target.UserID,
+			send,
+			bubble,
+			false,
+			" ",
+		)
+		if data != "" {
+			p = gjson.Parse(data[:strings.LastIndex(data, "}")])
+			if p.Get("sendok").Bool() {
+				var xe XEvent
+				xe.messageID = p.Get("msgid").Int()
+				xe.messageNum = p.Get("msgno").Int()
+				xe.cqID = 0
+				for i, _ := range Conf.BotConfs {
+					if bot == Conf.BotConfs[i].Bot && bot != 0 && Conf.BotConfs[i].DB != nil {
+						time.Sleep(time.Millisecond * 100)
+						xe.xq2cqid(Conf.BotConfs[i].DB)
+						return resultOK(map[string]interface{}{"message_id": xe.cqID})
+					}
+				}
+			}
+		}
+		return resultOK(map[string]interface{}{"message_id": 0})
 	}
 	return resultOK(map[string]interface{}{"message_id": 0})
 }
@@ -143,30 +213,64 @@ func (target cq2xqMsgToWhere) cq2xqDice(message gjson.Result) string {
 func (target cq2xqMsgToWhere) cq2xqImage(message gjson.Result) string {
 	url := strings.ReplaceAll(message.Get("data.url").Str, `\/`, `/`)
 	image := strings.ReplaceAll(message.Get("data.file").Str, `\/`, `/`)
-	switch {
-	case url != "":
-		return fmt.Sprintf("[pic=%s]", Url2Image(url))
-	case strings.Contains(image, "base64://"):
-		return fmt.Sprintf("[pic=%s]", Base642Image(image[9:]))
-	case strings.Contains(image, "file:///"):
-		return fmt.Sprintf("[pic=%s]", image[8:])
-	case strings.Contains(image, "http://"):
-		return fmt.Sprintf("[pic=%s]", image)
-	case strings.Contains(image, "https://"):
-		return fmt.Sprintf("[pic=%s]", image)
+	showID := message.Get("data.id").Int() - 40000
+	switch message.Get("data.type").Str {
+	case "show":
+		switch {
+		case url != "":
+			return fmt.Sprintf("[ShowPic=%s,type=%d]", Url2Image(url), showID)
+		case strings.Contains(image, "base64://"):
+			return fmt.Sprintf("[ShowPic=%s,type=%d]", Base642Image(image[9:]), showID)
+		case strings.Contains(image, "file:///"):
+			return fmt.Sprintf("[ShowPic=%s,type=%d]", image[8:], showID)
+		case strings.Contains(image, "http://"):
+			return fmt.Sprintf("[ShowPic=%s,type=%d]", Url2Image(image), showID)
+		case strings.Contains(image, "https://"):
+			return fmt.Sprintf("[ShowPic=%s,type=%d]", Url2Image(image), showID)
+		default:
+			return fmt.Sprintf("[ShowPic=%s,type=%d]", "error", showID)
+		}
 	default:
-		return fmt.Sprintf("[pic=%s]", "error")
+		switch {
+		case url != "":
+			return fmt.Sprintf("[pic=%s]", Url2Image(url))
+		case strings.Contains(image, "base64://"):
+			return fmt.Sprintf("[pic=%s]", Base642Image(image[9:]))
+		case strings.Contains(image, "file:///"):
+			return fmt.Sprintf("[pic=%s]", image[8:])
+		case strings.Contains(image, "http://"):
+			return fmt.Sprintf("[pic=%s]", image)
+		case strings.Contains(image, "https://"):
+			return fmt.Sprintf("[pic=%s]", image)
+		default:
+			return fmt.Sprintf("[pic=%s]", "error")
+		}
 	}
 }
 
 func (target cq2xqMsgToWhere) cq2xqRecord(message gjson.Result) string {
-	DEBUG("[CQ码解析] %v 暂未实现", message.Str)
-	return message.Str
+	record := strings.ReplaceAll(message.Get("data.file").Str, `\/`, `/`)
+	switch {
+	case strings.Contains(record, "file:///"):
+		return fmt.Sprintf("[Voi=%s]", record[8:])
+	default:
+		return fmt.Sprintf("[Voi=%s]", "error")
+	}
 }
 
 func (target cq2xqMsgToWhere) cq2xqVideo(message gjson.Result) string {
-	DEBUG("[CQ码解析] %v 暂未实现", message.Str)
-	return message.Str
+	DEBUG("[CQ码解析] %v 不支持", message.Str)
+	core.SendMsgEX_V2(
+		target.BotID,
+		target.Type_,
+		target.GroupID,
+		target.UserID,
+		message.Get("data.*").Str,
+		0,
+		false,
+		" ",
+	)
+	return ""
 }
 
 func (target cq2xqMsgToWhere) cq2xqMusic(message gjson.Result) string {
