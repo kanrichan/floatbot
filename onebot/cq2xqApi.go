@@ -158,11 +158,68 @@ func resultFail(data interface{}) Result {
 }
 
 func cq2xqDeleteMsg(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+	var xe XEvent
+	for i, _ := range Conf.BotConfs {
+		if bot == Conf.BotConfs[i].Bot {
+			xe = db2Mseeage(Conf.BotConfs[i].DB, bot, p.Get("message_id").Int())
+			break
+		}
+		return resultFail(map[string]interface{}{"error": "空指针"})
+	}
+	core.WithdrawMsgEX(
+		xe.selfID,
+		xe.mseeageType,
+		xe.groupID,
+		xe.userID,
+		xe.messageNum,
+		xe.messageID,
+		xe.time,
+	)
+	return resultFail(map[string]interface{}{})
 }
 
 func cq2xqGetMsg(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+	var xe XEvent
+	for i, _ := range Conf.BotConfs {
+		if bot == Conf.BotConfs[i].Bot {
+			xe = db2Mseeage(Conf.BotConfs[i].DB, bot, p.Get("message_id").Int())
+			break
+		}
+		return resultFail(map[string]interface{}{"error": "空指针"})
+	}
+	Tsubtype := "error"
+	switch xe.mseeageType {
+	case 0:
+		Tsubtype = "other"
+	case 1:
+		Tsubtype = "friend"
+	case 4:
+		Tsubtype = "group"
+	case 5:
+		Tsubtype = "discuss"
+	case 7:
+		Tsubtype = "other"
+	default:
+		Tsubtype = "error"
+	}
+	return resultFail(map[string]interface{}{
+		"time":         xe.time,
+		"message_type": Tsubtype,
+		"message_id":   p.Get("message_id").Int(),
+		"real_id":      xe.messageID,
+		"sender": Event{
+			"user_id":  xe.userID,
+			"nickname": "unknown",
+			"sex":      "unknown",
+			"age":      0,
+			"area":     "",
+			"card":     "",
+			"level":    "",
+			"role":     "admin",
+			"title":    "unknown",
+		},
+		"message": xe.message,
+	})
 }
 
 func cq2xqGetForwardMsg(bot int64, p gjson.Result) Result {
@@ -333,7 +390,31 @@ func cq2xqGetFriendList(bot int64, p gjson.Result) Result {
 }
 
 func cq2xqGetGroupInfo(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+	name := core.GetGroupName(
+		bot,
+		p.Get("group_id").Int(),
+	)
+	members := strings.Split(core.GetGroupMemberNum(
+		bot,
+		p.Get("group_id").Int(),
+	), "\n")
+	var (
+		count int64
+		max   int64
+	)
+	if len(members) != 2 {
+		count = -1
+		max = -1
+	} else {
+		count = core.Str2Int(members[0])
+		max = core.Str2Int(members[1])
+	}
+	return resultFail(map[string]interface{}{
+		"group_id":         p.Get("group_id").Int(),
+		"group_name":       name,
+		"member_count":     count,
+		"max_member_count": max,
+	})
 }
 
 func cq2xqGetGroupList(bot int64, p gjson.Result) Result {
