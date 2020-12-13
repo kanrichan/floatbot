@@ -1,188 +1,89 @@
 package onebot
 
 import (
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/tidwall/gjson"
 )
 
 // cqCode2Array 字符串CQ码转数组
-func cqCode2Array(text gjson.Result) gjson.Result {
-	if len(text.Get("#.type").Array()) == 0 {
-		message := text.Str
-
-		cqcode := regexp.MustCompile(`\[CQ:(.*?)\]`)
-		codeList := cqcode.FindAllStringSubmatch(message, -1)
-		codeLen := len(codeList)
-		messageElem := []string{}
-		if codeLen == 0 {
-			messageElem = append(messageElem, message)
-		} else {
-			sMSGe := "start<-" + message + "<-end"
-			codeElem := ""
-			preElem := ""
-			endElem := ""
-			for i, c := range codeList {
-				codeElem = c[0]
-				split := strings.Split(sMSGe, codeElem)
-				preElem = split[0]
-				endElem = "start<-" + split[1]
-				if preElem != "start<-" {
-					messageElem = append(messageElem, strings.ReplaceAll(preElem, "start<-", ""))
-				}
-				messageElem = append(messageElem, codeElem)
-				if i+1 == codeLen {
-					if endElem != "start<-<-end" {
-						messageElem = append(messageElem, strings.ReplaceAll(strings.ReplaceAll(endElem, "start<-", ""), "<-end", ""))
-					}
-				}
-				sMSGe = endElem
-			}
-		}
-
-		paramsArray := []map[string]interface{}{}
-		for _, e := range messageElem {
-			if len(cqcode.FindAllStringSubmatch(e, -1)) == 0 {
-				paramsArray = append(paramsArray, map[string]interface{}{"type": "text", "data": map[string]interface{}{"text": e}})
-			} else {
-				codeR1 := regexp.MustCompile(`\[CQ:(.*?),(.*)\]`)
-				codeR2 := regexp.MustCompile(`\[CQ:(.*)\]`)
-				code := codeR1.FindAllStringSubmatch(e, -1)
-				codeType := ""
-				codeParm := ""
-				if len(code) != 0 {
-					codeType = code[0][1]
-					codeParm = code[0][2]
-				} else {
-					code = codeR2.FindAllStringSubmatch(e, -1)
-					codeType = code[0][1]
-				}
-
-				switch codeType {
-				case "face":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "face", "data": map[string]interface{}{
-						"id": cqCodeParm(codeParm, "id"),
-					}})
-				case "image":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "image", "data": map[string]interface{}{
-						"file":    cqCodeParm(codeParm, "file"),
-						"type":    cqCodeParm(codeParm, "type"),
-						"url":     cqCodeParm(codeParm, "url"),
-						"cache":   cqCodeParm(codeParm, "cache"),
-						"proxy":   cqCodeParm(codeParm, "proxy"),
-						"timeout": cqCodeParm(codeParm, "timeout"),
-					}})
-				case "record":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "record", "data": map[string]interface{}{
-						"file":    cqCodeParm(codeParm, "file"),
-						"magic":   cqCodeParm(codeParm, "magic"),
-						"url":     cqCodeParm(codeParm, "url"),
-						"cache":   cqCodeParm(codeParm, "cache"),
-						"proxy":   cqCodeParm(codeParm, "proxy"),
-						"timeout": cqCodeParm(codeParm, "timeout"),
-					}})
-				case "video":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "video", "data": map[string]interface{}{
-						"file":    cqCodeParm(codeParm, "file"),
-						"url":     cqCodeParm(codeParm, "url"),
-						"cache":   cqCodeParm(codeParm, "cache"),
-						"proxy":   cqCodeParm(codeParm, "proxy"),
-						"timeout": cqCodeParm(codeParm, "timeout"),
-					}})
-				case "at":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "at", "data": map[string]interface{}{
-						"qq": cqCodeParm(codeParm, "qq"),
-					}})
-				case "rps":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "rps", "data": map[string]interface{}{}})
-				case "dice":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "dice", "data": map[string]interface{}{}})
-				case "shake":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "shake", "data": map[string]interface{}{}})
-				case "poke":
-					DEBUG("[CQ码解析] %v 不支持，将以原样发送", code[0][0])
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "text", "data": map[string]interface{}{
-						"text": code[0][0],
-					}})
-				case "anonymous":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "anonymous", "data": map[string]interface{}{}})
-				case "share":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "share", "data": map[string]interface{}{
-						"url":     cqCodeParm(codeParm, "url"),
-						"title":   cqCodeParm(codeParm, "title"),
-						"content": cqCodeParm(codeParm, "content"),
-						"image":   cqCodeParm(codeParm, "image"),
-					}})
-				case "contact":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "contact", "data": map[string]interface{}{
-						"type": cqCodeParm(codeParm, "type"),
-						"id":   cqCodeParm(codeParm, "id"),
-					}})
-				case "location":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "location", "data": map[string]interface{}{
-						"lat":     cqCodeParm(codeParm, "lat"),
-						"lon":     cqCodeParm(codeParm, "lon"),
-						"title":   cqCodeParm(codeParm, "title"),
-						"content": cqCodeParm(codeParm, "content"),
-					}})
-				case "music":
-					if cqCodeParm(codeParm, "id") != "" {
-						paramsArray = append(paramsArray, map[string]interface{}{"type": "music", "data": map[string]interface{}{
-							"type": cqCodeParm(codeParm, "type"),
-							"id":   cqCodeParm(codeParm, "id"),
-						}})
-					} else {
-						paramsArray = append(paramsArray, map[string]interface{}{"type": "music", "data": map[string]interface{}{
-							"type":    cqCodeParm(codeParm, "type"),
-							"url":     cqCodeParm(codeParm, "url"),
-							"audio":   cqCodeParm(codeParm, "audio"),
-							"title":   cqCodeParm(codeParm, "title"),
-							"content": cqCodeParm(codeParm, "content"),
-							"image":   cqCodeParm(codeParm, "image"),
-						}})
-					}
-				case "reply":
-					DEBUG("[CQ码解析] %v 不支持，将以原样发送", code[0][0])
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "text", "data": map[string]interface{}{
-						"text": code[0][0],
-					}})
-				case "forward":
-					DEBUG("[CQ码解析] %v 不支持，将以原样发送", code[0][0])
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "text", "data": map[string]interface{}{
-						"text": code[0][0],
-					}})
-				case "node":
-					DEBUG("[CQ码解析] %v 不支持，将以原样发送", code[0][0])
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "text", "data": map[string]interface{}{
-						"text": code[0][0],
-					}})
-				case "xml":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "xml", "data": map[string]interface{}{
-						"data": cqCodeParm(codeParm, "data"),
-					}})
-				case "json":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "json", "data": map[string]interface{}{
-						"data": cqCodeParm(codeParm, "data"),
-					}})
-				case "emoji":
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "emoji", "data": map[string]interface{}{
-						"id": cqCodeParm(codeParm, "id"),
-					}})
-				default:
-					DEBUG("[CQ码解析] %v 解析失败，将以原样发送", code[0][0])
-					paramsArray = append(paramsArray, map[string]interface{}{"type": "text", "data": map[string]interface{}{
-						"text": code[0][0],
-					}})
-				}
-			}
-		}
-		data, _ := json.Marshal(paramsArray)
-		return gjson.Parse(string(data))
+func cqCode2Array(message string) []map[string]interface{} {
+	array := []map[string]interface{}{}
+	for _, elem := range cqCode2Elems(message) {
+		array = append(array, map[string]interface{}{
+			"type": whatCQcode(elem)["type"],
+			"data": whatCQprams(elem)["data"],
+		})
 	}
-	return text
+	return array
+}
+
+// cqCode2Elems CQ 码转字符串数组
+func cqCode2Elems(message string) []string {
+	elems := []string{}
+	start := 0
+	for {
+		if !strings.Contains(message[start:], "[CQ:") {
+			// 如果没有 CQ 码了就直接把剩下的添加进去然后返回
+			elems = append(elems, message[start:])
+			break
+		}
+		index := strings.Index(message[start:], "[CQ:") + start
+		// 保证不是 CQ 码开头导致无文本
+		if start != index {
+			elems = append(elems, message[start:index])
+		}
+		// 找 CQ 码结束位置并把 CQ 码添加进去
+		end := strings.Index(message[start:], "]") + start
+		elems = append(elems, message[index:end+1])
+		start = end + 1
+		if start == len(message) {
+			break
+		}
+	}
+	return elems
+}
+
+// whatCQcode 自动解析 CQ 码类型
+func whatCQcode(code string) map[string]string {
+	if !strings.Contains(code, "[CQ:") {
+		return map[string]string{"type": "text"}
+	} else {
+		index := strings.Index(code, ",")
+		if index == -1 {
+			return map[string]string{"type": code[4:(len(code) - 1)]}
+		} else {
+			return map[string]string{"type": code[4:index]}
+		}
+	}
+}
+
+// whatCQcode 自动解析 CQ 码参数
+func whatCQprams(code string) map[string]interface{} {
+	elems := map[string]string{}
+	start := 0
+	for {
+		if !strings.Contains(code, "[CQ:") {
+			elems["text"] = code
+			break
+		}
+		if !strings.Contains(code[start:], ",") {
+			// 如果没有 , 那就是没有参数
+			break
+		}
+		index := strings.Index(code[start:], ",") + start
+		// 找 参数 结束位置并把 参数 添加进去
+		equal := strings.Index(code[start:], "=") + start
+		if !strings.Contains(code[equal:], ",") {
+			// 如果没有 , 参数 遍历完毕
+			elems[code[index+1:equal]] = code[equal+1 : (len(code) - 1)]
+			break
+		}
+		end := strings.Index(code[equal:], ",") + equal
+		elems[code[index+1:equal]] = code[equal+1 : end]
+		start = end
+	}
+	return map[string]interface{}{"data": elems}
 }
 
 // xq2cqCode 普通XQ码转CQ码
@@ -259,19 +160,6 @@ func cq2xqCode(message string) string {
 		message = strings.ReplaceAll(message, oldpic, newpic)
 	}
 	return message
-}
-
-func cqCodeParm(codeParm string, field string) string {
-	if !strings.Contains(codeParm, field+"=") {
-		return ""
-	}
-	p := strings.Index(codeParm, field+"=") + len(field) + 1
-	temp := codeParm[p:]
-	s := strings.Index(temp, ",")
-	if s == -1 {
-		return escape(temp)
-	}
-	return escape(temp[:s])
 }
 
 func escape(text string) string {
