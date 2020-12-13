@@ -9,9 +9,14 @@ char * eStrPtr2CStrPtr(char * str) {
 }
 */
 import "C"
-import "strconv"
-import "unsafe"
-import sc "golang.org/x/text/encoding/simplifiedchinese"
+
+import (
+	"encoding/binary"
+	"strconv"
+	"unsafe"
+
+	sc "golang.org/x/text/encoding/simplifiedchinese"
+)
 
 func CString(str string) *C.char {
 	gbstr, _ := sc.GB18030.NewEncoder().String(str)
@@ -69,4 +74,10 @@ func GoInt2CStr(val int64) *C.char {
 
 func CStr2GoInt(str *C.char) int64 {
 	return Str2Int(GoString(str))
+}
+
+func Int2Bytes(val int64) []byte {
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, uint64(val))
+	return b
 }
