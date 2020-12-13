@@ -130,3 +130,42 @@ func groupHonor(groupID int64, honorType int64, cookie string) []byte {
 	}
 	return data
 }
+
+func Base642ImageBytes(res string) []byte {
+	data, err := base64.StdEncoding.DecodeString(res)
+	if err != nil {
+		ERROR("base64编码解码失败")
+	}
+	return data
+}
+
+func Url2ImageBytes(url string) []byte {
+	client := &http.Client{}
+	reqest, err := http.NewRequest("GET", url, nil)
+	reqest.Header.Add("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
+	reqest.Header.Add("Net-Type", "Wifi")
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器图片%s下载失败", url)
+		return nil
+	}
+	resp, err := client.Do(reqest)
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器图片%s下载失败", url)
+		return nil
+	}
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器图片%s下载失败", url)
+		return nil
+	}
+	return data
+}
+
+func Path2ImageBytes(path string) []byte {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	return data
+}

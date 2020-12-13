@@ -49,9 +49,11 @@ func PathExecute() string {
 }
 
 func CreatePath(path string) {
-	err := os.MkdirAll(path, 0644)
-	if err != nil {
-		ERROR("生成应用目录失败")
+	if !PathExists(path) {
+		err := os.MkdirAll(path, 0644)
+		if err != nil {
+			ERROR("生成应用目录失败")
+		}
 	}
 }
 

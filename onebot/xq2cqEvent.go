@@ -3,7 +3,6 @@ package onebot
 import (
 	"encoding/json"
 	"fmt"
-	//"strings"
 
 	"yaya/core"
 )
@@ -35,16 +34,17 @@ type XEvent struct {
 	message     string
 	messageNum  int64
 	messageID   int64
-	rawMessage  string
+	rawMessage  []byte
 	time        int64
 	ret         int64
+	cqID        int64
 }
 
 func XQCreate(version string) string {
 	return AppInfoJson
 }
 
-func XQEvent(selfID int64, mseeageType int64, subType int64, groupID int64, userID int64, noticID int64, message string, messageNum int64, messageID int64, rawMessage string, time int64, ret int64) int64 {
+func XQEvent(selfID int64, mseeageType int64, subType int64, groupID int64, userID int64, noticID int64, message string, messageNum int64, messageID int64, rawMessage []byte, time int64, ret int64) int64 {
 	xe := XEvent{
 		selfID:      selfID,
 		mseeageType: mseeageType,
@@ -58,7 +58,9 @@ func XQEvent(selfID int64, mseeageType int64, subType int64, groupID int64, user
 		rawMessage:  rawMessage,
 		time:        time,
 		ret:         ret,
+		cqID:        0,
 	}
+
 	switch mseeageType {
 	case 12001:
 		go ProtectRun(func() { onStart() }, "onStart()")
@@ -67,17 +69,33 @@ func XQEvent(selfID int64, mseeageType int64, subType int64, groupID int64, user
 	// 消息事件
 	// 0：临时会话 1：好友会话 4：群临时会话 7：好友验证会话
 	case 0, 1, 4, 5, 7:
+		for i, _ := range Conf.BotConfs {
+			if selfID == Conf.BotConfs[i].Bot && selfID != 0 {
+				if Conf.BotConfs[i].DB != nil {
+					xe.event2DB(Conf.BotConfs[i].DB)
+				}
+			}
+		}
 		go ProtectRun(func() { onPrivateMessage(xe) }, "onPrivateMessage()")
-		/*if strings.Contains(message, "/") {
-			go ProtectRun(func() { commandHandle(xe) }, "commandHandle()")
-		}*/
 	// 2：群聊信息
 	case 2, 3:
+		for i, _ := range Conf.BotConfs {
+			if selfID == Conf.BotConfs[i].Bot && selfID != 0 {
+				if Conf.BotConfs[i].DB != nil {
+					xe.event2DB(Conf.BotConfs[i].DB)
+				}
+			}
+		}
 		go ProtectRun(func() { onGroupMessage(xe) }, "onGroupMessage()")
-		/*if strings.Contains(message, "/") {
-			go ProtectRun(func() { commandHandle(xe) }, "commandHandle()")
-		}*/
-
+	// 10：回音信息
+	case 10:
+		for i, _ := range Conf.BotConfs {
+			if selfID == Conf.BotConfs[i].Bot && selfID != 0 {
+				if Conf.BotConfs[i].DB != nil {
+					xe.event2DB(Conf.BotConfs[i].DB)
+				}
+			}
+		}
 	// 通知事件
 	// 群文件接收
 	case 218:
@@ -107,6 +125,13 @@ func XQEvent(selfID int64, mseeageType int64, subType int64, groupID int64, user
 	// 群消息撤回 subType 2
 	// 好友消息撤回 subType 1
 	case 9:
+		for i, _ := range Conf.BotConfs {
+			if selfID == Conf.BotConfs[i].Bot && selfID != 0 {
+				if Conf.BotConfs[i].DB != nil {
+					xe.xq2cqid(Conf.BotConfs[i].DB)
+				}
+			}
+		}
 		if xe.subType == 2 {
 			go ProtectRun(func() { noticGroupMsgDelete(xe) }, "noticGroupMsgDelete()")
 		} else {
@@ -148,27 +173,52 @@ func WSCPush(bot int64, e Event, c *Yaml) {
 		}
 	}()
 
-	send, _ := json.Marshal(e)
 	for i, _ := range c.BotConfs {
 		if bot == c.BotConfs[i].Bot {
 			for j, _ := range c.BotConfs[i].WSSConf {
 				if c.BotConfs[i].WSSConf[j].Status == 1 && c.BotConfs[i].WSSConf[j].Enable == true && c.BotConfs[i].WSSConf[j].Host != "" {
+					ce := e
+					if c.BotConfs[i].WSSConf[j].PostMessageFormat == "array" {
+						ce["message"] = cqCode2Array(e["message"].(string))
+					}
+					send, _ := json.Marshal(ce)
 					c.BotConfs[i].WSSConf[j].Event <- send
 				}
 			}
 			for k, _ := range c.BotConfs[i].WSCConf {
 				if c.BotConfs[i].WSCConf[k].Status == 1 && c.BotConfs[i].WSCConf[k].Enable == true && c.BotConfs[i].WSCConf[k].Url != "" {
+					ce := e
+					if c.BotConfs[i].WSCConf[k].PostMessageFormat == "array" {
+						ce["message"] = cqCode2Array(e["message"].(string))
+					}
+					send, _ := json.Marshal(ce)
 					c.BotConfs[i].WSCConf[k].Event <- send
 				}
 			}
 			for l, _ := range c.BotConfs[i].HTTPConf {
+				ce := e
 				if c.BotConfs[i].HTTPConf[l].Status == 1 && c.BotConfs[i].HTTPConf[l].Enable == true && c.BotConfs[i].HTTPConf[l].Host != "" {
+					if c.BotConfs[i].HTTPConf[l].PostMessageFormat == "array" {
+						ce["message"] = cqCode2Array(e["message"].(string))
+					}
+					send, _ := json.Marshal(ce)
 					c.BotConfs[i].HTTPConf[l].Event <- send
 				}
 			}
 		}
 	}
 
+}
+
+func xq2cqMsgID(xqid int64, xqnum int64) int64 {
+	return core.Str2Int(fmt.Sprintf("%01d%02d%06d%010d", len(core.Int2Str(xqid)), len(core.Int2Str(xqnum)), xqid, xqnum))
+}
+
+func cq2xqMsgID(cqid int64) (int64, int64) {
+	idLen := core.Str2Int(core.Int2Str(cqid)[0:1])
+	numLen := core.Str2Int(core.Int2Str(cqid)[1:3])
+	return core.Str2Int(core.Int2Str(cqid)[(9 - idLen):9]),
+		core.Str2Int(core.Int2Str(cqid)[(19 - numLen):19])
 }
 
 func onPrivateMessage(xe XEvent) {
@@ -193,7 +243,7 @@ func onPrivateMessage(xe XEvent) {
 		"post_type":    "message",
 		"message_type": "private",
 		"sub_type":     Tsubtype,
-		"message_id":   xe.messageID,
+		"message_id":   xe.cqID,
 		"user_id":      xe.userID,
 		"message":      xq2cqCode(xe.message),
 		"raw_message":  xq2cqCode(xe.message),
@@ -224,7 +274,7 @@ func onGroupMessage(xe XEvent) {
 		"post_type":    "message",
 		"message_type": Tmessagetype,
 		"sub_type":     "normal",
-		"message_id":   xe.messageID,
+		"message_id":   xe.cqID,
 		"group_id":     xe.groupID,
 		"user_id":      xe.userID,
 		"anonymous":    nil,
@@ -358,7 +408,7 @@ func noticGroupMsgDelete(xe XEvent) {
 		"group_id":    xe.groupID,
 		"user_id":     xe.noticID,
 		"operator_id": xe.userID,
-		"message_id":  0,
+		"message_id":  xe.cqID,
 	}
 	WSCPush(xe.selfID, e, Conf)
 }
@@ -371,7 +421,7 @@ func noticFriendMsgDelete(xe XEvent) {
 		"post_type":   "notice",
 		"notice_type": "friend_recall",
 		"user_id":     xe.noticID,
-		"message_id":  0,
+		"message_id":  xe.cqID,
 	}
 	WSCPush(xe.selfID, e, Conf)
 }

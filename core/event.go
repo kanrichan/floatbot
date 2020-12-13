@@ -3,7 +3,7 @@ package core
 import "C"
 
 var Create func(version string) string
-var Event func(selfID int64, mseeageType int64, subType int64, groupID int64, userID int64, noticID int64, message string, messageNum int64, messageID int64, rawMessage string, time int64, ret int64) int64
+var Event func(selfID int64, mseeageType int64, subType int64, groupID int64, userID int64, noticID int64, message string, messageNum int64, messageID int64, rawMessage []byte, time int64, ret int64) int64
 var DestroyPlugin func() int64
 var SetUp func() int64
 
@@ -23,7 +23,7 @@ func GO_Event(selfID *C.char, mseeageType C.int, subType C.int, groupID *C.char,
 		GoString(message),
 		CStr2GoInt(messageNum),
 		CStr2GoInt(messageID),
-		GoString(rawMessage),
+		[]byte(GoString(rawMessage)),
 		CStr2GoInt(time),
 		CStr2GoInt(ret),
 	))

@@ -4,7 +4,6 @@ var FirstStart bool = true
 
 var XQPath = PathExecute()
 var AppPath = XQPath + "OneBot/"
-var DatabasePath = XQPath + "OneBot/database/"
 var ImagePath = XQPath + "OneBot/image/"
 var RecordPath = XQPath + "OneBot/record/"
 var VideoPath = XQPath + "OneBot/video/"
@@ -18,16 +17,17 @@ func Main() {
 func onStart() {
 	if FirstStart {
 		CreatePath(AppPath)
-		CreatePath(DatabasePath)
 		CreatePath(ImagePath)
 		CreatePath(RecordPath)
 		CreatePath(VideoPath)
+
 		INFO("夜夜は世界一かわいい")
 		Conf = Load(AppPath + "config.yml")
 		if Conf == nil {
 			ERROR("晚安~")
 			return
 		}
+		go Conf.runDB()
 		go Conf.runOnebot()
 	}
 	FirstStart = false
