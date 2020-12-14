@@ -1,9 +1,11 @@
 name: Compile OneBot-YaYa
 on:
+  push:
+    branches: 
+      - master
   release:
     types: 
       - created
-        edited
 
 env:
   GITHUB_TOKEN: ${{ github.token }}
@@ -39,7 +41,7 @@ jobs:
       run: go mod tidy
       
     - name: Build
-      run: export GOOS=windows; export GOARCH=386; export CGO_ENABLED=1; export CGO_LDFLAGS=-Wl,--kill-at -O4; export CGO_LDFLAGS_ALLOW=-Wl,--kill-at -O4; export CXX=i686-w64-mingw32-g++; export CC=i686-w64-mingw32-gcc; go build -ldflags="-s -w  -extldflags '-static'" -buildmode=c-shared -o artifacts/OneBot-YaYa.XQ.dll
+      run: export GOOS=windows; export GOARCH=386; export CGO_ENABLED=1; export CGO_LDFLAGS=-Wl,--kill-at; export CGO_LDFLAGS_ALLOW=-Wl,--kill-at; export CXX=i686-w64-mingw32-g++; export CC=i686-w64-mingw32-gcc; go build -ldflags="-s -w  -extldflags '-static'" -buildmode=c-shared -o artifacts/OneBot-YaYa.XQ.dll
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v2
