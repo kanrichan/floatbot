@@ -152,30 +152,21 @@ func (h *HTTPYaml) fastReply(send []byte, reply []byte) {
 	req := gjson.ParseBytes(send)
 	res := gjson.ParseBytes(reply)
 
-	params := []map[string]interface{}{}
+	var text string
 	if res.Get("at_sender").Bool() {
-		elem := map[string]interface{}{
-			"type": "at",
-			"data": map[string]interface{}{
-				"qq": req.Get("user_id").Int(),
-			},
-		}
-		params = append(params, elem)
+		text += fmt.Sprintf("[CQ:at,qq=%d]", req.Get("user_id").Int())
 	}
 	if res.Get("reply").Str != "" {
-		elem := map[string]interface{}{
-			"type": "text",
-			"data": map[string]interface{}{
-				"text": res.Get("reply"),
-			},
-		}
-		params = append(params, elem)
+		text += unicode2chinese(res.Get("reply").Str)
+	}
+	if text == "" {
+		return
 	}
 	p := map[string]interface{}{
 		"message_type": req.Get("message_type").Str,
 		"group_id":     req.Get("group_id").Int(),
 		"user_id":      req.Get("user_id").Int(),
-		"message":      params,
+		"message":      text,
 	}
 	data, _ := json.Marshal(p)
 	cq2xqSendMsg(h.BotID, gjson.Parse(string(data)))
