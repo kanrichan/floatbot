@@ -125,7 +125,11 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 					false,
 					"",
 				)
-				// time.Sleep(time.Millisecond * 200)
+				if strings.Contains(o, "[pic") {
+					time.Sleep(time.Millisecond * 1000)
+				} else {
+					time.Sleep(time.Millisecond * 200)
+				}
 			}
 			return resultOK(map[string]interface{}{"message_id": 0})
 		}
@@ -172,9 +176,11 @@ func messageSplit(texts string) string {
 			break
 		}
 		now := strings.Split(send, "[Next]")
-		if len(now[len(now)-1])+len(text) > 30 && len(split[i+1]) > 15 {
+		if strings.Contains(text, "[pic") && strings.Contains(text, "]") {
 			send = send + text + "[Next]"
-		} else if len(now[len(now)-1])+len(text) > 60 {
+		} else if len(now[len(now)-1])+len(text) > 120 && len(split[i+1]) > 60 {
+			send = send + text + "[Next]"
+		} else if len(now[len(now)-1])+len(text) > 180 {
 			send = send + text + "\n"
 		} else {
 			send = send + text + "\n"
