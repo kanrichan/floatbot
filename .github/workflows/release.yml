@@ -3,6 +3,7 @@ on:
   release:
     types: 
       - created
+        edited
 
 env:
   GITHUB_TOKEN: ${{ github.token }}
