@@ -484,7 +484,7 @@ func cq2xqGetGroupMemberList(bot int64, p gjson.Result) Result {
 	}
 	g := gjson.Parse(list)
 	memberList := []map[string]interface{}{}
-	for _, o := range g.Get("members").Array() {
+	for _, o := range g.Get("list").Array() {
 		member := map[string]interface{}{
 			"group_id":          p.Get("group_id").Int(),
 			"user_id":           o.Get("QQ").Int(),
@@ -495,7 +495,7 @@ func cq2xqGetGroupMemberList(bot int64, p gjson.Result) Result {
 			"area":              "unknown",
 			"join_time":         0,
 			"last_sent_time":    0,
-			"level":             o.Get("Lv").Int(),
+			"level":             o.Get("lv").Int(),
 			"role":              "unknown",
 			"unfriendly":        false,
 			"title":             "unknown",

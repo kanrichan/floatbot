@@ -32,8 +32,10 @@ func (conf *Yaml) runOnebot() {
 			}
 		}
 		for l, _ := range conf.BotConfs[i].HTTPConf {
-			if conf.BotConfs[i].HTTPConf[l].Status == 0 && conf.BotConfs[i].HTTPConf[l].Enable == true && conf.BotConfs[i].HTTPConf[l].Host != "" {
-				go conf.BotConfs[i].HTTPConf[l].listen()
+			if conf.BotConfs[i].HTTPConf[l].Status == 0 && conf.BotConfs[i].HTTPConf[l].Enable == true {
+				if conf.BotConfs[i].HTTPConf[l].Host != "" {
+					go conf.BotConfs[i].HTTPConf[l].listen()
+				}
 				go conf.BotConfs[i].HTTPConf[l].send()
 			}
 		}

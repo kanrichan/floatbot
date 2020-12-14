@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tidwall/gjson"
 )
@@ -19,11 +20,14 @@ func (h *HTTPYaml) listen() {
 	defer func() {
 		if err := recover(); err != nil {
 			ERROR("[连接][HTTP][%v] BOT =X=> ==> %v:%v Error: %v", h.BotID, h.Host, h.Port, err)
+			time.Sleep(time.Second * 1)
 			h.listen()
 		}
 	}()
 	INFO("[连接][HTTP][%v] BOT ==> ==> %v:%v", h.BotID, h.Host, h.Port)
 	http.ListenAndServe(fmt.Sprintf("%v:%v", h.Host, h.Port), h)
+	time.Sleep(time.Second * 1)
+	h.listen()
 }
 
 func (h *HTTPYaml) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -50,14 +54,14 @@ func (h *HTTPYaml) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else {
 		WARN("[监听][HTTP][%v] BOT X Secret X %v:%v", h.BotID, h.Host, h.Port)
 	}
-	h.Status = 1
 }
 
 func (h *HTTPYaml) send() {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[上报][HTTP][%v] BOT =X=> ==> %v Error: %v", h.BotID, h.PostUrl, err)
 			h.Status = 0
+			ERROR("[上报][HTTP][%v] BOT =X=> ==> %v Error: %v", h.BotID, h.PostUrl, err)
+			time.Sleep(time.Second * 1)
 			h.send()
 		}
 	}()
@@ -67,6 +71,7 @@ func (h *HTTPYaml) send() {
 		},
 	}
 	INFO("[上报][HTTP][%v] BOT ==> ==> %v", h.BotID, h.PostUrl)
+	h.Status = 1
 	for {
 		select {
 		case send := <-h.Event:
@@ -87,7 +92,7 @@ func (h *HTTPYaml) send() {
 					DEBUG("[上报][HTTP][%v] %v <- %v", h.BotID, h.PostUrl, string(send))
 					body, _ := ioutil.ReadAll(resp.Body)
 					if string(body) != "" {
-						h.reply(send, body)
+						h.fastReply(send, body)
 					}
 				}
 				resp.Body.Close()
@@ -136,7 +141,7 @@ func (h *HTTPYaml) apiReply(path string, api []byte) []byte {
 	}
 }
 
-func (h *HTTPYaml) reply(send []byte, reply []byte) {
+func (h *HTTPYaml) fastReply(send []byte, reply []byte) {
 	defer func() {
 		if err := recover(); err != nil {
 			ERROR("[快速回复][HTTP][%v] BOT X %v:%v Error: %v", h.BotID, h.Host, err)
