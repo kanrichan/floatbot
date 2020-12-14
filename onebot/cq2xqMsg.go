@@ -110,6 +110,25 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 		}
 	}
 	if out != "" {
+		// 如果开了分片就切割信息
+		if Conf.Cache.Video {
+			out = messageSplit(out)
+			// 调用core发送信息
+			for _, o := range strings.Split(out, "[Next]") {
+				core.SendMsgEX_V2(
+					target.BotID,
+					target.Type_,
+					target.GroupID,
+					target.UserID,
+					o,
+					bubble,
+					false,
+					"",
+				)
+				// time.Sleep(time.Millisecond * 200)
+			}
+			return resultOK(map[string]interface{}{"message_id": 0})
+		}
 		data := core.SendMsgEX_V2(
 			target.BotID,
 			target.Type_,
@@ -118,8 +137,9 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 			out,
 			bubble,
 			false,
-			" ",
+			"",
 		)
+		// 获取CQID返回
 		if data != "" {
 			p = gjson.Parse(data[:strings.LastIndex(data, "}")])
 			if p.Get("sendok").Bool() {
@@ -136,43 +156,31 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 				}
 			}
 		}
-		send := ""
-		for i, o := range strings.Split(out, "\n") {
-			if (i%3) != 0 && i != 0 {
-				send = send + o + "\n"
-			} else {
-				send = send + o + "[Next]"
-			}
-		}
-		data = core.SendMsgEX_V2(
-			target.BotID,
-			target.Type_,
-			target.GroupID,
-			target.UserID,
-			send,
-			bubble,
-			false,
-			" ",
-		)
-		if data != "" {
-			p = gjson.Parse(data[:strings.LastIndex(data, "}")])
-			if p.Get("sendok").Bool() {
-				var xe XEvent
-				xe.messageID = p.Get("msgid").Int()
-				xe.messageNum = p.Get("msgno").Int()
-				xe.cqID = 0
-				for i, _ := range Conf.BotConfs {
-					if bot == Conf.BotConfs[i].Bot && bot != 0 && Conf.BotConfs[i].DB != nil {
-						time.Sleep(time.Millisecond * 100)
-						xe.xq2cqid(Conf.BotConfs[i].DB)
-						return resultOK(map[string]interface{}{"message_id": xe.cqID})
-					}
-				}
-			}
-		}
-		return resultOK(map[string]interface{}{"message_id": 0})
+		return resultFail(map[string]interface{}{"error": "可能受到风控"})
 	}
 	return resultOK(map[string]interface{}{"message_id": 0})
+}
+
+func messageSplit(texts string) string {
+	var (
+		send  string   = ""
+		split []string = strings.Split(texts, "\n")
+	)
+	for i, text := range split {
+		if i+1 == len(split) {
+			send = send + text
+			break
+		}
+		now := strings.Split(send, "[Next]")
+		if len(now[len(now)-1])+len(text) > 30 && len(split[i+1]) > 15 {
+			send = send + text + "[Next]"
+		} else if len(now[len(now)-1])+len(text) > 60 {
+			send = send + text + "\n"
+		} else {
+			send = send + text + "\n"
+		}
+	}
+	return send
 }
 
 func (target cq2xqMsgToWhere) cq2xqText(message gjson.Result) string {

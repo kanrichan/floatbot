@@ -94,7 +94,7 @@ type WSSYaml struct {
 
 func DefaultConfig() *Yaml {
 	return &Yaml{
-		Version: "1.0.5",
+		Version: "1.1.2",
 		Master:  12345678,
 		Debug:   true,
 		Cache: &CacheYaml{
