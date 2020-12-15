@@ -155,16 +155,24 @@ bots:
   [CQ:shake]
   ```
 
+- 本条消息使用私聊气泡
+
+  ```
+  [CQ:bubble,id=0]
+  ```
+
 - [自定义音乐分享](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#自定义音乐分享)
 
   ```
   [CQ:music,type=custom,url=http://baidu.com,audio=http://baidu.com/1.mp3,title=音乐标题]
   ```
 
+  注：暂时只支持`type=custom`
+
 - [XML消息](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#xml-消息)
 
   ```
-  [CQ:json,data=<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  [CQ:xml,data=<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <msg serviceID="1">
   <item><title>生死8秒！女司机高速急刹，他一个操作救下一车性命</title></item>
   <source name="官方认证消息" icon="https://qzs.qq.com/ac/qzone_v5/client/auth_icon.png" action="" appid="-1" />
@@ -199,8 +207,8 @@ bots:
 | /send_private_msg        | [发送私聊消息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#send_private_msg-发送私聊消息) |  |
 | /send_group_msg          | [发送群消息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#send_group_msg-发送群消息) |  |
 | /send_msg                | [发送消息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#send_msg-发送消息) |  |
-| /delete_msg | [撤回信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#delete_msg-撤回消息) | 暂未实现 |
-| /get_msg | [获取消息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_msg-获取消息) | 暂未实现 |
+| /delete_msg | [撤回信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#delete_msg-撤回消息) |  |
+| /get_msg | [获取消息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_msg-获取消息) |  |
 | /get_forward_msg | [获取合并转发消息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_forward_msg-获取合并转发消息) | 暂未实现 |
 | /send_like | [发送好友赞](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#send_like-发送好友赞) |  |
 | /set_group_kick | [群组踢人](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_kick-群组踢人) |  |
@@ -218,7 +226,7 @@ bots:
 | /get_login_info | [获取登录号信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_login_info-获取登录号信息) |  |
 | /get_stranger_info | [获取陌生人信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_stranger_info-获取陌生人信息) |  |
 | /get_friend_list         | [获取好友列表](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_friend_list-获取好友列表) |  |
-| /get_group_info | [获取群信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_info-获取群信息) | 暂未实现 |
+| /get_group_info | [获取群信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_info-获取群信息) |  |
 | /get_group_list | [获取群列表](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_list-获取群列表) |  |
 | /get_group_member_info | [获取群成员信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_member_info-获取群成员信息) | 实现了 昵称 性别 年龄 的获取 |
 | /get_group_member_list | [获取群成员列表](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_member_list-获取群成员列表) |  |
@@ -283,7 +291,7 @@ bots:
 | Go                 | 正向 WS                | [wdvxdr1123/ZeroBot](https://github.com/wdvxdr1123/ZeroBot)  | wdvxdr1123             |
 | Node.js            | HTTP, 正向 WS, 反向 WS | [koishijs/koishi](https://github.com/koishijs/koishi)        | Shigma                 |
 | PHP                | 反向 WS                | [zhamao-robot/zhamao-framework](https://github.com/zhamao-robot/zhamao-framework) | crazywhalecc           |
-| C#                 | HTTP, 正向 WS, 反向 WS | [frank-bots/cqhttp.Cyan](https://github.com/frank-bots/cqhttp.Cyan) | frankli0324            |
+| C#                 | 反向 WS                | [Yukrai103/Sora](https://github.com/Yukrai103/Sora)          | Yukrai103              |
 | Java Kotlin Groovy | 反向 WS                | [lz1998/Spring-CQ](https://github.com/lz1998/Spring-CQ)（[教程](https://www.bilibili.com/video/av89649630/)） | lz1998                 |
 
 [More](https://github.com/Yiwen-Chan/OneBot-YaYa/blob/master/docs/ecosystem.md)

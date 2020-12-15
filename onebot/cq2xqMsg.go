@@ -49,7 +49,6 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 	if len(p.Get("message.#.type").Array()) == 0 {
 		b, _ := json.Marshal(cqCode2Array(p.Get("message").Str))
 		msg = gjson.ParseBytes(b)
-		TEST("%v", msg)
 	} else {
 		msg = p.Get("message")
 	}
@@ -71,7 +70,6 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 			out += target.cq2xqDice(message)
 		case "bubble":
 			bubble = message.Get("data.id").Int()
-			TEST("id %v", bubble)
 		// 媒体
 		case "image":
 			out += target.cq2xqImage(message)

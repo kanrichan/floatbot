@@ -133,6 +133,9 @@ var apiList = map[string]func(int64, gjson.Result) Result{
 	"clean_cache": func(bot int64, p gjson.Result) Result {
 		return cq2xqCleanCache(bot, p)
 	},
+	".handle_quick_operation": func(bot int64, p gjson.Result) Result {
+		return cq2xqHandleQuickOperation(bot, p)
+	},
 	// 先驱新增
 	"out_put_log": func(bot int64, p gjson.Result) Result {
 		return cq2xqOutPutLog(bot, p)
@@ -160,7 +163,7 @@ func resultFail(data interface{}) Result {
 func cq2xqDeleteMsg(bot int64, p gjson.Result) Result {
 	var xe XEvent
 	for i, _ := range Conf.BotConfs {
-		if bot == Conf.BotConfs[i].Bot {
+		if bot == Conf.BotConfs[i].Bot && Conf.BotConfs[i].DB != nil {
 			xe = db2Mseeage(Conf.BotConfs[i].DB, bot, p.Get("message_id").Int())
 			break
 		}
@@ -175,7 +178,7 @@ func cq2xqDeleteMsg(bot int64, p gjson.Result) Result {
 		xe.messageID,
 		xe.time,
 	)
-	return resultFail(map[string]interface{}{})
+	return resultOK(map[string]interface{}{})
 }
 
 func cq2xqGetMsg(bot int64, p gjson.Result) Result {
@@ -603,4 +606,76 @@ func cq2xqCleanCache(bot int64, p gjson.Result) Result {
 func cq2xqOutPutLog(bot int64, p gjson.Result) Result {
 	core.OutPutLog(p.Get("text").Str)
 	return resultOK(map[string]interface{}{})
+}
+
+func cq2xqHandleQuickOperation(bot int64, p gjson.Result) Result {
+	var reply []byte
+	switch p.Get("context.post_type").Str {
+	case "message":
+		if p.Get("operation.reply").Exists() {
+			var text string
+			if p.Get("operation.at_sender").Bool() {
+				text += fmt.Sprintf("[CQ:at,qq=%d]", p.Get("context.user_id").Int())
+			}
+			if p.Get("operation.reply").Str != "" {
+				text += unicode2chinese(p.Get("operation.reply").Str)
+			}
+			reply, _ = json.Marshal(
+				map[string]interface{}{
+					"message_type": p.Get("context.message_type").Str,
+					"group_id":     p.Get("context.group_id").Int(),
+					"user_id":      p.Get("context.user_id").Int(),
+					"message":      text,
+				})
+		}
+		if p.Get("operation.delete").Bool() {
+			parmas, _ := json.Marshal(
+				map[string]interface{}{
+					"message_id": p.Get("context.message_id").Int(),
+				})
+			cq2xqDeleteMsg(bot, gjson.ParseBytes(parmas))
+		}
+		if p.Get("operation.kick").Bool() {
+			parmas, _ := json.Marshal(
+				map[string]interface{}{
+					"group_id":           p.Get("context.group_id").Int(),
+					"user_id":            p.Get("context.user_id").Int(),
+					"reject_add_request": false,
+				})
+			cq2xqSetGroupKick(bot, gjson.ParseBytes(parmas))
+		}
+		if p.Get("operation.ban").Bool() {
+			parmas, _ := json.Marshal(
+				map[string]interface{}{
+					"group_id": p.Get("context.group_id").Int(),
+					"user_id":  p.Get("context.user_id").Int(),
+					"duration": p.Get("operation.duration").Int(),
+				})
+			cq2xqDeleteMsg(bot, gjson.ParseBytes(parmas))
+		}
+	case "request":
+		if p.Get("operation.approve").Exists() {
+			if p.Get("operation.request_type").Str == "friend" {
+				parmas, _ := json.Marshal(
+					map[string]interface{}{
+						"flag":    p.Get("context.flag").Str,
+						"approve": p.Get("operation.approve").Bool(),
+						"remark":  p.Get("operation.remark").Str,
+					})
+				cq2xqSetFriendAddRequest(bot, gjson.ParseBytes(parmas))
+			}
+			if p.Get("operation.request_type").Str == "group" {
+				parmas, _ := json.Marshal(
+					map[string]interface{}{
+						"flag":    p.Get("context.flag").Str,
+						"approve": p.Get("operation.approve").Str,
+						"reason":  p.Get("operation.reason").Bool(),
+					})
+				cq2xqSetGroupAddRequest(bot, gjson.ParseBytes(parmas))
+			}
+		}
+	default:
+		//
+	}
+	return cq2xqSendMsg(bot, gjson.ParseBytes(reply))
 }
