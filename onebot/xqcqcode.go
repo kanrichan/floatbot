@@ -83,7 +83,7 @@ func whatCQprams(code string) map[string]interface{} {
 		elems[code[index+1:equal]] = code[equal+1 : end]
 		start = end
 	}
-	return map[string]interface{}{"data": elems}
+	return map[string]interface{}{"data": escape(elems)}
 }
 
 // xq2cqCode 普通XQ码转CQ码
