@@ -163,8 +163,8 @@ func cq2xqCode(message string) string {
 }
 
 func escape(text string) string {
-	text = strings.ReplaceAll(text, "&#44;", ",")
 	text = strings.ReplaceAll(text, "&amp;", "&")
+	text = strings.ReplaceAll(text, "&#44;", ",")
 	text = strings.ReplaceAll(text, "&#91;", "[")
 	text = strings.ReplaceAll(text, "&#93;", "]")
 	return text
