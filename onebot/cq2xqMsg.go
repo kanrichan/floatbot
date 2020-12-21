@@ -86,6 +86,8 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 			out += target.cq2xqShare(message)
 		case "music":
 			out += target.cq2xqMusic(message)
+		case "weather":
+			out += target.cq2xqWeather(message)
 		case "contact":
 			out += target.cq2xqContact(message)
 		case "location":
@@ -331,6 +333,30 @@ func (target cq2xqMsgToWhere) cq2xqMusic(message gjson.Result) string {
 	return ""
 }
 
+func (target cq2xqMsgToWhere) cq2xqWeather(message gjson.Result) string {
+	core.SendJSON(
+		target.BotID,
+		1,
+		target.Type_,
+		target.GroupID,
+		target.UserID,
+		fmt.Sprintf(`{"app":"com.tencent.weather","desc":"天气",
+			"view":"RichInfoView","ver":"0.0.0.1","prompt":"[应用]天气",
+			"appID":"","sourceName":"","actionData":"","actionData_A":"",
+			"sourceUrl":"","meta":{"richinfo":{"adcode":"","air":"%s",
+			"city":"%s","date":"%s","max":"%s","min":"%s",
+			"ts":"15158613","type":"%s","wind":""}},"text":"","sourceAd":"","extra":""}`,
+			message.Get("data.air").Str,
+			message.Get("data.city").Str,
+			message.Get("data.date").Str,
+			message.Get("data.max").Str,
+			message.Get("data.min").Str,
+			message.Get("data.type").Str,
+		),
+	)
+	return ""
+}
+
 func (target cq2xqMsgToWhere) cq2xqXml(message gjson.Result) string {
 	core.SendXML(
 		target.BotID,
@@ -357,57 +383,117 @@ func (target cq2xqMsgToWhere) cq2xqJson(message gjson.Result) string {
 }
 
 func (target cq2xqMsgToWhere) cq2xqShare(message gjson.Result) string {
-	DEBUG("[CQ码解析] %v 暂未实现", message.Str)
-	core.SendMsgEX_V2(
+	core.SendXML(
 		target.BotID,
+		1,
 		target.Type_,
 		target.GroupID,
 		target.UserID,
-		fmt.Sprintf("分享：%s\n%s",
-			message.Get("data.title").Str,
+		fmt.Sprintf(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+				<msg serviceID="33" templateID="123" action="web" brief="%s" 
+				sourceMsgId="0" url="%s" 
+				flag="8" adverSign="0" multiMsgFlag="0"><item layout="2" 
+				advertiser_id="0" aid="0"><picture cover="%s" w="0" h="0" />
+				<title>%s</title><summary>%s</summary>
+				</item><source name="" icon="" action="" appid="-1" /></msg>`,
+			message.Get("data.brief").Str,
 			message.Get("data.url").Str,
+			message.Get("data.image").Str,
+			message.Get("data.title").Str,
+			message.Get("data.content").Str,
 		),
 		0,
-		false,
-		" ",
 	)
 	return ""
 }
 
 func (target cq2xqMsgToWhere) cq2xqContact(message gjson.Result) string {
-	DEBUG("[CQ码解析] %v 暂未实现", message.Str)
-	core.SendMsgEX_V2(
-		target.BotID,
-		target.Type_,
-		target.GroupID,
-		target.UserID,
-		fmt.Sprintf("分享：%s: %s",
-			message.Get("data.type").Str,
-			message.Get("data.id").Str,
-		),
-		0,
-		false,
-		" ",
-	)
+	switch message.Get("data.type").Str {
+	case "qq":
+		core.SendXML(
+			target.BotID,
+			1,
+			target.Type_,
+			target.GroupID,
+			target.UserID,
+			fmt.Sprintf(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+			<msg serviceID="14" templateID="1" action="plugin" 
+			actionData="AppCmd://OpenContactInfo/?uin=%s" 
+			a_actionData="mqqapi://card/show_pslcard?src_type=internal&amp;
+			source=sharecard&amp;version=1&amp;uin=%s" 
+			i_actionData="mqqapi://card/show_pslcard?src_type=internal&amp;
+			source=sharecard&amp;version=1&amp;uin=%s" 
+			brief="推荐了%s" sourceMsgId="0" url="" flag="1" 
+			adverSign="0" multiMsgFlag="0"><item layout="0" 
+			mode="1" advertiser_id="0" aid="0">
+			<summary>推荐联系人</summary><hr hidden="false" style="0" />
+			</item><item layout="2" mode="1" advertiser_id="0" aid="0">
+			<picture cover="mqqapi://card/show_pslcard?src_type=internal&amp;
+			source=sharecard&amp;version=1&amp;uin=%s" w="0" h="0" />
+			<title>%s</title><summary>帐号:%s</summary>
+			</item><source name="" icon="" action="" appid="-1" /></msg>`,
+				message.Get("data.id").Str,
+				message.Get("data.id").Str,
+				message.Get("data.id").Str,
+				message.Get("data.name").Str,
+				message.Get("data.id").Str,
+				message.Get("data.name").Str,
+				message.Get("data.id").Str,
+			),
+			0,
+		)
+	case "group":
+		core.SendXML(
+			target.BotID,
+			1,
+			target.Type_,
+			target.GroupID,
+			target.UserID,
+			fmt.Sprintf(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+				<msg serviceID="15" templateID="1" action="web" 
+				actionData="group:%s" a_actionData="group:%s" 
+				i_actionData="group:%s" brief="推荐群聊：%s" 
+				sourceMsgId="0" url="%s" flag="0" adverSign="0" multiMsgFlag="0">
+				<item layout="0" mode="1" advertiser_id="0" aid="0">
+				<summary>推荐群聊</summary><hr hidden="false" style="0" />
+				</item><item layout="2" mode="1" advertiser_id="0" aid="0">
+				<picture cover="https://p.qlogo.cn/gh/%s/%s/100" w="0" h="0" needRoundView="0" />
+				<title>%s</title><summary>创建人：%s</summary></item>
+				<source name="" icon="" action="" appid="-1" /></msg>`,
+				message.Get("data.id").Str,
+				message.Get("data.id").Str,
+				message.Get("data.id").Str,
+				message.Get("data.name").Str,
+				message.Get("data.url").Str,
+				message.Get("data.id").Str,
+				message.Get("data.id").Str,
+				message.Get("data.name").Str,
+				message.Get("data.owner").Str,
+			),
+			0,
+		)
+	}
 	return ""
 }
 
 func (target cq2xqMsgToWhere) cq2xqLocation(message gjson.Result) string {
-	DEBUG("[CQ码解析] %v 暂未实现", message.Str)
-	core.SendMsgEX_V2(
+	core.SendJSON(
 		target.BotID,
+		1,
 		target.Type_,
 		target.GroupID,
 		target.UserID,
-		fmt.Sprintf("位置分享：%s/n%s/n经度：%s 纬度：%s",
-			message.Get("data.title").Str,
+		fmt.Sprintf(`{"app":"com.tencent.map","desc":"","view":"Share",
+			"ver":"0.0.0.1","prompt":"[应用]地图","appID":"","sourceName":"",
+			"actionData":"","actionData_A":"","sourceUrl":"","meta":{"Share":{"locSub":"%s",
+			"lng":%s,"lat":%s,"zoom":15,"locName":"%s"}},
+			"config":{"forward":true,"autosize":1},"text":"","extraApps":[],
+			"sourceAd":"","extra":""}`,
 			message.Get("data.content").Str,
 			message.Get("data.lon").Str,
 			message.Get("data.lat").Str,
+			message.Get("data.title").Str,
 		),
-		0,
-		false,
-		" ",
 	)
 	return ""
 }
@@ -440,7 +526,6 @@ func (target cq2xqMsgToWhere) cq2xqPoke(message gjson.Result) string {
 }
 
 func (target cq2xqMsgToWhere) cq2xqAnonymous(message gjson.Result) string {
-	DEBUG("[CQ码解析] %v 不支持", message.Str)
 	core.SendMsgEX_V2(
 		target.BotID,
 		target.Type_,
