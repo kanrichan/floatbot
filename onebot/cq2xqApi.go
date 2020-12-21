@@ -140,6 +140,12 @@ var apiList = map[string]func(int64, gjson.Result) Result{
 	"out_put_log": func(bot int64, p gjson.Result) Result {
 		return cq2xqOutPutLog(bot, p)
 	},
+	"send_json": func(bot int64, p gjson.Result) Result {
+		return cq2xqSendJson(bot, p)
+	},
+	"send_xml": func(bot int64, p gjson.Result) Result {
+		return cq2xqSendXml(bot, p)
+	},
 }
 
 func resultOK(data interface{}) Result {
@@ -205,7 +211,7 @@ func cq2xqGetMsg(bot int64, p gjson.Result) Result {
 	default:
 		Tsubtype = "error"
 	}
-	return resultFail(map[string]interface{}{
+	return resultOK(map[string]interface{}{
 		"time":         xe.time,
 		"message_type": Tsubtype,
 		"message_id":   p.Get("message_id").Int(),
@@ -412,7 +418,7 @@ func cq2xqGetGroupInfo(bot int64, p gjson.Result) Result {
 		count = core.Str2Int(members[0])
 		max = core.Str2Int(members[1])
 	}
-	return resultFail(map[string]interface{}{
+	return resultOK(map[string]interface{}{
 		"group_id":         p.Get("group_id").Int(),
 		"group_name":       name,
 		"member_count":     count,
@@ -541,11 +547,11 @@ func cq2xqGetGroupHonorInfo(bot int64, p gjson.Result) Result {
 func cq2xqGetCookies(bot int64, p gjson.Result) Result {
 	switch p.Get("domain").Str {
 	case "qun.qq.com":
-		return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetGroupPsKey(bot)})
+		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetGroupPsKey(bot)})
 	case "qzone.qq.com":
-		return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetZonePsKey(bot)})
+		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetZonePsKey(bot)})
 	default:
-		return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot)})
+		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot)})
 	}
 }
 
@@ -556,11 +562,11 @@ func cq2xqGetCsrfToken(bot int64, p gjson.Result) Result {
 func cq2xqGetCredentials(bot int64, p gjson.Result) Result {
 	switch p.Get("domain").Str {
 	case "qun.qq.com":
-		return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetGroupPsKey(bot)})
+		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetGroupPsKey(bot)})
 	case "qzone.qq.com":
-		return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetZonePsKey(bot)})
+		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetZonePsKey(bot)})
 	default:
-		return resultFail(map[string]interface{}{"cookies": core.GetCookies(bot)})
+		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot)})
 	}
 }
 
@@ -573,22 +579,22 @@ func cq2xqGetImage(bot int64, p gjson.Result) Result {
 }
 
 func cq2xqCanSendImage(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"yes": true})
+	return resultOK(map[string]interface{}{"yes": true})
 }
 
 func cq2xqCanSendRecord(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"yes": true})
+	return resultOK(map[string]interface{}{"yes": true})
 }
 
 func cq2xqGetStatus(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{
+	return resultOK(map[string]interface{}{
 		"online": core.IsOnline(bot, bot),
 		"good":   true,
 	})
 }
 
 func cq2xqGetVersionInfo(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{
+	return resultOK(map[string]interface{}{
 		"app_name":         "OneBot-YaYa",
 		"app_version":      gjson.Parse(AppInfoJson).Get("pver"),
 		"protocol_version": "v11",
@@ -678,4 +684,29 @@ func cq2xqHandleQuickOperation(bot int64, p gjson.Result) Result {
 		//
 	}
 	return cq2xqSendMsg(bot, gjson.ParseBytes(reply))
+}
+
+func cq2xqSendJson(bot int64, p gjson.Result) Result {
+	core.SendJSON(
+		bot,
+		1,
+		cq2xqMessageType(p),
+		p.Get("group_id").Int(),
+		p.Get("user_id").Int(),
+		p.Get("data").Str,
+	)
+	return resultOK(map[string]interface{}{})
+}
+
+func cq2xqSendXml(bot int64, p gjson.Result) Result {
+	core.SendXML(
+		bot,
+		1,
+		cq2xqMessageType(p),
+		p.Get("group_id").Int(),
+		p.Get("user_id").Int(),
+		p.Get("data").Str,
+		0,
+	)
+	return resultOK(map[string]interface{}{})
 }

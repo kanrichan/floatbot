@@ -117,7 +117,15 @@ bots:
 
 <details>
 <summary>消息段类型</summary>
+注：CQ码需要对以下字符进行转义
 
+> ","=> `&#44;`
+
+> "&"=> `&amp;`
+
+> "["=> `&#91;`
+
+> "]"=> `&#93;`
 
 - [纯文本](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#纯文本)
 
@@ -160,6 +168,15 @@ bots:
   ```
   [CQ:bubble,id=0]
   ```
+  注：此为YaYa特有CQ码
+
+- 自定义分享
+
+  ```
+  [CQ:share,title=OneBot,content=YaYa,url=https://github.com/Yiwen-Chan/OneBot-YaYa,image=https://github.com/howmanybots/onebot/raw/master/assets/logo-256.png,brief=OneBot]
+  ```
+
+  注：此CQ码与OneBot标准有异
 
 - [自定义音乐分享](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#自定义音乐分享)
 
@@ -168,6 +185,38 @@ bots:
   ```
 
   注：暂时只支持`type=custom`
+
+- 自定义天气分享
+
+  ```
+  [CQ:weather,city=北京,type=201,air=66,max=30,min=20,date=1月1日 周一]
+  ```
+
+  注：此为YaYa特有CQ码
+
+- 推荐联系人
+
+  ```
+  [CQ:contact,type=qq,id=11011101,name=昵称]
+  ```
+
+  注：此CQ码与OneBot标准有异
+
+- 推荐群聊
+
+  ```
+  [CQ:contact,type=group,id=11011101,name=群名,url=http://www.链接.com,owner=群主]
+  ```
+
+  注：此CQ码与OneBot标准有异
+
+- 自定义位置分享
+
+  ```
+  [CQ:location,title=OneBot,content=YaYa,lon=114,lat=514]
+  ```
+
+  注：此为YaYa特有CQ码
 
 - [XML消息](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#xml-消息)
 
@@ -181,15 +230,7 @@ bots:
 
 - [JSON消息](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#json-消息)
 
-  json中的字符串需要进行转义：
-  
-  > ","=> `&#44;`
-  
-  > "&"=> `&amp;`
-  
-  > "["=> `&#91;`
-  
-  > "]"=> `&#93;`
+  注：特殊字符需要转义
   
   ```
   [CQ:json,data={"app":"com.tencent.miniapp"&#44;"desc":""&#44;"view":"notification"&#44;"ver":"0.0.0.1"&#44;"prompt":"&#91;应用&#93;"&#44;"appID":""&#44;"sourceName":""&#44;"actionData":""&#44;"actionData_A":""&#44;"sourceUrl":""&#44;"meta":{"notification":{"appInfo":{"appName":"全国疫情数据统计"&#44;"appType":4&#44;"appid":1109659848&#44;"iconUrl":"http:\/\/gchat.qpic.cn\/gchatpic_new\/719328335\/-2010394141-6383A777BEB79B70B31CE250142D740F\/0"}&#44;"data":&#91;{"title":"确诊"&#44;"value":"80932"}&#44;{"title":"今日确诊"&#44;"value":"28"}&#44;{"title":"疑似"&#44;"value":"72"}&#44;{"title":"今日疑似"&#44;"value":"5"}&#44;{"title":"治愈"&#44;"value":"60197"}&#44;{"title":"今日治愈"&#44;"value":"1513"}&#44;{"title":"死亡"&#44;"value":"3140"}&#44;{"title":"今**亡"&#44;"value":"17"}&#93;&#44;"title":"中国加油，武汉加油"&#44;"button":&#91;{"name":"病毒：SARS-CoV-2，其导致疾病命名 COVID-19"&#44;"action":""}&#44;{"name":"传染源：新冠肺炎的患者。无症状感染者也可能成为传染源。"&#44;"action":""}&#93;&#44;"emphasis_keyword":""}}&#44;"text":""&#44;"sourceAd":""}]
@@ -242,6 +283,8 @@ bots:
 | /get_version_info | [获取版本信息](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_version_info-获取版本信息) |  |
 | /set_restart | [重启 onebot 实现](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_restart-重启-onebot-实现) | 暂未实现 |
 | /clean_cache | [清理缓存](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#clean_cache-清理缓存) | 暂未实现 |
+| /send_json | 发送`JSON`消息 | data字段填`JSON`结构体，YaYa特有，不需要转义，sdk可能无此API接口 |
+| /send_xml | 发送`XML`消息 | data字段填`XML`结构体，YaYa特有，不需要转义，sdk可能无此API接口 |
 
 </details>
 
