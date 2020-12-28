@@ -88,6 +88,8 @@ func whatCQprams(code string) map[string]interface{} {
 
 // xq2cqCode 普通XQ码转CQ码
 func xq2cqCode(message string) string {
+	// 防止注入
+	message = strings.ReplaceAll(message, "[CQ", "[YaYa")
 	// 转艾特
 	message = strings.ReplaceAll(message, "[@", "[CQ:at,qq=")
 	// 转emoji
