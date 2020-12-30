@@ -1,3 +1,4 @@
+// from https://github.com/Tnze/CoolQ-Golang-SDK/blob/master/cqp/apis_native.go
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
