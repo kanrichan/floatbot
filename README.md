@@ -357,3 +357,4 @@ bots:
 - [OneBot标准](https://github.com/howmanybots/onebot)
 - [CQHTTP](https://github.com/richardchien/coolq-http-api) - [LICENSE](https://github.com/richardchien/coolq-http-api/blob/master/LICENSE)
 - [go-cqhttp](https://github.com/Mrs4s/go-cqhttp) - [LICENSE](https://github.com/Mrs4s/go-cqhttp/blob/master/LICENSE)
+- [CoolQ-Golang-SDK](https://github.com/Tnze/CoolQ-Golang-SDK) - [LICENSE](https://github.com/Tnze/CoolQ-Golang-SDK/blob/master/LICENSE)
