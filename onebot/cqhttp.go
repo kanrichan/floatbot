@@ -82,13 +82,16 @@ func (conf *Yaml) heartBeat() {
 }
 
 func heartEvent(interval int64, bot int64) []byte {
-	heartbeat := map[string]string{
+	heartbeat := map[string]interface{}{
 		"interval":        fmt.Sprint(interval),
 		"meta_event_type": "heartbeat",
 		"post_type":       "meta_event",
 		"self_id":         fmt.Sprint(bot),
-		"status":          "null",
-		"time":            fmt.Sprint(time.Now().Unix()),
+		"status": map[string]interface{}{
+			"online": true,
+			"good":   true,
+		},
+		"time": fmt.Sprint(time.Now().Unix()),
 	}
 	event, _ := json.Marshal(heartbeat)
 	return event
