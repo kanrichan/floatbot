@@ -143,6 +143,7 @@ bots:
 
   ```
   [CQ:image,file=http://baidu.com/1.jpg]
+  [CQ:image,file=file:///C:\\example\test.jpg]
   ```
 
 - [语音](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#语音)
