@@ -1,6 +1,7 @@
 package onebot
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -190,7 +191,27 @@ func messageSplit(texts string) string {
 }
 
 func (target cq2xqMsgToWhere) cq2xqText(message gjson.Result) string {
-	return message.Get("data.*").Str
+	return emoji2xq(message.Get("data.*").Str)
+}
+
+func emoji2xq(text string) string {
+	data := []byte(text)
+	ret := []byte{}
+	skip := 0
+	for i, _ := range data {
+		if skip > 1 {
+			skip -= 1
+			continue
+		}
+		if data[i] == byte(240) && data[i+1] == byte(159) {
+			code := hex.EncodeToString(data[i : i+4])
+			ret = append(ret, []byte(fmt.Sprintf("[emoji=%s]", code))...)
+			skip = 4
+		} else {
+			ret = append(ret, data[i])
+		}
+	}
+	return string(ret)
 }
 
 func (target cq2xqMsgToWhere) cq2xqFace(message gjson.Result) string {
