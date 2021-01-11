@@ -286,8 +286,14 @@ func (target cq2xqMsgToWhere) cq2xqImage(message gjson.Result) string {
 func (target cq2xqMsgToWhere) cq2xqRecord(message gjson.Result) string {
 	record := strings.ReplaceAll(message.Get("data.file").Str, `\/`, `/`)
 	switch {
+	case strings.Contains(record, "base64://"):
+		return fmt.Sprintf("[Voi=%s]", rec2silk(Base642Record(record[9:])))
 	case strings.Contains(record, "file:///"):
-		return fmt.Sprintf("[Voi=%s]", record[8:])
+		return fmt.Sprintf("[Voi=%s]", rec2silk(record[8:]))
+	case strings.Contains(record, "http://"):
+		return fmt.Sprintf("[Voi=%s]", rec2silk(Url2Record(record)))
+	case strings.Contains(record, "https://"):
+		return fmt.Sprintf("[Voi=%s]", rec2silk(Url2Record(record)))
 	default:
 		return fmt.Sprintf("[Voi=%s]", "error")
 	}
