@@ -1,15 +1,17 @@
 package onebot
 
 import (
-	"gopkg.in/yaml.v3"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v3"
+
 	"yaya/core"
 
 	"database/sql"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -174,6 +176,7 @@ func Load(p string) *Yaml {
 		c := DefaultConfig()
 		c.Save(p)
 	}
+	yaml.Unmarshal([]byte(ReadAllText(p)), &c)
 	if c.Version != "1.0.5" {
 		WARN("!!!!!!!!配置文件版本更新了，请重新配置配置文件")
 		os.Rename(p, p+".backup"+strconv.FormatInt(time.Now().Unix(), 10))
@@ -197,6 +200,11 @@ func (c *Yaml) Save(p string) {
 func (conf *Yaml) InitConf() {
 	conf.Meta = false
 	for i, _ := range conf.BotConfs {
+		// 如果bot没有填写的话就自动修改为当前登录账号的第一个
+		if conf.BotConfs[i].Bot == 0 && DefaultQQ() != 0 {
+			conf.BotConfs[i].Bot = DefaultQQ()
+			conf.Save(AppPath + "config.yml")
+		}
 		for j, _ := range conf.BotConfs[i].WSSConf {
 			conf.BotConfs[i].WSSConf[j].Status = 0
 			conf.BotConfs[i].WSSConf[j].BotID = conf.BotConfs[i].Bot
