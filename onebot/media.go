@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/Yiwen-Chan/go-silk/silk"
 )
 
 type GroupHonorInfo struct {
@@ -92,6 +94,84 @@ func Url2Image(url string) string {
 		ERROR("[CQ码解析] 从TX服务器图片%s保存失败", url)
 	}
 	return path
+}
+
+func Base642Record(res string) string {
+	data, err := base64.StdEncoding.DecodeString(res)
+	if err != nil {
+		ERROR("base64编码解码失败")
+	}
+	name := strings.ToUpper(fmt.Sprintf("%x", md5.Sum(data)))
+	path := RecordPath + name + ".mp3"
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	defer f.Close()
+	if err != nil {
+		ERROR("base64编码保存语音失败")
+	} else {
+		_, err = f.Write(data)
+		if err != nil {
+			ERROR("base64编码写入语音失败")
+		}
+	}
+	return path
+}
+
+func Url2Record(url string) string {
+	client := &http.Client{}
+	reqest, err := http.NewRequest("GET", url, nil)
+	reqest.Header.Add("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
+	reqest.Header.Add("Net-Type", "Wifi")
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器语音%s下载失败", url)
+		return "error"
+	}
+	resp, err := client.Do(reqest)
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器语音%s下载失败", url)
+		return "error"
+	}
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		ERROR("[CQ码解析] 从TX服务器语音%s下载失败", url)
+		return "error"
+	}
+	name := byte2md5(data)
+	path := RecordPath + name + ".mp3"
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	defer f.Close()
+	if err == nil {
+		_, err = f.Write(data)
+		if err != nil {
+			ERROR("[CQ码解析] 从TX服务器语音%s保存失败", url)
+		}
+	} else {
+		ERROR("[CQ码解析] 从TX服务器语音%s保存失败", url)
+	}
+	return path
+}
+
+func rec2silk(path string) string {
+	silkEncoder := &silk.Encoder{}
+	err := silkEncoder.Init("OneBot/record", "OneBot/codec")
+	if err != nil {
+		ERROR("[CQ码解析] %s", err)
+	}
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		ERROR("[CQ码解析] %s", err)
+	}
+	name := "not found"
+	if strings.LastIndex(path, "\\") > strings.LastIndex(path, "/") {
+		name = path[strings.LastIndex(path, "\\")+1 : strings.LastIndex(path, ".")]
+	} else {
+		name = path[strings.LastIndex(path, "/")+1 : strings.LastIndex(path, ".")]
+	}
+	_, err = silkEncoder.EncodeToSilk(data, name, true)
+	if err != nil {
+		ERROR("[CQ码解析] %s", err)
+	}
+	return RecordPath + name + ".silk"
 }
 
 func byte2md5(data []byte) string {
