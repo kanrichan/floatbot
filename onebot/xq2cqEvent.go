@@ -52,7 +52,7 @@ func XQEvent(selfID int64, mseeageType int64, subType int64, groupID int64, user
 		groupID:     groupID,
 		userID:      userID,
 		noticID:     noticID,
-		message:     message,
+		message:     xq2emoji(message),
 		messageNum:  messageNum,
 		messageID:   messageID,
 		rawMessage:  rawMessage,
