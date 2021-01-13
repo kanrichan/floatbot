@@ -1,6 +1,8 @@
 package onebot
 
 import (
+	"bytes"
+	"encoding/hex"
 	"fmt"
 	"regexp"
 	"strings"
@@ -162,6 +164,50 @@ func cq2xqCode(message string) string {
 		message = strings.ReplaceAll(message, oldpic, newpic)
 	}
 	return message
+}
+
+func emoji2xq(text string) string {
+	data := []byte(text)
+	ret := []byte{}
+	skip := 0
+	for i, _ := range data {
+		if skip > 1 {
+			skip -= 1
+			continue
+		}
+		if data[i] == byte(240) && data[i+1] == byte(159) {
+			code := hex.EncodeToString(data[i : i+4])
+			ret = append(ret, []byte(fmt.Sprintf("[emoji=%s]", code))...)
+			skip = 4
+		} else {
+			ret = append(ret, data[i])
+		}
+	}
+	return string(ret)
+}
+
+func xq2emoji(text string) string {
+	data := []byte(text)
+	ret := []byte{}
+	skip := 0
+	for i, _ := range data {
+		if skip > 1 {
+			skip -= 1
+			continue
+		}
+		if i+7 < len(data) && bytes.Equal(data[i:i+7], []byte("[emoji=")) {
+			end := bytes.IndexByte(data[i:], byte(93))
+			if end == -1 {
+				return text
+			}
+			code, _ := hex.DecodeString(string(data[i+7 : end+i]))
+			ret = append(ret, code...)
+			skip = end + 1
+		} else {
+			ret = append(ret, data[i])
+		}
+	}
+	return string(ret)
 }
 
 func escape(text string) string {
