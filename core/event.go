@@ -3,7 +3,7 @@ package core
 import "C"
 
 var Create func(version string) string
-var Event func(selfID int64, mseeageType int64, subType int64, groupID int64, userID int64, noticID int64, message string, messageNum int64, messageID int64, rawMessage []byte, time int64, ret int64) int64
+var Event func(selfID int64, mseeageType int64, subType int64, groupID int64, userID int64, noticeID int64, message string, messageNum int64, messageID int64, rawMessage string, time int64, ret int64) int64
 var DestroyPlugin func() int64
 var SetUp func() int64
 
@@ -13,17 +13,17 @@ func GO_Create(version *C.char) *C.char {
 }
 
 //export GO_Event
-func GO_Event(selfID *C.char, mseeageType C.int, subType C.int, groupID *C.char, userID *C.char, noticID *C.char, message *C.char, messageNum *C.char, messageID *C.char, rawMessage *C.char, time *C.char, ret *C.char) C.int {
+func GO_Event(selfID *C.char, mseeageType C.int, subType C.int, groupID *C.char, userID *C.char, noticeID *C.char, message *C.char, messageNum *C.char, messageID *C.char, rawMessage *C.char, time *C.char, ret *C.char) C.int {
 	return C.int(Event(CStr2GoInt(selfID),
 		int64(mseeageType),
 		int64(subType),
 		CStr2GoInt(groupID),
 		CStr2GoInt(userID),
-		CStr2GoInt(noticID),
+		CStr2GoInt(noticeID),
 		GoString(message),
 		CStr2GoInt(messageNum),
 		CStr2GoInt(messageID),
-		[]byte(GoString(rawMessage)),
+		GoString(rawMessage),
 		CStr2GoInt(time),
 		CStr2GoInt(ret),
 	))
