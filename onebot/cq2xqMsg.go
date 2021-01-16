@@ -148,14 +148,14 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 			p = gjson.Parse(data[:strings.LastIndex(data, "}")])
 			if p.Get("sendok").Bool() {
 				var xe XEvent
-				xe.messageID = p.Get("msgid").Int()
-				xe.messageNum = p.Get("msgno").Int()
-				xe.cqID = 0
+				xe.MessageID = p.Get("msgid").Int()
+				xe.MessageNum = p.Get("msgno").Int()
+				xe.ID = 0
 				for i, _ := range Conf.BotConfs {
 					if bot == Conf.BotConfs[i].Bot && bot != 0 && Conf.BotConfs[i].DB != nil {
 						time.Sleep(time.Millisecond * 100)
-						xe.xq2cqid(Conf.BotConfs[i].DB)
-						return resultOK(map[string]interface{}{"message_id": xe.cqID})
+						Conf.BotConfs[i].dbSelect(&xe, "message_num="+core.Int2Str(xe.MessageNum))
+						return resultOK(map[string]interface{}{"message_id": xe.ID})
 					}
 				}
 			}

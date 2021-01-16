@@ -42,6 +42,7 @@ type HeratBeatYaml struct {
 type BotYaml struct {
 	Bot      int64       `yaml:"bot"`
 	DB       *sql.DB     `yaml:"-"`
+	DBPath   string      `yaml:"-"`
 	WSSConf  []*WSSYaml  `yaml:"websocket"`
 	WSCConf  []*WSCYaml  `yaml:"websocket_reverse"`
 	HTTPConf []*HTTPYaml `yaml:"http"`

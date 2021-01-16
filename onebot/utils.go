@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -49,6 +50,15 @@ func PathExecute() string {
 }
 
 func CreatePath(path string) {
+	length := len(path)
+	switch {
+	case path[length-1:] != "/":
+		path = path[:strings.LastIndex(path, "/")]
+	case path[length-1:] != "\\":
+		path = path[:strings.LastIndex(path, "\\")]
+	default:
+		//
+	}
 	if !PathExists(path) {
 		err := os.MkdirAll(path, 0644)
 		if err != nil {
@@ -79,6 +89,9 @@ func ProtectRun(entry func(), label string) {
 		err := recover()
 		if err != nil {
 			ERROR("[协程] %v协程发生了不可预知的错误，请在GitHub提交issue：%v", label, err)
+			buf := make([]byte, 1<<16)
+			runtime.Stack(buf, true)
+			ERROR("traceback:\n%v", string(buf))
 		}
 	}()
 	entry()

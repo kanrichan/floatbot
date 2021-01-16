@@ -3,201 +3,192 @@ package onebot
 import (
 	"database/sql"
 	"fmt"
+	"reflect"
+	"yaya/core"
 
 	_ "github.com/mattn/go-sqlite3"
-
-	"yaya/core"
 )
 
+// runDB 创建各个bot对应的数据库
 func (conf *Yaml) runDB() {
 	defer func() {
 		if err := recover(); err != nil {
 			ERROR("[数据库] DB =X=> =X=> Start Error: %v", err)
-			WARN("[数据库] DB ==> ==> Sleep")
 		}
 	}()
 	for i, _ := range conf.BotConfs {
-		conf.BotConfs[i].DB = openEventDB(conf.BotConfs[i].Bot)
+		conf.BotConfs[i].DBPath = AppPath + core.Int2Str(conf.BotConfs[i].Bot) + "/XQ.db"
+		CreatePath(conf.BotConfs[i].DBPath)
+		conf.BotConfs[i].dbCreate(&XEvent{})
 	}
 }
 
-func openEventDB(botID int64) *sql.DB {
-	CreatePath(AppPath + core.Int2Str(botID))
-	db, err := sql.Open("sqlite3", AppPath+core.Int2Str(botID)+"/event.db")
+// dbCreate 根据结构体生成数据库table，tag为"id"为主键，自增
+func (bot *BotYaml) dbCreate(objptr interface{}) {
+	db, err := sql.Open("sqlite3", bot.DBPath)
 	if err != nil {
-		ERROR("[数据库] Open DB ERROR: %v", err)
+		panic(err)
 	}
-	table := `
-    CREATE TABLE IF NOT EXISTS event (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        self_id INT NULL,
-        message_type INT NULL,
-        sub_type INT NULL,
-        group_id INT NULL,
-        user_id INT NULL,
-        notice_id INT NULL,
-        message TEXT NULL,
-        message_num INT NULL,
-        message_id INT NULL,
-        raw_message BLOB NULL,
-        time INT NULL,
-        ret INT NULL
-    );
-    `
+
+	table := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (", struct2name(objptr))
+	for i, column := range strcut2columns(objptr) {
+		table += fmt.Sprintf(" %s %s NULL", column, column2type(objptr, column))
+		if i+1 != len(strcut2columns(objptr)) {
+			table += ","
+		} else {
+			table += " );"
+		}
+	}
 	if _, err := db.Exec(table); err != nil {
-		ERROR("[数据库] Create DB ERROR: %v", err)
+		panic(err)
 	}
-	return db
+	bot.DB = db
 }
 
-func (xe *XEvent) event2DB(db *sql.DB) {
+// dbInsert 根据结构体插入一条数据
+func (bot *BotYaml) dbInsert(objptr interface{}) int64 {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[数据库] DB =X=> =X=> Start Error: %v", err)
-			WARN("[数据库] DB ==> ==> Sleep")
+			ERROR("[数据库] DB =X=> =X=> Insert Error: %v", err)
 		}
 	}()
-	stmt, err := db.Prepare(`INSERT INTO event(
-		self_id,
-		message_type,
-        sub_type,
-        group_id,
-        user_id,
-        notice_id,
-        message,
-        message_num,
-        message_id,
-        raw_message,
-        time,
-        ret
-		) values(?,?,?,?,?,?,?,?,?,?,?,?)`)
+	rows, err := bot.DB.Query("SELECT * FROM " + struct2name(objptr))
 	if err != nil {
-		ERROR("[数据库] Event =X=> ==> DB ERROR: %v", err)
+		panic(err)
+	}
+	defer rows.Close()
+
+	columns, _ := rows.Columns()
+
+	index := -1
+	names := "("
+	insert := "("
+	for i, column := range columns {
+		if column == "id" {
+			index = i
+			continue
+		}
+		if i+1 != len(columns) {
+			names += column + ","
+			insert += "?,"
+		} else {
+			names += column + ")"
+			insert += "?)"
+		}
 	}
 
-	res, err := stmt.Exec(
-		xe.selfID,
-		xe.mseeageType,
-		xe.subType,
-		xe.groupID,
-		xe.userID,
-		xe.noticID,
-		xe.message,
-		xe.messageNum,
-		xe.messageID,
-		xe.rawMessage,
-		xe.time,
-		xe.ret,
-	)
+	stmt, err := bot.DB.Prepare("INSERT INTO " + struct2name(objptr) + names + " values " + insert)
 	if err != nil {
-		ERROR("[数据库] Event =X=> ==> DB ERROR: %v", err)
+		panic(err)
+	}
+
+	value := []interface{}{}
+	if index == -1 {
+		value = append(value, struct2values(objptr, columns)...)
+	} else {
+		value = append(value, append(struct2values(objptr, columns)[:index], struct2values(objptr, columns)[index+1:]...)...)
+	}
+	res, err := stmt.Exec(value...)
+	if err != nil {
+		panic(err)
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		ERROR("[数据库] Event =X=> ==> DB ERROR: %v", err)
+		panic(err)
 	}
-	xe.cqID = id
+
+	return id
 }
 
-func db2Mseeage(db *sql.DB, bot int64, id int64) XEvent {
-	rows, err := db.Query(fmt.Sprintf("SELECT * FROM event where id=%d", id))
+// dbSelect 根据结构体查询对应的表，cmd可为" id = 0 "
+func (bot *BotYaml) dbSelect(objptr interface{}, cmd string) {
+	rows, err := bot.DB.Query(fmt.Sprintf("SELECT * FROM %s where %s", struct2name(objptr), cmd))
 	if err != nil {
-		ERROR("[数据库] DB =X=> ==> Event ERROR: %v", err)
+		panic(err)
 	}
 	defer rows.Close()
-	var (
-		selfID      int64
-		mseeageType int64
-		subType     int64
-		groupID     int64
-		userID      int64
-		noticID     int64
-		message     string
-		messageNum  int64
-		messageID   int64
-		rawMessage  []byte
-		time        int64
-		ret         int64
-		cqID        int64
-	)
+
 	for rows.Next() {
-		err = rows.Scan(
-			&cqID,
-			&selfID,
-			&mseeageType,
-			&subType,
-			&groupID,
-			&userID,
-			&noticID,
-			&message,
-			&messageNum,
-			&messageID,
-			&rawMessage,
-			&time,
-			&ret,
-		)
-	}
-	if err != nil {
-		ERROR("[数据库] DB =X=> ==> Event ERROR: %v", err)
-	}
-	return XEvent{
-		selfID:      selfID,
-		mseeageType: mseeageType,
-		subType:     subType,
-		groupID:     groupID,
-		userID:      userID,
-		noticID:     noticID,
-		message:     message,
-		messageNum:  messageNum,
-		messageID:   messageID,
-		rawMessage:  rawMessage,
-		time:        time,
-		ret:         ret,
-		cqID:        cqID,
+		columns, err := rows.Columns()
+		if err != nil {
+			panic(err)
+		}
+		err = rows.Scan(struct2addrs(objptr, columns)...)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
-func (xe *XEvent) xq2cqid(db *sql.DB) {
-	rows, err := db.Query(fmt.Sprintf("SELECT * FROM event where message_num=%d", xe.messageNum))
-	if err != nil {
-		ERROR("[数据库] DB =X=> ==> Event ERROR: %v", err)
+// strcut2columns 反射得到结构体的 tag 数组
+func strcut2columns(objptr interface{}) []string {
+	var columns []string
+	elem := reflect.ValueOf(objptr).Elem()
+	for i, flen := 0, elem.Type().NumField(); i < flen; i++ {
+		columns = append(columns, elem.Type().Field(i).Tag.Get("db"))
 	}
-	defer rows.Close()
-	var (
-		selfID      int64
-		mseeageType int64
-		subType     int64
-		groupID     int64
-		userID      int64
-		noticID     int64
-		message     string
-		messageNum  int64
-		messageID   int64
-		rawMessage  []byte
-		time        int64
-		ret         int64
-		cqID        int64
-	)
-	for rows.Next() {
-		err = rows.Scan(
-			&cqID,
-			&selfID,
-			&mseeageType,
-			&subType,
-			&groupID,
-			&userID,
-			&noticID,
-			&message,
-			&messageNum,
-			&messageID,
-			&rawMessage,
-			&time,
-			&ret,
-		)
+	return columns
+}
+
+// struct2name 反射得到结构体的名字
+func struct2name(objptr interface{}) string {
+	return reflect.ValueOf(objptr).Elem().Type().Name()
+}
+
+// column2type 反射得到结构体对应 tag 的 数据库数据类型
+func column2type(objptr interface{}, column string) string {
+	type_ := ""
+	elem := reflect.ValueOf(objptr).Elem()
+	for i, flen := 0, elem.Type().NumField(); i < flen; i++ {
+		if column == elem.Type().Field(i).Tag.Get("db") {
+			type_ = elem.Field(i).Type().String()
+		}
 	}
-	if err != nil {
-		ERROR("[数据库] DB =X=> ==> Event ERROR: %v", err)
+	if column == "id" {
+		return "INTEGER PRIMARY KEY"
 	}
-	xe.cqID = cqID
+	switch type_ {
+	case "int64":
+		return "INT"
+	case "string":
+		return "TEXT"
+	default:
+		return "TEXT"
+	}
+}
+
+// struct2addrs 反射得到结构体对应数据库字段的属性地址
+func struct2addrs(objptr interface{}, columns []string) []interface{} {
+	var addrs []interface{}
+	elem := reflect.ValueOf(objptr).Elem()
+	for _, column := range columns {
+		for i, flen := 0, elem.Type().NumField(); i < flen; i++ {
+			if column == elem.Type().Field(i).Tag.Get("db") {
+				addrs = append(addrs, elem.Field(i).Addr().Interface())
+			}
+		}
+	}
+	return addrs
+}
+
+// struct2values 反射得到结构体对应数据库字段的属性值
+func struct2values(objptr interface{}, columns []string) []interface{} {
+	var values []interface{}
+	elem := reflect.ValueOf(objptr).Elem()
+	for _, column := range columns {
+		for i, flen := 0, elem.Type().NumField(); i < flen; i++ {
+			if column == elem.Type().Field(i).Tag.Get("db") {
+				switch elem.Field(i).Type().String() {
+				case "int64":
+					values = append(values, elem.Field(i).Int())
+				case "string":
+					values = append(values, elem.Field(i).String())
+				default:
+					values = append(values, elem.Field(i).String())
+				}
+			}
+		}
+	}
+	return values
 }

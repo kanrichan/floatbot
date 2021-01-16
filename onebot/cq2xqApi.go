@@ -170,19 +170,19 @@ func cq2xqDeleteMsg(bot int64, p gjson.Result) Result {
 	var xe XEvent
 	for i, _ := range Conf.BotConfs {
 		if bot == Conf.BotConfs[i].Bot && Conf.BotConfs[i].DB != nil {
-			xe = db2Mseeage(Conf.BotConfs[i].DB, bot, p.Get("message_id").Int())
+			Conf.BotConfs[i].dbSelect(&xe, "id="+p.Get("message_id").Str)
 			break
 		}
 		return resultFail(map[string]interface{}{"error": "空指针"})
 	}
 	core.WithdrawMsgEX(
-		xe.selfID,
-		xe.mseeageType,
-		xe.groupID,
-		xe.userID,
-		xe.messageNum,
-		xe.messageID,
-		xe.time,
+		xe.SelfID,
+		xe.MseeageType,
+		xe.GroupID,
+		xe.UserID,
+		xe.MessageNum,
+		xe.MessageID,
+		xe.Time,
 	)
 	return resultOK(map[string]interface{}{})
 }
@@ -191,13 +191,13 @@ func cq2xqGetMsg(bot int64, p gjson.Result) Result {
 	var xe XEvent
 	for i, _ := range Conf.BotConfs {
 		if bot == Conf.BotConfs[i].Bot {
-			xe = db2Mseeage(Conf.BotConfs[i].DB, bot, p.Get("message_id").Int())
+			Conf.BotConfs[i].dbSelect(&xe, "id="+p.Get("message_id").Str)
 			break
 		}
 		return resultFail(map[string]interface{}{"error": "空指针"})
 	}
 	Tsubtype := "error"
-	switch xe.mseeageType {
+	switch xe.MseeageType {
 	case 0:
 		Tsubtype = "other"
 	case 1:
@@ -212,12 +212,12 @@ func cq2xqGetMsg(bot int64, p gjson.Result) Result {
 		Tsubtype = "error"
 	}
 	return resultOK(map[string]interface{}{
-		"time":         xe.time,
+		"time":         xe.Time,
 		"message_type": Tsubtype,
 		"message_id":   p.Get("message_id").Int(),
-		"real_id":      xe.messageID,
+		"real_id":      xe.MessageID,
 		"sender": Event{
-			"user_id":  xe.userID,
+			"user_id":  xe.UserID,
 			"nickname": "unknown",
 			"sex":      "unknown",
 			"age":      0,
@@ -227,7 +227,7 @@ func cq2xqGetMsg(bot int64, p gjson.Result) Result {
 			"role":     "admin",
 			"title":    "unknown",
 		},
-		"message": xe.message,
+		"message": xe.Message,
 	})
 }
 

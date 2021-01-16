@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -123,6 +124,9 @@ func (h *HTTPYaml) apiReply(path string, api []byte) []byte {
 	defer func() {
 		if err := recover(); err != nil {
 			ERROR("[响应][HTTP][%v] BOT X %v:%v Error: %v", h.BotID, h.Host, h.Port, err)
+			buf := make([]byte, 1<<16)
+			runtime.Stack(buf, true)
+			ERROR("traceback:\n%v", string(buf))
 		}
 	}()
 
