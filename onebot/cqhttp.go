@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"github.com/tidwall/gjson"
 )
 
 // runOnebot run all server in config
@@ -95,15 +93,4 @@ func heartEvent(interval int64, bot int64) []byte {
 	}
 	event, _ := json.Marshal(heartbeat)
 	return event
-}
-
-func tieEcho(ret Result, req gjson.Result) Result {
-	if req.Get("echo").Int() != 0 {
-		ret.Echo = req.Get("echo").Int()
-	} else if req.Get("echo").Str != "" {
-		ret.Echo = req.Get("echo").Str
-	} else {
-		ret.Echo, _ = req.Get("echo").Value().(map[string]interface{})
-	}
-	return ret
 }

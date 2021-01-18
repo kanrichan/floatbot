@@ -29,6 +29,7 @@ func onStart() {
 		}
 		go Conf.runDB()
 		go Conf.runOnebot()
+		apiMap.Register(&apiMap.this)
 	}
 	FirstStart = false
 }

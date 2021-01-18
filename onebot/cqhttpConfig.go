@@ -95,6 +95,15 @@ type WSSYaml struct {
 	Heart             chan []byte       `yaml:"-"`
 }
 
+func (conf *Yaml) getBotConfig(bot int64) *BotYaml {
+	for i, _ := range conf.BotConfs {
+		if bot == conf.BotConfs[i].Bot {
+			return conf.BotConfs[i]
+		}
+	}
+	return nil
+}
+
 func DefaultConfig() *Yaml {
 	return &Yaml{
 		Version: "1.1.2",
