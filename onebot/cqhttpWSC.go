@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/hjson/hjson-go"
 	"github.com/tidwall/gjson"
 )
 
@@ -50,7 +51,7 @@ func (c *WSCYaml) handShake() {
 		"sub_type":        "connect",
 		"time":            fmt.Sprint(time.Now().Unix()),
 	}
-	event, _ := json.Marshal(handshake)
+	event, _ := hjson.Marshal(handshake)
 	if c.Status == 1 {
 		c.Heart <- event
 	}
@@ -65,14 +66,14 @@ func (c *WSCYaml) listen() {
 		}
 	}()
 	c.connect()
-	// 等待wsc连接成功
+	// TODO 等待wsc连接成功
 	for {
 		if c.Status == 1 {
 			break
 		}
 		time.Sleep(time.Second * 1)
 	}
-	// 监听wsc
+	// TODO 监听wsc
 	INFO("[监听][反向WS][%v] BOT ==> ==> %v ", c.BotID, c.Url)
 	for {
 		_, buf, err := c.Conn.ReadMessage()
@@ -90,7 +91,7 @@ func (c *WSCYaml) send() {
 			c.send()
 		}
 	}()
-	// 等待wsc连接成功
+	// TODO 等待wsc连接成功
 	for {
 		if c.Status == 1 {
 			break
@@ -120,25 +121,22 @@ func (c *WSCYaml) send() {
 	}
 }
 
-func (c *WSCYaml) apiReply(api []byte) {
+func (c *WSCYaml) apiReply(data []byte) {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[响应][HTTP][%v] BOT X %v Error: %v", c.BotID, c.Url, err)
+			ERROR("[响应][反向WS][%v] BOT X %v Error: %v", c.BotID, c.Url, err)
 		}
 	}()
 
-	req := gjson.ParseBytes(api)
-	action := strings.ReplaceAll(req.Get("action").Str, "_async", "")
-	params := req.Get("params")
-	DEBUG("[响应][HTTP][%v] BOT <- %v API: %v Params: %v", c.BotID, c.Url, action, string(api))
+	obj := gjson.ParseBytes(data)
 
-	if f, ok := apiList[action]; ok {
-		ret := tieEcho(f(c.BotID, params), req)
-		send, _ := json.Marshal(ret)
-		c.Event <- send
-	} else {
-		ret := tieEcho(resultFail("no such api"), req)
-		send, _ := json.Marshal(ret)
-		c.Event <- send
-	}
+	action := obj.Get("action").Str
+	action = strings.ReplaceAll(action, "_async", "")
+	params := obj.Get("params")
+	DEBUG("[响应][反向WS][%v] BOT <- %v API: %v Params: %v", c.BotID, c.Url, action, string(data))
+
+	ret := apiMap.CallApi(action, c.BotID, params)
+	ret.Echo = obj.Get("echo").Value()
+	send, _ := json.Marshal(ret)
+	c.Event <- send
 }

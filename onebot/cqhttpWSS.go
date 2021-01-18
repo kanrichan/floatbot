@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/hjson/hjson-go"
 	"github.com/tidwall/gjson"
 )
 
@@ -44,7 +45,7 @@ func (s *WSSYaml) handShake() {
 		"sub_type":        "connect",
 		"time":            fmt.Sprint(time.Now().Unix()),
 	}
-	event, _ := json.Marshal(handshake)
+	event, _ := hjson.Marshal(handshake)
 	if s.Status == 1 {
 		s.Event <- event
 	}
@@ -129,25 +130,21 @@ func (s *WSSYaml) send() {
 	}
 }
 
-func (s *WSSYaml) apiReply(api []byte) {
+func (s *WSSYaml) apiReply(data []byte) {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[响应][HTTP][%v] BOT X %v:%v Error: %v", s.BotID, s.Host, s.Port, err)
+			ERROR("[响应][正向WS][%v] BOT X %v:%v Error: %v", s.BotID, s.Host, s.Port, err)
 		}
 	}()
+	obj := gjson.ParseBytes(data)
 
-	req := gjson.ParseBytes(api)
-	action := strings.ReplaceAll(req.Get("action").Str, "_async", "")
-	params := req.Get("params")
-	DEBUG("[响应][HTTP][%v] BOT <- %v:%v API: %v Params: %v", s.BotID, s.Host, s.Port, action, string(api))
+	action := obj.Get("action").Str
+	action = strings.ReplaceAll(action, "_async", "")
+	params := obj.Get("params")
+	DEBUG("[响应][正向WS][%v] BOT <- %v:%v API: %v Params: %v", s.BotID, s.Host, s.Port, action, string(data))
 
-	if f, ok := apiList[action]; ok {
-		ret := tieEcho(f(s.BotID, params), req)
-		send, _ := json.Marshal(ret)
-		s.Event <- send
-	} else {
-		ret := tieEcho(resultFail("no such api"), req)
-		send, _ := json.Marshal(ret)
-		s.Event <- send
-	}
+	ret := apiMap.CallApi(action, s.BotID, params)
+	ret.Echo = obj.Get("echo").Value()
+	send, _ := json.Marshal(ret)
+	s.Event <- send
 }

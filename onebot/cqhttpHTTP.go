@@ -120,7 +120,7 @@ func (h *HTTPYaml) send() {
 	}
 }
 
-func (h *HTTPYaml) apiReply(path string, api []byte) []byte {
+func (h *HTTPYaml) apiReply(path string, data []byte) []byte {
 	defer func() {
 		if err := recover(); err != nil {
 			ERROR("[响应][HTTP][%v] BOT X %v:%v Error: %v", h.BotID, h.Host, h.Port, err)
@@ -131,39 +131,121 @@ func (h *HTTPYaml) apiReply(path string, api []byte) []byte {
 	}()
 
 	action := strings.ReplaceAll(path, "/", "")
-	params := gjson.ParseBytes(api)
-	DEBUG("[响应][HTTP][%v] BOT <- %v:%v API: %v Params: %v", h.BotID, h.Host, h.Port, action, string(api))
+	DEBUG("[响应][HTTP][%v] BOT <- %v:%v API: %v Params: %v", h.BotID, h.Host, h.Port, action, string(data))
 
-	if f, ok := apiList[action]; ok {
-		ret := f(h.BotID, params)
-		send, _ := json.Marshal(ret)
-		return send
-	} else {
-		ret := resultFail("no such api")
-		send, _ := json.Marshal(ret)
-		return send
-	}
+	params := gjson.ParseBytes(data)
+	ret := apiMap.CallApi(action, h.BotID, params)
+	send, _ := json.Marshal(ret)
+	return send
 }
 
 func (h *HTTPYaml) fastReply(send []byte, reply []byte) {
 	defer func() {
 		if err := recover(); err != nil {
-			ERROR("[快速回复][HTTP][%v] BOT X %v:%v Error: %v", h.BotID, h.Host, err)
+			ERROR("[快速回复][HTTP][%v] BOT X %v:%v Error: %v", h.BotID, h.Host, h.Port, err)
 		}
 	}()
 	DEBUG("[快速回复][HTTP][%v] BOT <- %v:%v API: %v", h.BotID, h.Host, h.Port, string(reply))
 
-	action := ".handle_quick_operation"
-	context := map[string]interface{}{}
-	json.Unmarshal(send, &context)
-	operation := map[string]interface{}{}
-	json.Unmarshal(reply, &operation)
-	get, _ := json.Marshal(map[string]interface{}{
-		"context":   context,
-		"operation": operation,
-	})
-	params := gjson.ParseBytes(get)
-	if f, ok := apiList[action]; ok {
-		f(h.BotID, params)
+	context := gjson.ParseBytes(send)
+	operation := gjson.ParseBytes(reply)
+
+	switch context.Get("path post_type").Str {
+	case "message":
+		switch {
+		case operation.Get("reply").Exists():
+			var text string
+			if operation.Get("at_sender").Bool() {
+				text += fmt.Sprintf("[CQ:at,qq=%s]", context.Get("user_id").Str)
+			}
+			text += unicode2chinese(operation.Get("reply").Str)
+			data, _ := json.Marshal(
+				map[string]interface{}{
+					"message_type": context.Get("message_type").Str,
+					"group_id":     context.Get("group_id").Int(),
+					"user_id":      context.Get("user_id").Int(),
+					"message":      text,
+				},
+			)
+			apiMap.CallApi(
+				"send_msg",
+				h.BotID,
+				gjson.ParseBytes(data),
+			)
+			return
+		case operation.Get("delete").Bool():
+			data, _ := json.Marshal(
+				map[string]interface{}{
+					"message_id": context.Get("message_id").Int(),
+				},
+			)
+			apiMap.CallApi(
+				"delete_msg",
+				h.BotID,
+				gjson.ParseBytes(data),
+			)
+			return
+		case operation.Get("kick").Bool():
+			data, _ := json.Marshal(
+				map[string]interface{}{
+					"group_id":           context.Get("group_id").Int(),
+					"user_id":            context.Get("user_id").Int(),
+					"reject_add_request": false,
+				},
+			)
+			apiMap.CallApi(
+				"set_group_kick",
+				h.BotID,
+				gjson.ParseBytes(data),
+			)
+			return
+		case operation.Get("ban").Bool():
+			data, _ := json.Marshal(
+				map[string]interface{}{
+					"group_id": context.Get("group_id").Int(),
+					"user_id":  context.Get("user_id").Int(),
+					"duration": context.Get("duration").Int(),
+				},
+			)
+			apiMap.CallApi(
+				"set_group_ban",
+				h.BotID,
+				gjson.ParseBytes(data),
+			)
+			return
+		}
+	case "request":
+		if operation.Get("approve").Exists() {
+			switch {
+			case operation.Get("request_type").Str == "friend":
+				data, _ := json.Marshal(
+					map[string]interface{}{
+						"flag":    context.Get("flag").Str,
+						"approve": context.Get("approve").Bool(),
+						"remark":  context.Get("remark").Str,
+					},
+				)
+				apiMap.CallApi(
+					"set_friend_add_request",
+					h.BotID,
+					gjson.ParseBytes(data),
+				)
+				return
+			case operation.Get("request_type").Str == "group":
+				data, _ := json.Marshal(
+					map[string]interface{}{
+						"flag":    context.Get("flag").Str,
+						"approve": context.Get("approve").Bool(),
+						"reason":  context.Get("reason").Str,
+					},
+				)
+				apiMap.CallApi(
+					"set_group_add_request",
+					h.BotID,
+					gjson.ParseBytes(data),
+				)
+				return
+			}
+		}
 	}
 }
