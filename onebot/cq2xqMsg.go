@@ -14,43 +14,83 @@ import (
 
 var Split bool
 
-type cq2xqMsgToWhere struct {
+type msgTarget struct {
 	BotID   int64
 	Type_   int64
 	GroupID int64
 	UserID  int64
 }
 
-func cq2xqMessageType(p gjson.Result) int64 {
-	switch {
-	case p.Get("message_type").Str == "private":
-		return 1
-	case p.Get("message_type").Str == "group":
-		return 2
-	case p.Get("group_id").Int() != 0:
-		return 2
+func xq2cqMsgType(type_ int64) string {
+	switch type_ {
 	default:
-		return 1
+		return "friend"
+	case 1:
+		return "friend"
+	case 2:
+		return "group"
 	}
 }
 
-func cq2xqSendMsg(bot int64, p gjson.Result) Result {
-	target := cq2xqMsgToWhere{
-		BotID:   bot,
-		Type_:   cq2xqMessageType(p),
-		GroupID: p.Get("group_id").Int(),
-		UserID:  p.Get("user_id").Int(),
+func cq2xqMsgType(type_ string) int64 {
+	switch type_ {
+	default:
+		return 1
+	case "friend":
+		return 1
+	case "group":
+		return 2
+	}
+}
+
+func xq2cqSex(sex int64) string {
+	switch sex {
+	default:
+		return "unknown"
+	case 1:
+		return "male"
+	case 2:
+		return "female"
+	}
+}
+
+func (this *Routers) SendMsg(bot *BotYaml, params gjson.Result) Result {
+	var type_ string = params.Get("message_type").Str
+	var groupID int64 = params.Get("group_id").Int()
+	var userID int64 = params.Get("user_id").Int()
+	var message = params.Get("message")
+	if type_ == "group" && groupID == 0 {
+		return makeError("无效'group_id'")
+	}
+	if type_ == "private" && userID == 0 {
+		return makeError("无效'user_id'")
+	}
+	if groupID == 0 && userID == 0 {
+		return makeError("无效'group_id'或'user_id'")
+	}
+	if type_ == "" {
+		if groupID != 0 {
+			type_ = "group"
+		} else {
+			type_ = "private"
+		}
+	}
+	target := msgTarget{
+		BotID:   bot.Bot,
+		Type_:   cq2xqMsgType(type_),
+		GroupID: groupID,
+		UserID:  userID,
 	}
 
 	var out string = ""
 	var bubble int64 = 0
 	var msg gjson.Result
 
-	if len(p.Get("message.#.type").Array()) == 0 {
-		b, _ := json.Marshal(cqCode2Array(p.Get("message").Str))
+	if len(message.Get("#.type").Array()) == 0 {
+		b, _ := json.Marshal(cqCode2Array(message.Str))
 		msg = gjson.ParseBytes(b)
 	} else {
-		msg = p.Get("message")
+		msg = message
 	}
 
 	for _, message := range msg.Array() {
@@ -131,7 +171,7 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 					time.Sleep(time.Millisecond * 200)
 				}
 			}
-			return resultOK(map[string]interface{}{"message_id": 0})
+			return makeOk(map[string]interface{}{"message_id": 0})
 		}
 		data := core.SendMsgEX_V2(
 			target.BotID,
@@ -145,24 +185,24 @@ func cq2xqSendMsg(bot int64, p gjson.Result) Result {
 		)
 		// 获取CQID返回
 		if data != "" {
-			p = gjson.Parse(data[:strings.LastIndex(data, "}")])
-			if p.Get("sendok").Bool() {
+			ret := gjson.Parse(data[:strings.LastIndex(data, "}")])
+			if ret.Get("sendok").Bool() {
 				var xe XEvent
-				xe.MessageID = p.Get("msgid").Int()
-				xe.MessageNum = p.Get("msgno").Int()
+				xe.MessageID = ret.Get("msgid").Int()
+				xe.MessageNum = ret.Get("msgno").Int()
 				xe.ID = 0
 				for i, _ := range Conf.BotConfs {
-					if bot == Conf.BotConfs[i].Bot && bot != 0 && Conf.BotConfs[i].DB != nil {
+					if bot.Bot == Conf.BotConfs[i].Bot && bot.Bot != 0 && Conf.BotConfs[i].DB != nil {
 						time.Sleep(time.Millisecond * 100)
 						Conf.BotConfs[i].dbSelect(&xe, "message_num="+core.Int2Str(xe.MessageNum))
-						return resultOK(map[string]interface{}{"message_id": xe.ID})
+						return makeOk(map[string]interface{}{"message_id": xe.ID})
 					}
 				}
 			}
 		}
-		return resultFail(map[string]interface{}{"error": "可能受到风控"})
+		return makeError("可能受到风控")
 	}
-	return resultOK(map[string]interface{}{"message_id": 0})
+	return makeOk(map[string]interface{}{"message_id": 0})
 }
 
 func messageSplit(texts string) string {
@@ -189,23 +229,23 @@ func messageSplit(texts string) string {
 	return send
 }
 
-func (target cq2xqMsgToWhere) cq2xqText(message gjson.Result) string {
+func (target msgTarget) cq2xqText(message gjson.Result) string {
 	return emoji2xq(message.Get("data.*").Str)
 }
 
-func (target cq2xqMsgToWhere) cq2xqFace(message gjson.Result) string {
+func (target msgTarget) cq2xqFace(message gjson.Result) string {
 	return fmt.Sprintf("[Face%s.gif]", message.Get("data.*").Str)
 }
 
-func (target cq2xqMsgToWhere) cq2xqAt(message gjson.Result) string {
+func (target msgTarget) cq2xqAt(message gjson.Result) string {
 	return fmt.Sprintf("[@%s] ", message.Get("data.*").Str)
 }
 
-func (target cq2xqMsgToWhere) cq2xqEmoji(message gjson.Result) string {
+func (target msgTarget) cq2xqEmoji(message gjson.Result) string {
 	return fmt.Sprintf("[emoji=%s]", message.Get("data.*").Str)
 }
 
-func (target cq2xqMsgToWhere) cq2xqRps(message gjson.Result) string {
+func (target msgTarget) cq2xqRps(message gjson.Result) string {
 	return []string{
 		"[魔法猜拳] 石头",
 		"[魔法猜拳] 剪刀",
@@ -213,7 +253,7 @@ func (target cq2xqMsgToWhere) cq2xqRps(message gjson.Result) string {
 	}[rand.Intn(3)]
 }
 
-func (target cq2xqMsgToWhere) cq2xqDice(message gjson.Result) string {
+func (target msgTarget) cq2xqDice(message gjson.Result) string {
 	return []string{
 		"[魔法骰子] 1",
 		"[魔法骰子] 2",
@@ -224,7 +264,7 @@ func (target cq2xqMsgToWhere) cq2xqDice(message gjson.Result) string {
 	}[rand.Intn(6)]
 }
 
-func (target cq2xqMsgToWhere) cq2xqImage(message gjson.Result) string {
+func (target msgTarget) cq2xqImage(message gjson.Result) string {
 	url := strings.ReplaceAll(message.Get("data.url").Str, `\/`, `/`)
 	image := strings.ReplaceAll(message.Get("data.file").Str, `\/`, `/`)
 	showID := message.Get("data.id").Int() - 40000
@@ -247,7 +287,20 @@ func (target cq2xqMsgToWhere) cq2xqImage(message gjson.Result) string {
 	default:
 		switch {
 		case url != "":
-			return fmt.Sprintf("[pic=%s]", Url2Image(url))
+			start := strings.LastIndex(url, "-")
+			end := strings.LastIndex(url, "/0")
+			if start == 0 || end == 0 {
+				return fmt.Sprintf("[pic=%s]", Url2Image(url))
+			}
+			md5 := url[start+1 : end]
+			return fmt.Sprintf(
+				"[pic={%s-%s-%s-%s-%s}.jpg]",
+				md5[:8],
+				md5[8:12],
+				md5[12:16],
+				md5[16:20],
+				md5[20:],
+			)
 		case strings.Contains(image, "base64://"):
 			return fmt.Sprintf("[pic=%s]", Base642Image(image[9:]))
 		case strings.Contains(image, "file:///"):
@@ -262,7 +315,7 @@ func (target cq2xqMsgToWhere) cq2xqImage(message gjson.Result) string {
 	}
 }
 
-func (target cq2xqMsgToWhere) cq2xqRecord(message gjson.Result) string {
+func (target msgTarget) cq2xqRecord(message gjson.Result) string {
 	record := strings.ReplaceAll(message.Get("data.file").Str, `\/`, `/`)
 	switch {
 	case strings.Contains(record, "base64://"):
@@ -278,7 +331,7 @@ func (target cq2xqMsgToWhere) cq2xqRecord(message gjson.Result) string {
 	}
 }
 
-func (target cq2xqMsgToWhere) cq2xqVideo(message gjson.Result) string {
+func (target msgTarget) cq2xqVideo(message gjson.Result) string {
 	DEBUG("[CQ码解析] %v 不支持", message.Str)
 	core.SendMsgEX_V2(
 		target.BotID,
@@ -293,7 +346,7 @@ func (target cq2xqMsgToWhere) cq2xqVideo(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqMusic(message gjson.Result) string {
+func (target msgTarget) cq2xqMusic(message gjson.Result) string {
 	switch {
 	case message.Get("data.type").Str == "custom":
 		core.SendXML(
@@ -339,7 +392,7 @@ func (target cq2xqMsgToWhere) cq2xqMusic(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqWeather(message gjson.Result) string {
+func (target msgTarget) cq2xqWeather(message gjson.Result) string {
 	core.SendJSON(
 		target.BotID,
 		1,
@@ -363,7 +416,7 @@ func (target cq2xqMsgToWhere) cq2xqWeather(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqXml(message gjson.Result) string {
+func (target msgTarget) cq2xqXml(message gjson.Result) string {
 	core.SendXML(
 		target.BotID,
 		1,
@@ -376,7 +429,7 @@ func (target cq2xqMsgToWhere) cq2xqXml(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqJson(message gjson.Result) string {
+func (target msgTarget) cq2xqJson(message gjson.Result) string {
 	core.SendJSON(
 		target.BotID,
 		1,
@@ -388,7 +441,7 @@ func (target cq2xqMsgToWhere) cq2xqJson(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqShare(message gjson.Result) string {
+func (target msgTarget) cq2xqShare(message gjson.Result) string {
 	core.SendXML(
 		target.BotID,
 		1,
@@ -413,7 +466,7 @@ func (target cq2xqMsgToWhere) cq2xqShare(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqContact(message gjson.Result) string {
+func (target msgTarget) cq2xqContact(message gjson.Result) string {
 	switch message.Get("data.type").Str {
 	case "qq":
 		core.SendXML(
@@ -482,7 +535,7 @@ func (target cq2xqMsgToWhere) cq2xqContact(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqLocation(message gjson.Result) string {
+func (target msgTarget) cq2xqLocation(message gjson.Result) string {
 	core.SendJSON(
 		target.BotID,
 		1,
@@ -504,7 +557,7 @@ func (target cq2xqMsgToWhere) cq2xqLocation(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqShake(message gjson.Result) string {
+func (target msgTarget) cq2xqShake(message gjson.Result) string {
 	core.ShakeWindow(
 		target.BotID,
 		target.UserID,
@@ -512,7 +565,7 @@ func (target cq2xqMsgToWhere) cq2xqShake(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqPoke(message gjson.Result) string {
+func (target msgTarget) cq2xqPoke(message gjson.Result) string {
 	DEBUG("[CQ码解析] %v 不支持", message.Str)
 	core.SendMsgEX_V2(
 		target.BotID,
@@ -531,7 +584,7 @@ func (target cq2xqMsgToWhere) cq2xqPoke(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqAnonymous(message gjson.Result) string {
+func (target msgTarget) cq2xqAnonymous(message gjson.Result) string {
 	core.SendMsgEX_V2(
 		target.BotID,
 		target.Type_,
@@ -545,7 +598,7 @@ func (target cq2xqMsgToWhere) cq2xqAnonymous(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqReply(message gjson.Result) string {
+func (target msgTarget) cq2xqReply(message gjson.Result) string {
 	DEBUG("[CQ码解析] %v 不支持", message.Str)
 	core.SendMsgEX_V2(
 		target.BotID,
@@ -563,7 +616,7 @@ func (target cq2xqMsgToWhere) cq2xqReply(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqForward(message gjson.Result) string {
+func (target msgTarget) cq2xqForward(message gjson.Result) string {
 	DEBUG("[CQ码解析] %v 不支持", message.Str)
 	core.SendMsgEX_V2(
 		target.BotID,
@@ -581,7 +634,7 @@ func (target cq2xqMsgToWhere) cq2xqForward(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqNode(message gjson.Result) string {
+func (target msgTarget) cq2xqNode(message gjson.Result) string {
 	DEBUG("[CQ码解析] %v 不支持", message.Str)
 	core.SendMsgEX_V2(
 		target.BotID,
@@ -599,7 +652,7 @@ func (target cq2xqMsgToWhere) cq2xqNode(message gjson.Result) string {
 	return ""
 }
 
-func (target cq2xqMsgToWhere) cq2xqDefault(message gjson.Result) string {
+func (target msgTarget) cq2xqDefault(message gjson.Result) string {
 	DEBUG("[CQ码解析] %v 不支持", message.Str)
 	core.SendMsgEX_V2(
 		target.BotID,
