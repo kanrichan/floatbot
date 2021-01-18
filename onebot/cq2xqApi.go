@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/tidwall/gjson"
 
 	"yaya/core"
 )
+
+var apiMap ApiMap
 
 type Result struct {
 	Status  string      `json:"status"`
@@ -18,137 +22,98 @@ type Result struct {
 	Echo    interface{} `json:"echo"`
 }
 
-var apiList = map[string]func(int64, gjson.Result) Result{
-	"send_msg": func(bot int64, p gjson.Result) Result {
-		return cq2xqSendMsg(bot, p)
-	},
-	"send_private_msg": func(bot int64, p gjson.Result) Result {
-		return cq2xqSendMsg(bot, p)
-	},
-	"send_group_msg": func(bot int64, p gjson.Result) Result {
-		return cq2xqSendMsg(bot, p)
-	},
-	"delete_msg": func(bot int64, p gjson.Result) Result {
-		return cq2xqDeleteMsg(bot, p)
-	},
-	"get_msg": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetMsg(bot, p)
-	},
-	"get_forward_msg": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetForwardMsg(bot, p)
-	},
-	"send_like": func(bot int64, p gjson.Result) Result {
-		return cq2xqSendLike(bot, p)
-	},
-	"set_group_kick": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetGroupKick(bot, p)
-	},
-	"set_group_ban": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetGroupBan(bot, p)
-	},
-	"set_group_anonymous_ban": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetGroupAnonymousBan(bot, p)
-	},
-	"set_group_whole_ban": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetGroupWholeBan(bot, p)
-	},
-	"set_group_admin": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetGroupAdmin(bot, p)
-	},
-	"set_group_anonymous": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetGroupAnonymous(bot, p)
-	},
-	"set_group_card": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetGroupCard(bot, p)
-	},
-	"set_group_name": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetGroupName(bot, p)
-	},
-	"set_group_leave": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetGroupLeave(bot, p)
-	},
-	"set_group_special_title": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetGroupSpecialTitle(bot, p)
-	},
-	"set_friend_add_request": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetFriendAddRequest(bot, p)
-	},
-	"set_group_add_request": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetGroupAddRequest(bot, p)
-	},
-	"get_login_info": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetLoginInfo(bot, p)
-	},
-	"get_stranger_info": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetStrangerInfo(bot, p)
-	},
-	"get_friend_list": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetFriendList(bot, p)
-	},
-	"get_group_info": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetGroupInfo(bot, p)
-	},
-	"get_group_list": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetGroupList(bot, p)
-	},
-	"get_group_member_info": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetGroupMemberInfo(bot, p)
-	},
-	"get_group_member_list": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetGroupMemberList(bot, p)
-	},
-	"get_group_honor_info": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetGroupHonorInfo(bot, p)
-	},
-	"get_cookies": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetCookies(bot, p)
-	},
-	"get_csrf_token": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetCsrfToken(bot, p)
-	},
-	"get_credentials": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetCredentials(bot, p)
-	},
-	"get_record": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetRecord(bot, p)
-	},
-	"get_image": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetImage(bot, p)
-	},
-	"can_send_image": func(bot int64, p gjson.Result) Result {
-		return cq2xqCanSendImage(bot, p)
-	},
-	"can_send_record": func(bot int64, p gjson.Result) Result {
-		return cq2xqCanSendRecord(bot, p)
-	},
-	"get_status": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetStatus(bot, p)
-	},
-	"get_version_info": func(bot int64, p gjson.Result) Result {
-		return cq2xqGetVersionInfo(bot, p)
-	},
-	"set_restart": func(bot int64, p gjson.Result) Result {
-		return cq2xqSetRestart(bot, p)
-	},
-	"clean_cache": func(bot int64, p gjson.Result) Result {
-		return cq2xqCleanCache(bot, p)
-	},
-	".handle_quick_operation": func(bot int64, p gjson.Result) Result {
-		return cq2xqHandleQuickOperation(bot, p)
-	},
-	// 先驱新增
-	"out_put_log": func(bot int64, p gjson.Result) Result {
-		return cq2xqOutPutLog(bot, p)
-	},
-	"send_json": func(bot int64, p gjson.Result) Result {
-		return cq2xqSendJson(bot, p)
-	},
-	"send_xml": func(bot int64, p gjson.Result) Result {
-		return cq2xqSendXml(bot, p)
-	},
+// Routers XQApi路由
+type Routers struct {
 }
 
-func resultOK(data interface{}) Result {
+// ApiMap XQApi的name与method对应表
+type ApiMap struct {
+	this     Routers
+	name     []string
+	function []func(this *Routers, bot *BotYaml, params gjson.Result) Result
+}
+
+// Get 二分法获得字符串对应的method
+func (apiMap *ApiMap) Get(name string) func(this *Routers, bot *BotYaml, params gjson.Result) Result {
+	length := len(apiMap.name)
+	low := 0
+	high := length - 1
+	var fun func(this *Routers, bot *BotYaml, params gjson.Result) Result
+	for low <= high {
+		mid := (low + high) / 2
+		switch {
+		default:
+			fun = apiMap.function[mid]
+			return fun
+		case apiMap.name[mid] > name:
+			high = mid - 1
+		case apiMap.name[mid] < name:
+			low = mid + 1
+		}
+	}
+	return nil
+}
+
+// Register 反射所有Routers的method并注册
+func (apiMap *ApiMap) Register(this *Routers) {
+	obj := reflect.TypeOf(this)
+	var i int = 0
+	for i < obj.NumMethod() {
+		apiMap.name = append(apiMap.name, obj.Method(i).Name)
+		apiMap.function = append(apiMap.function, obj.Method(i).Func.Interface().(func(this *Routers, bot *BotYaml, params gjson.Result) Result))
+		i++
+	}
+	sort.Sort(apiMap)
+}
+
+func (apiMap *ApiMap) Len() int { return len(apiMap.name) }
+
+func (apiMap *ApiMap) Less(i, j int) bool { return apiMap.name[i] < apiMap.name[j] }
+
+func (apiMap *ApiMap) Swap(i, j int) {
+	apiMap.name[i], apiMap.name[j] = apiMap.name[j], apiMap.name[i]
+	apiMap.function[i], apiMap.function[j] = apiMap.function[j], apiMap.function[i]
+}
+
+// CallApi 调用XQApi
+func (apiMap *ApiMap) CallApi(action string, bot int64, params gjson.Result) Result {
+	name := action2fname(action)
+	if apiMap.Get(name) == nil {
+		return makeError("no such api")
+	}
+	botConfig := Conf.getBotConfig(bot)
+	return apiMap.Get(name)(&apiMap.this, botConfig, params)
+}
+
+// action2func OneBot的action转驼峰命名
+func action2fname(action string) string {
+	up := true
+	name := ""
+	for _, r := range action {
+		if up {
+			name += strings.ToUpper(string(r))
+			up = false
+			continue
+		}
+		if string(r) == "_" {
+			up = true
+		} else {
+			name += string(r)
+		}
+	}
+	return name
+}
+
+func makeError(err string) Result {
+	return Result{
+		Status:  "failed",
+		Retcode: 100,
+		Data:    map[string]interface{}{"error": err},
+		Echo:    nil,
+	}
+}
+
+func makeOk(data interface{}) Result {
 	return Result{
 		Status:  "ok",
 		Retcode: 0,
@@ -157,23 +122,25 @@ func resultOK(data interface{}) Result {
 	}
 }
 
-func resultFail(data interface{}) Result {
-	return Result{
-		Status:  "failed",
-		Retcode: 100,
-		Data:    data,
-		Echo:    nil,
-	}
+func (this *Routers) SendGroupMsg(bot *BotYaml, params gjson.Result) Result {
+	return this.SendMsg(bot, params)
 }
 
-func cq2xqDeleteMsg(bot int64, p gjson.Result) Result {
+func (this *Routers) SendPrivateMsg(bot *BotYaml, params gjson.Result) Result {
+	return this.SendMsg(bot, params)
+}
+
+func (this *Routers) DeleteMsg(bot *BotYaml, params gjson.Result) Result {
+	var id int64 = params.Get("message_id").Int()
+	if id == 0 {
+		return makeError("无效'message_id'")
+	}
 	var xe XEvent
-	for i, _ := range Conf.BotConfs {
-		if bot == Conf.BotConfs[i].Bot && Conf.BotConfs[i].DB != nil {
-			Conf.BotConfs[i].dbSelect(&xe, "id="+p.Get("message_id").Str)
-			break
-		}
-		return resultFail(map[string]interface{}{"error": "空指针"})
+	if bot.DB != nil {
+		bot.dbSelect(&xe, "id="+core.Int2Str(id))
+	}
+	if xe.ID == 0 {
+		return makeError("查询无此消息")
 	}
 	core.WithdrawMsgEX(
 		xe.SelfID,
@@ -184,37 +151,25 @@ func cq2xqDeleteMsg(bot int64, p gjson.Result) Result {
 		xe.MessageID,
 		xe.Time,
 	)
-	return resultOK(map[string]interface{}{})
+	return makeOk(nil)
 }
 
-func cq2xqGetMsg(bot int64, p gjson.Result) Result {
+func (this *Routers) GetMsg(bot *BotYaml, params gjson.Result) Result {
+	var id int64 = params.Get("message_id").Int()
+	if id == 0 {
+		return makeError("无效'message_id'")
+	}
 	var xe XEvent
-	for i, _ := range Conf.BotConfs {
-		if bot == Conf.BotConfs[i].Bot {
-			Conf.BotConfs[i].dbSelect(&xe, "id="+p.Get("message_id").Str)
-			break
-		}
-		return resultFail(map[string]interface{}{"error": "空指针"})
+	if bot.DB != nil {
+		bot.dbSelect(&xe, "id="+core.Int2Str(id))
 	}
-	Tsubtype := "error"
-	switch xe.MseeageType {
-	case 0:
-		Tsubtype = "other"
-	case 1:
-		Tsubtype = "friend"
-	case 4:
-		Tsubtype = "group"
-	case 5:
-		Tsubtype = "discuss"
-	case 7:
-		Tsubtype = "other"
-	default:
-		Tsubtype = "error"
+	if xe.ID == 0 {
+		return makeError("查询无此消息")
 	}
-	return resultOK(map[string]interface{}{
+	return makeOk(map[string]interface{}{
 		"time":         xe.Time,
-		"message_type": Tsubtype,
-		"message_id":   p.Get("message_id").Int(),
+		"message_type": xq2cqMsgType(xe.MseeageType),
+		"message_id":   xe.ID,
 		"real_id":      xe.MessageID,
 		"sender": Event{
 			"user_id":  xe.UserID,
@@ -224,166 +179,248 @@ func cq2xqGetMsg(bot int64, p gjson.Result) Result {
 			"area":     "",
 			"card":     "",
 			"level":    "",
-			"role":     "admin",
+			"role":     "unknown",
 			"title":    "unknown",
 		},
 		"message": xe.Message,
 	})
 }
 
-func cq2xqGetForwardMsg(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "先驱好像不支持"})
+func (this *Routers) GetForwardMsg(bot *BotYaml, params gjson.Result) Result {
+	return makeError("先驱不支持")
 }
 
-func cq2xqSendLike(bot int64, p gjson.Result) Result {
+func (this *Routers) SendLike(bot *BotYaml, params gjson.Result) Result {
+	var userID int64 = params.Get("user_id").Int()
+	if userID == 0 {
+		return makeError("无效'user_id'")
+	}
 	core.UpVote(
-		bot,
-		p.Get("user_id").Int())
-	return resultOK(map[string]interface{}{"message_id": 0})
+		bot.Bot,
+		userID,
+	)
+	return makeOk(nil)
 }
 
-func cq2xqSetGroupKick(bot int64, p gjson.Result) Result {
+func (this *Routers) SetGroupKick(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	var userID int64 = params.Get("user_id").Int()
+	var rejectAddRequest bool = params.Get("reject_add_request").Bool()
+	if groupID == 0 {
+		return makeError("无效'group_id'")
+	}
+	if userID == 0 {
+		return makeError("无效'user_id'")
+	}
 	core.KickGroupMBR(
-		bot,
-		p.Get("group_id").Int(),
-		p.Get("user_id").Int(),
-		p.Get("reject_add_request").Bool(),
+		bot.Bot,
+		groupID,
+		userID,
+		rejectAddRequest,
 	)
-	return resultOK(map[string]interface{}{"message_id": 0})
+	return makeOk(nil)
 }
 
-func cq2xqSetGroupBan(bot int64, p gjson.Result) Result {
+func (this *Routers) SetGroupBan(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	var userID int64 = params.Get("user_id").Int()
+	var duration int64 = params.Get("duration").Int()
+	if groupID == 0 {
+		return makeError("无效'group_id'")
+	}
+	if userID == 0 {
+		return makeError("无效'user_id'")
+	}
 	core.ShutUP(
-		bot,
-		p.Get("group_id").Int(),
-		p.Get("user_id").Int(),
-		p.Get("duration").Int(),
+		bot.Bot,
+		groupID,
+		userID,
+		duration,
 	)
-	return resultOK(map[string]interface{}{"message_id": 0})
+	return makeOk(nil)
 }
 
-func cq2xqSetGroupAnonymousBan(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+func (this *Routers) SetGroupAnonymousBan(bot *BotYaml, params gjson.Result) Result {
+	return makeError("先驱不支持")
 }
 
-func cq2xqSetGroupWholeBan(bot int64, p gjson.Result) Result {
-	if p.Get("enable").Bool() {
+func (this *Routers) SetGroupWholeBan(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	var enable bool = params.Get("enable").Bool()
+	if groupID == 0 {
+		return makeError("无效'group_id'")
+	}
+	if enable {
 		core.ShutUP(
-			bot,
-			p.Get("group_id").Int(),
+			bot.Bot,
+			groupID,
 			0,
 			1,
 		)
 	} else {
 		core.ShutUP(
-			bot,
-			p.Get("group_id").Int(),
+			bot.Bot,
+			groupID,
 			0,
 			0,
 		)
 	}
-	return resultOK(map[string]interface{}{"message_id": 0})
+	return makeOk(nil)
 }
 
-func cq2xqSetGroupAdmin(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "先驱好像不支持"})
+func (this *Routers) SetGroupAdmin(bot *BotYaml, params gjson.Result) Result {
+	return makeError("先驱不支持")
 }
 
-func cq2xqSetGroupAnonymous(bot int64, p gjson.Result) Result {
+func (this *Routers) SetGroupAnonymous(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	var enable bool = params.Get("enable").Bool()
+	if groupID == 0 {
+		return makeError("无效'group_id'")
+	}
 	core.SetAnon(
-		bot,
-		p.Get("group_id").Int(),
-		p.Get("enable").Bool(),
+		bot.Bot,
+		groupID,
+		enable,
 	)
-	return resultOK(map[string]interface{}{"message_id": 0})
+	return makeOk(nil)
 }
 
-func cq2xqSetGroupCard(bot int64, p gjson.Result) Result {
+func (this *Routers) SetGroupCard(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	var userID int64 = params.Get("user_id").Int()
+	var card string = params.Get("enable").Str
+	if groupID == 0 {
+		return makeError("无效'group_id'")
+	}
+	if userID == 0 {
+		return makeError("无效'user_id'")
+	}
 	core.SetGroupCard(
-		bot,
-		p.Get("group_id").Int(),
-		p.Get("user_id").Int(),
-		p.Get("card").Str,
+		bot.Bot,
+		groupID,
+		userID,
+		card,
 	)
-	return resultOK(map[string]interface{}{"message_id": 0})
+	return makeOk(nil)
 }
 
-func cq2xqSetGroupName(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "先驱好像不支持"})
+func (this *Routers) SetGroupName(bot *BotYaml, params gjson.Result) Result {
+	return makeError("先驱不支持")
 }
 
-func cq2xqSetGroupLeave(bot int64, p gjson.Result) Result {
+func (this *Routers) SetGroupLeave(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	if groupID == 0 {
+		return makeError("无效'group_id'")
+	}
 	core.QuitGroup(
-		bot,
-		p.Get("group_id").Int(),
+		bot.Bot,
+		groupID,
 	)
-	return resultOK(map[string]interface{}{"message_id": 0})
+	return makeOk(nil)
 }
 
-func cq2xqSetGroupSpecialTitle(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "先驱好像不支持"})
+func (this *Routers) SetGroupSpecialTitle(bot *BotYaml, params gjson.Result) Result {
+	return makeError("先驱不支持")
 }
 
-func cq2xqSetFriendAddRequest(bot int64, p gjson.Result) Result {
-	if p.Get("approve").Bool() {
+func (this *Routers) SetFriendAddRequest(bot *BotYaml, params gjson.Result) Result {
+	var flag int64 = params.Get("flag").Int()
+	var approve bool = params.Get("approve").Bool()
+	var remark string = params.Get("remark").Str
+	if flag == 0 {
+		return makeError("无效'flag'")
+	}
+	if approve {
 		core.HandleFriendEvent(
-			bot,
-			core.Str2Int(p.Get("flag").Str),
+			bot.Bot,
+			flag,
 			10,
-			p.Get("remark").Str,
+			remark,
 		)
 	} else {
 		core.HandleFriendEvent(
-			bot,
-			core.Str2Int(p.Get("flag").Str),
+			bot.Bot,
+			flag,
 			20,
-			p.Get("remark").Str,
+			remark,
 		)
 	}
-	return resultOK(map[string]interface{}{})
+	return makeOk(nil)
 }
 
-func cq2xqSetGroupAddRequest(bot int64, p gjson.Result) Result {
-	if p.Get("approve").Bool() {
-		core.HandleGroupEvent(bot,
-			core.Str2Int(strings.Split(p.Get("flag").Str, "|")[0]),
+func (this *Routers) SetGroupAddRequest(bot *BotYaml, params gjson.Result) Result {
+	var flag string = params.Get("flag").Str
+	var approve bool = params.Get("approve").Bool()
+	var reason string = params.Get("reason").Str
+	if flag == "" {
+		return makeError("无效'flag'")
+	}
+	if approve {
+		core.HandleGroupEvent(bot.Bot,
+			core.Str2Int(strings.Split(flag, "|")[0]),
 			0,
-			core.Str2Int(strings.Split(p.Get("flag").Str, "|")[1]),
-			core.Str2Int(strings.Split(p.Get("flag").Str, "|")[2]),
+			core.Str2Int(strings.Split(flag, "|")[1]),
+			core.Str2Int(strings.Split(flag, "|")[2]),
 			10,
-			p.Get("reason").Str,
+			reason,
 		)
 	} else {
-		core.HandleGroupEvent(bot,
-			core.Str2Int(strings.Split(p.Get("flag").Str, "|")[0]),
+		core.HandleGroupEvent(bot.Bot,
+			core.Str2Int(strings.Split(flag, "|")[0]),
 			0,
-			core.Str2Int(strings.Split(p.Get("flag").Str, "|")[1]),
-			core.Str2Int(strings.Split(p.Get("flag").Str, "|")[2]),
+			core.Str2Int(strings.Split(flag, "|")[1]),
+			core.Str2Int(strings.Split(flag, "|")[2]),
 			20,
-			p.Get("reason").Str,
+			reason,
 		)
 	}
-	return resultOK(map[string]interface{}{})
+	return makeOk(nil)
 }
 
-func cq2xqGetLoginInfo(bot int64, p gjson.Result) Result {
-	nickname := strings.Split(core.GetNick(bot, bot), "\n")[0]
-	return resultOK(map[string]interface{}{"user_id": bot, "nickname": nickname})
-}
-
-func cq2xqGetStrangerInfo(bot int64, p gjson.Result) Result {
-	return resultOK(map[string]interface{}{
-		"user_id":  p.Get("user_id").Int(),
-		"nickname": core.GetNick(bot, p.Get("user_id").Int()),
-		"sex":      []string{"unknown", "male", "female"}[core.GetGender(bot, p.Get("user_id").Int())],
-		"age":      core.GetAge(bot, p.Get("user_id").Int()),
+func (this *Routers) GetLoginInfo(bot *BotYaml, params gjson.Result) Result {
+	nickname := strings.Split(core.GetNick(
+		bot.Bot,
+		bot.Bot,
+	), "\n")[0]
+	return makeOk(map[string]interface{}{
+		"user_id":  bot.Bot,
+		"nickname": nickname,
 	})
 }
 
-func cq2xqGetFriendList(bot int64, p gjson.Result) Result {
-	list := core.GetFriendList(bot)
+func (this *Routers) GetStrangerInfo(bot *BotYaml, params gjson.Result) Result {
+	var userID int64 = params.Get("user_id").Int()
+	if userID == 0 {
+		return makeError("无效'user_id'")
+	}
+	var nickname string = core.GetNick(
+		bot.Bot,
+		userID,
+	)
+	var sex string = xq2cqSex(
+		core.GetGender(
+			bot.Bot,
+			userID,
+		),
+	)
+	var age int64 = core.GetAge(
+		bot.Bot,
+		userID,
+	)
+	return makeOk(map[string]interface{}{
+		"user_id":  userID,
+		"nickname": nickname,
+		"sex":      sex,
+		"age":      age,
+	})
+}
+
+func (this *Routers) GetFriendList(bot *BotYaml, params gjson.Result) Result {
+	var list string = core.GetFriendList(bot.Bot)
 	if list == "" {
-		return resultFail(map[string]interface{}{"error": "无法获取到好友列表"})
+		return makeError("获取好友列表失败")
 	}
 	g := gjson.Parse(list)
 	friendList := []map[string]interface{}{}
@@ -395,17 +432,21 @@ func cq2xqGetFriendList(bot int64, p gjson.Result) Result {
 		}
 		friendList = append(friendList, info)
 	}
-	return resultOK(friendList)
+	return makeOk(friendList)
 }
 
-func cq2xqGetGroupInfo(bot int64, p gjson.Result) Result {
-	name := core.GetGroupName(
-		bot,
-		p.Get("group_id").Int(),
+func (this *Routers) GetGroupInfo(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	if groupID == 0 {
+		return makeError("无效'group_id'")
+	}
+	var name string = core.GetGroupName(
+		bot.Bot,
+		groupID,
 	)
 	members := strings.Split(core.GetGroupMemberNum(
-		bot,
-		p.Get("group_id").Int(),
+		bot.Bot,
+		groupID,
 	), "\n")
 	var (
 		count int64
@@ -418,18 +459,18 @@ func cq2xqGetGroupInfo(bot int64, p gjson.Result) Result {
 		count = core.Str2Int(members[0])
 		max = core.Str2Int(members[1])
 	}
-	return resultOK(map[string]interface{}{
-		"group_id":         p.Get("group_id").Int(),
+	return makeOk(map[string]interface{}{
+		"group_id":         groupID,
 		"group_name":       name,
 		"member_count":     count,
 		"max_member_count": max,
 	})
 }
 
-func cq2xqGetGroupList(bot int64, p gjson.Result) Result {
-	list := core.GetGroupList(bot)
+func (this *Routers) GetGroupList(bot *BotYaml, params gjson.Result) Result {
+	list := core.GetGroupList(bot.Bot)
 	if list == "" {
-		return resultFail(map[string]interface{}{"error": "无法获取到群列表"})
+		return makeError("获取群列表失败")
 	}
 	g := gjson.Parse(list)
 	groupList := []map[string]interface{}{}
@@ -460,17 +501,25 @@ func cq2xqGetGroupList(bot int64, p gjson.Result) Result {
 		}
 		groupList = append(groupList, info)
 	}
-	return resultOK(groupList)
+	return makeOk(groupList)
 }
 
-func cq2xqGetGroupMemberInfo(bot int64, p gjson.Result) Result {
-	return resultOK(map[string]interface{}{
-		"group_id":          p.Get("group_id").Int(),
-		"user_id":           p.Get("user_id").Int(),
-		"nickname":          core.GetNick(bot, p.Get("user_id").Int()),
-		"card":              core.GetNick(bot, p.Get("user_id").Int()),
-		"sex":               []string{"unknown", "male", "female"}[core.GetGender(bot, p.Get("user_id").Int())],
-		"age":               core.GetAge(bot, p.Get("user_id").Int()),
+func (this *Routers) GetGroupMemberInfo(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	var userID int64 = params.Get("user_id").Int()
+	if groupID == 0 {
+		return makeError("无效'group_id'")
+	}
+	if userID == 0 {
+		return makeError("无效'user_id'")
+	}
+	return makeOk(map[string]interface{}{
+		"group_id":          groupID,
+		"user_id":           userID,
+		"nickname":          core.GetNick(bot.Bot, userID),
+		"card":              core.GetNick(bot.Bot, userID),
+		"sex":               []string{"unknown", "male", "female"}[core.GetGender(bot.Bot, userID)],
+		"age":               core.GetAge(bot.Bot, userID),
 		"area":              "unknown",
 		"join_time":         0,
 		"last_sent_time":    0,
@@ -483,19 +532,23 @@ func cq2xqGetGroupMemberInfo(bot int64, p gjson.Result) Result {
 	})
 }
 
-func cq2xqGetGroupMemberList(bot int64, p gjson.Result) Result {
+func (this *Routers) GetGroupMemberList(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	if groupID == 0 {
+		return makeError("无效'group_id'")
+	}
 	list := core.GetGroupMemberList_C(
-		bot,
-		p.Get("group_id").Int(),
+		bot.Bot,
+		groupID,
 	)
 	if list == "" {
-		return resultFail(map[string]interface{}{"error": "无法获取到群成员列表"})
+		return makeError("获取群员列表失败")
 	}
 	g := gjson.Parse(list)
 	memberList := []map[string]interface{}{}
 	for _, o := range g.Get("list").Array() {
 		member := map[string]interface{}{
-			"group_id":          p.Get("group_id").Int(),
+			"group_id":          groupID,
 			"user_id":           o.Get("QQ").Int(),
 			"nickname":          "unknown",
 			"card":              "unknown",
@@ -513,14 +566,18 @@ func cq2xqGetGroupMemberList(bot int64, p gjson.Result) Result {
 		}
 		memberList = append(memberList, member)
 	}
-	return resultOK(memberList)
+	return makeOk(memberList)
 }
 
-func cq2xqGetGroupHonorInfo(bot int64, p gjson.Result) Result {
-	groupID := p.Get("group_id").Int()
-	cookie := fmt.Sprintf("%s%s", core.GetCookies(bot), core.GetGroupPsKey(bot))
+func (this *Routers) GetGroupHonorInfo(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	var type_ string = params.Get("message_type").Str
+	if groupID == 0 {
+		return makeError("无效'group_id'")
+	}
+	cookie := fmt.Sprintf("%s%s", core.GetCookies(bot.Bot), core.GetGroupPsKey(bot.Bot))
 	var honorType int64 = 1
-	switch p.Get("type").Str {
+	switch type_ {
 	case "talkative":
 		honorType = 1
 	case "performer":
@@ -538,175 +595,146 @@ func cq2xqGetGroupHonorInfo(bot int64, p gjson.Result) Result {
 		data = data[:bytes.Index(data, []byte("</script>"))]
 		ret := GroupHonorInfo{}
 		json.Unmarshal(data, &ret)
-		return resultOK(ret)
+		return makeOk(ret)
 	} else {
-		return resultFail(map[string]interface{}{"data": "error"})
+		return makeError("error")
 	}
 }
 
-func cq2xqGetCookies(bot int64, p gjson.Result) Result {
-	switch p.Get("domain").Str {
+func (this *Routers) GetCookies(bot *BotYaml, params gjson.Result) Result {
+	var domain string = params.Get("domain").Str
+	switch domain {
 	case "qun.qq.com":
-		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetGroupPsKey(bot)})
+		return makeOk(map[string]interface{}{"cookies": core.GetCookies(bot.Bot) + core.GetGroupPsKey(bot.Bot)})
 	case "qzone.qq.com":
-		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetZonePsKey(bot)})
+		return makeOk(map[string]interface{}{"cookies": core.GetCookies(bot.Bot) + core.GetZonePsKey(bot.Bot)})
 	default:
-		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot)})
+		return makeOk(map[string]interface{}{"cookies": core.GetCookies(bot.Bot)})
 	}
 }
 
-func cq2xqGetCsrfToken(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+func (this *Routers) GetCsrfToken(bot *BotYaml, params gjson.Result) Result {
+	return makeError("暂未实现")
 }
 
-func cq2xqGetCredentials(bot int64, p gjson.Result) Result {
-	switch p.Get("domain").Str {
+func (this *Routers) GetCredentials(bot *BotYaml, params gjson.Result) Result {
+	var domain string = params.Get("domain").Str
+	switch domain {
 	case "qun.qq.com":
-		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetGroupPsKey(bot)})
+		return makeOk(map[string]interface{}{"cookies": core.GetCookies(bot.Bot) + core.GetGroupPsKey(bot.Bot)})
 	case "qzone.qq.com":
-		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot) + core.GetZonePsKey(bot)})
+		return makeOk(map[string]interface{}{"cookies": core.GetCookies(bot.Bot) + core.GetZonePsKey(bot.Bot)})
 	default:
-		return resultOK(map[string]interface{}{"cookies": core.GetCookies(bot)})
+		return makeOk(map[string]interface{}{"cookies": core.GetCookies(bot.Bot)})
 	}
 }
 
-func cq2xqGetRecord(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+func (this *Routers) GetRecord(bot *BotYaml, params gjson.Result) Result {
+	return makeError("暂未实现")
 }
 
-func cq2xqGetImage(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+func (this *Routers) GetImage(bot *BotYaml, params gjson.Result) Result {
+	return makeError("暂未实现")
 }
 
-func cq2xqCanSendImage(bot int64, p gjson.Result) Result {
-	return resultOK(map[string]interface{}{"yes": true})
+func (this *Routers) CanSendImage(bot *BotYaml, params gjson.Result) Result {
+	return makeOk(map[string]interface{}{"yes": true})
 }
 
-func cq2xqCanSendRecord(bot int64, p gjson.Result) Result {
-	return resultOK(map[string]interface{}{"yes": true})
+func (this *Routers) CanSendRecord(bot *BotYaml, params gjson.Result) Result {
+	return makeOk(map[string]interface{}{"yes": true})
 }
 
-func cq2xqGetStatus(bot int64, p gjson.Result) Result {
-	return resultOK(map[string]interface{}{
-		"online": core.IsOnline(bot, bot),
+func (this *Routers) GetStatus(bot *BotYaml, params gjson.Result) Result {
+	return makeOk(map[string]interface{}{
+		"online": core.IsOnline(bot.Bot, bot.Bot),
 		"good":   true,
 	})
 }
 
-func cq2xqGetVersionInfo(bot int64, p gjson.Result) Result {
-	return resultOK(map[string]interface{}{
+func (this *Routers) GetVersionInfo(bot *BotYaml, params gjson.Result) Result {
+	return makeOk(map[string]interface{}{
 		"app_name":         "OneBot-YaYa",
 		"app_version":      gjson.Parse(AppInfoJson).Get("pver"),
 		"protocol_version": "v11",
 	})
 }
 
-func cq2xqSetRestart(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+func (this *Routers) SetRestart(bot *BotYaml, params gjson.Result) Result {
+	return makeError("暂未实现")
 }
 
-func cq2xqCleanCache(bot int64, p gjson.Result) Result {
-	return resultFail(map[string]interface{}{"data": "还没写，催更去GitHub提issue"})
+func (this *Routers) CleanCache(bot *BotYaml, params gjson.Result) Result {
+	return makeError("暂未实现")
 }
 
-func cq2xqOutPutLog(bot int64, p gjson.Result) Result {
-	core.OutPutLog(p.Get("text").Str)
-	return resultOK(map[string]interface{}{})
+func (this *Routers) OutPutLog(bot *BotYaml, params gjson.Result) Result {
+	var text string = params.Get("text").Str
+	core.OutPutLog(text)
+	return makeOk(nil)
 }
 
-func cq2xqHandleQuickOperation(bot int64, p gjson.Result) Result {
-	var reply []byte
-	switch p.Get("context.post_type").Str {
-	case "message":
-		if p.Get("operation.reply").Exists() {
-			var text string
-			if p.Get("operation.at_sender").Bool() {
-				text += fmt.Sprintf("[CQ:at,qq=%d]", p.Get("context.user_id").Int())
-			}
-			if p.Get("operation.reply").Str != "" {
-				text += unicode2chinese(p.Get("operation.reply").Str)
-			}
-			reply, _ = json.Marshal(
-				map[string]interface{}{
-					"message_type": p.Get("context.message_type").Str,
-					"group_id":     p.Get("context.group_id").Int(),
-					"user_id":      p.Get("context.user_id").Int(),
-					"message":      text,
-				})
-		}
-		if p.Get("operation.delete").Bool() {
-			parmas, _ := json.Marshal(
-				map[string]interface{}{
-					"message_id": p.Get("context.message_id").Int(),
-				})
-			cq2xqDeleteMsg(bot, gjson.ParseBytes(parmas))
-		}
-		if p.Get("operation.kick").Bool() {
-			parmas, _ := json.Marshal(
-				map[string]interface{}{
-					"group_id":           p.Get("context.group_id").Int(),
-					"user_id":            p.Get("context.user_id").Int(),
-					"reject_add_request": false,
-				})
-			cq2xqSetGroupKick(bot, gjson.ParseBytes(parmas))
-		}
-		if p.Get("operation.ban").Bool() {
-			parmas, _ := json.Marshal(
-				map[string]interface{}{
-					"group_id": p.Get("context.group_id").Int(),
-					"user_id":  p.Get("context.user_id").Int(),
-					"duration": p.Get("operation.duration").Int(),
-				})
-			cq2xqDeleteMsg(bot, gjson.ParseBytes(parmas))
-		}
-	case "request":
-		if p.Get("operation.approve").Exists() {
-			if p.Get("operation.request_type").Str == "friend" {
-				parmas, _ := json.Marshal(
-					map[string]interface{}{
-						"flag":    p.Get("context.flag").Str,
-						"approve": p.Get("operation.approve").Bool(),
-						"remark":  p.Get("operation.remark").Str,
-					})
-				cq2xqSetFriendAddRequest(bot, gjson.ParseBytes(parmas))
-			}
-			if p.Get("operation.request_type").Str == "group" {
-				parmas, _ := json.Marshal(
-					map[string]interface{}{
-						"flag":    p.Get("context.flag").Str,
-						"approve": p.Get("operation.approve").Str,
-						"reason":  p.Get("operation.reason").Bool(),
-					})
-				cq2xqSetGroupAddRequest(bot, gjson.ParseBytes(parmas))
-			}
-		}
-	default:
-		//
+func (this *Routers) SendXml(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	var userID int64 = params.Get("user_id").Int()
+	var type_ string = params.Get("message_type").Str
+	var data string = params.Get("data").Str
+	if groupID == 0 {
+		return makeError("无效'group_id'")
 	}
-	return cq2xqSendMsg(bot, gjson.ParseBytes(reply))
-}
-
-func cq2xqSendJson(bot int64, p gjson.Result) Result {
-	core.SendJSON(
-		bot,
-		1,
-		cq2xqMessageType(p),
-		p.Get("group_id").Int(),
-		p.Get("user_id").Int(),
-		p.Get("data").Str,
-	)
-	return resultOK(map[string]interface{}{})
-}
-
-func cq2xqSendXml(bot int64, p gjson.Result) Result {
+	if userID == 0 {
+		return makeError("无效'user_id'")
+	}
+	if groupID == 0 && userID == 0 {
+		return makeError("无效'group_id'或'user_id'")
+	}
+	if type_ == "" {
+		if groupID != 0 {
+			type_ = "group"
+		} else {
+			type_ = "private"
+		}
+	}
 	core.SendXML(
-		bot,
+		bot.Bot,
 		1,
-		cq2xqMessageType(p),
-		p.Get("group_id").Int(),
-		p.Get("user_id").Int(),
-		p.Get("data").Str,
+		cq2xqMsgType(type_),
+		groupID,
+		userID,
+		data,
 		0,
 	)
-	return resultOK(map[string]interface{}{})
+	return makeOk(map[string]interface{}{})
+}
+
+func (this *Routers) SendJson(bot *BotYaml, params gjson.Result) Result {
+	var groupID int64 = params.Get("group_id").Int()
+	var userID int64 = params.Get("user_id").Int()
+	var type_ string = params.Get("message_type").Str
+	var data string = params.Get("data").Str
+	if groupID == 0 {
+		return makeError("无效'group_id'")
+	}
+	if userID == 0 {
+		return makeError("无效'user_id'")
+	}
+	if groupID == 0 && userID == 0 {
+		return makeError("无效'group_id'或'user_id'")
+	}
+	if type_ == "" {
+		if groupID != 0 {
+			type_ = "group"
+		} else {
+			type_ = "private"
+		}
+	}
+	core.SendJSON(
+		bot.Bot,
+		1,
+		cq2xqMsgType(type_),
+		groupID,
+		userID,
+		data,
+	)
+	return makeOk(map[string]interface{}{})
 }
