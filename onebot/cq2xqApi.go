@@ -351,31 +351,27 @@ func (this *Routers) SetFriendAddRequest(bot *BotYaml, params gjson.Result) Resu
 }
 
 func (this *Routers) SetGroupAddRequest(bot *BotYaml, params gjson.Result) Result {
-	var flag string = params.Get("flag").Str
-	var approve bool = params.Get("approve").Bool()
-	var reason string = params.Get("reason").Str
+	flag  := params.Get("flag").Str
 	if flag == "" {
 		return makeError("无效'flag'")
 	}
-	if approve {
-		core.HandleGroupEvent(bot.Bot,
-			core.Str2Int(strings.Split(flag, "|")[0]),
-			0,
-			core.Str2Int(strings.Split(flag, "|")[1]),
-			core.Str2Int(strings.Split(flag, "|")[2]),
-			10,
-			reason,
-		)
-	} else {
-		core.HandleGroupEvent(bot.Bot,
-			core.Str2Int(strings.Split(flag, "|")[0]),
-			0,
-			core.Str2Int(strings.Split(flag, "|")[1]),
-			core.Str2Int(strings.Split(flag, "|")[2]),
-			20,
-			reason,
-		)
+	var approve int64
+	if params.Get("approve").Bool() {
+		approve = 10
+	}else {
+		approve = 20
 	}
+	reason := params.Get("reason").Str
+
+	split := strings.Split(flag, "|")
+	core.HandleGroupEvent(bot.Bot,
+		213,
+		params.Get("user_id").Int(),
+		core.Str2Int(split[1]),
+		core.Str2Int(split[2]),
+		approve,
+		reason,
+	)
 	return makeOk(nil)
 }
 
