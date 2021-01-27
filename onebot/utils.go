@@ -1,6 +1,8 @@
 package onebot
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -117,4 +119,10 @@ func unicode2chinese(text string) string {
 		}
 	}
 	return out
+}
+
+func hashText(input string) string {
+	m := md5.New()
+	m.Write([]byte(input))
+	return hex.EncodeToString(m.Sum(nil))
 }
