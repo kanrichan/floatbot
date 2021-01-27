@@ -63,6 +63,7 @@ func XQEvent(selfID int64, mseeageType int64, subType int64, groupID int64, user
 	// 消息事件
 	// 0：临时会话 1：好友会话 4：群临时会话 7：好友验证会话
 	case 0, 1, 4, 5, 7:
+		addPicPool(xe.Message)
 		for i, _ := range Conf.BotConfs {
 			if selfID == Conf.BotConfs[i].Bot && selfID != 0 {
 				if Conf.BotConfs[i].DB != nil {
@@ -73,6 +74,7 @@ func XQEvent(selfID int64, mseeageType int64, subType int64, groupID int64, user
 		go ProtectRun(func() { onPrivateMessage(xe) }, "onPrivateMessage()")
 	// 2：群聊信息
 	case 2, 3:
+		addPicPool(xe.Message)
 		for i, _ := range Conf.BotConfs {
 			if selfID == Conf.BotConfs[i].Bot && selfID != 0 {
 				if Conf.BotConfs[i].DB != nil {
@@ -83,6 +85,7 @@ func XQEvent(selfID int64, mseeageType int64, subType int64, groupID int64, user
 		go ProtectRun(func() { onGroupMessage(xe) }, "onGroupMessage()")
 	// 10：回音信息
 	case 10:
+		addPicPool(xe.Message)
 		for i, _ := range Conf.BotConfs {
 			if selfID == Conf.BotConfs[i].Bot && selfID != 0 {
 				if Conf.BotConfs[i].DB != nil {
