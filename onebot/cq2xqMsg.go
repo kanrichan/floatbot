@@ -266,69 +266,41 @@ func (target msgTarget) cq2xqDice(message gjson.Result) string {
 
 func (target msgTarget) cq2xqImage(message gjson.Result) string {
 	url := strings.ReplaceAll(message.Get("data.url").Str, `\/`, `/`)
-	image := strings.ReplaceAll(message.Get("data.file").Str, `\/`, `/`)
+	file := strings.ReplaceAll(message.Get("data.file").Str, `\/`, `/`)
+	cache := true
+	if message.Get("data.cache").Exists() {
+		cache = message.Get("data.cache").Bool()
+	}
 	showID := message.Get("data.id").Int() - 40000
-	switch message.Get("data.type").Str {
-	case "show":
-		switch {
-		case url != "":
-			return fmt.Sprintf("[ShowPic=%s,type=%d]", Url2Image(url), showID)
-		case strings.Contains(image, "base64://"):
-			return fmt.Sprintf("[ShowPic=%s,type=%d]", Base642Image(image[9:]), showID)
-		case strings.Contains(image, "file:///"):
-			return fmt.Sprintf("[ShowPic=%s,type=%d]", image[8:], showID)
-		case strings.Contains(image, "http://"):
-			return fmt.Sprintf("[ShowPic=%s,type=%d]", Url2Image(image), showID)
-		case strings.Contains(image, "https://"):
-			return fmt.Sprintf("[ShowPic=%s,type=%d]", Url2Image(image), showID)
-		default:
-			return fmt.Sprintf("[ShowPic=%s,type=%d]", "error", showID)
-		}
-	default:
-		switch {
-		case url != "":
-			start := strings.LastIndex(url, "-")
-			end := strings.LastIndex(url, "/0")
-			if start == 0 || end == 0 {
-				return fmt.Sprintf("[pic=%s]", Url2Image(url))
-			}
-			md5 := url[start+1 : end]
-			return fmt.Sprintf(
-				"[pic={%s-%s-%s-%s-%s}.jpg]",
-				md5[:8],
-				md5[8:12],
-				md5[12:16],
-				md5[16:20],
-				md5[20:],
-			)
-		case strings.Contains(image, "base64://"):
-			return fmt.Sprintf("[pic=%s]", Base642Image(image[9:]))
-		case strings.Contains(image, "file:///"):
-			return fmt.Sprintf("[pic=%s]", image[8:])
-		case strings.Contains(image, "http://"):
-			return fmt.Sprintf("[pic=%s]", image)
-		case strings.Contains(image, "https://"):
-			return fmt.Sprintf("[pic=%s]", image)
-		default:
-			return fmt.Sprintf("[pic=%s]", "error")
-		}
+	pic := picDownloader{
+		file:     file,
+		url:      url,
+		suffix:   ".jpg",
+		savePath: ImagePath,
+		iscache:  cache,
+	}
+	if message.Get("data.type").Str == "show" {
+		return fmt.Sprintf("[ShowPic=%s,type=%d]", pic.path(), showID)
+	} else {
+		return fmt.Sprintf("[pic=%s]", pic.path())
 	}
 }
 
 func (target msgTarget) cq2xqRecord(message gjson.Result) string {
-	record := strings.ReplaceAll(message.Get("data.file").Str, `\/`, `/`)
-	switch {
-	case strings.Contains(record, "base64://"):
-		return fmt.Sprintf("[Voi=%s]", rec2silk(Base642Record(record[9:])))
-	case strings.Contains(record, "file:///"):
-		return fmt.Sprintf("[Voi=%s]", rec2silk(record[8:]))
-	case strings.Contains(record, "http://"):
-		return fmt.Sprintf("[Voi=%s]", rec2silk(Url2Record(record)))
-	case strings.Contains(record, "https://"):
-		return fmt.Sprintf("[Voi=%s]", rec2silk(Url2Record(record)))
-	default:
-		return fmt.Sprintf("[Voi=%s]", "error")
+	url := strings.ReplaceAll(message.Get("data.url").Str, `\/`, `/`)
+	file := strings.ReplaceAll(message.Get("data.file").Str, `\/`, `/`)
+	cache := true
+	if message.Get("data.cache").Exists() {
+		cache = message.Get("data.cache").Bool()
 	}
+	rec := picDownloader{
+		file:     file,
+		url:      url,
+		suffix:   ".mp3",
+		savePath: RecordPath,
+		iscache:  cache,
+	}
+	return fmt.Sprintf("[pic=%s]", rec.path())
 }
 
 func (target msgTarget) cq2xqVideo(message gjson.Result) string {
