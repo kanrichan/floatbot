@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"yaya/core"
 )
 
 // cqCode2Array 字符串CQ码转数组
@@ -109,16 +110,9 @@ func xq2cqCode(message string) string {
 	pic := regexp.MustCompile(`\[pic={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(\..*?),(.*?)\]`)
 	for _, p := range pic.FindAllStringSubmatch(message, -1) {
 		oldpic := p[0]
-		md5 := strings.ToUpper(fmt.Sprintf("%s%s%s%s%s", p[1], p[2], p[3], p[4], p[5]))
-		newpic := fmt.Sprintf("[CQ:image,file=%s.image,url=http://gchat.qpic.cn/gchatpic_new//--%s/0]", md5, md5)
-		message = strings.ReplaceAll(message, oldpic, newpic)
-	}
-
-	pic2 := regexp.MustCompile(`\[pic={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(\..*?)]`)
-	for _, p := range pic2.FindAllStringSubmatch(message, -1) {
-		oldpic := p[0]
-		md5 := strings.ToUpper(fmt.Sprintf("%s%s%s%s%s", p[1], p[2], p[3], p[4], p[5]))
-		newpic := fmt.Sprintf("[CQ:image,file=%s.image,url=http://gchat.qpic.cn/gchatpic_new//--%s/0]", md5, md5)
+		res := fmt.Sprintf("{%s-%s-%s-%s-%s}.jpg", p[1], p[2], p[3], p[4], p[5])
+		md5 := fmt.Sprintf("%s%s%s%s%s", p[1], p[2], p[3], p[4], p[5])
+		newpic := fmt.Sprintf("[CQ:image,file=%s,url=http://gchat.qpic.cn/gchatpic_new//--%s/0]", res, md5)
 		message = strings.ReplaceAll(message, oldpic, newpic)
 	}
 
@@ -126,7 +120,9 @@ func xq2cqCode(message string) string {
 	voi := regexp.MustCompile(`\[Voi={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(\..*?),(.*?)\]`)
 	for _, v := range voi.FindAllStringSubmatch(message, -1) {
 		oldpic := v[0]
-		newpic := fmt.Sprintf("[CQ:record,file=%s%s%s%s%s]", v[1], v[2], v[3], v[4], v[5])
+		res := fmt.Sprintf("{%s-%s-%s-%s-%s}.amr", v[1], v[2], v[3], v[4], v[5])
+		url := core.GetVoiLink(DefaultQQ(), oldpic)
+		newpic := fmt.Sprintf("[CQ:record,file=%s,url=%s]", res, url)
 		message = strings.ReplaceAll(message, oldpic, newpic)
 	}
 
