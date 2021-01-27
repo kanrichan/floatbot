@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/hjson/hjson-go"
 	"github.com/tidwall/gjson"
 )
 
@@ -51,7 +50,7 @@ func (c *WSCYaml) handShake() {
 		"sub_type":        "connect",
 		"time":            fmt.Sprint(time.Now().Unix()),
 	}
-	event, _ := hjson.Marshal(handshake)
+	event, _ := json.Marshal(handshake)
 	if c.Status == 1 {
 		c.Heart <- event
 	}
@@ -132,7 +131,7 @@ func (c *WSCYaml) apiReply(data []byte) {
 
 	action := obj.Get("action").Str
 	action = strings.ReplaceAll(action, "_async", "")
-	params := obj.Get("params")
+	var params = obj.Get("params")
 	DEBUG("[响应][反向WS][%v] BOT <- %v API: %v Params: %v", c.BotID, c.Url, action, string(data))
 
 	ret := apiMap.CallApi(action, c.BotID, params)

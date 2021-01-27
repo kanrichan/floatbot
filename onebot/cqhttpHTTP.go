@@ -132,8 +132,7 @@ func (h *HTTPYaml) apiReply(path string, data []byte) []byte {
 
 	action := strings.ReplaceAll(path, "/", "")
 	DEBUG("[响应][HTTP][%v] BOT <- %v:%v API: %v Params: %v", h.BotID, h.Host, h.Port, action, string(data))
-
-	params := gjson.ParseBytes(data)
+	var params = gjson.ParseBytes(data)
 	ret := apiMap.CallApi(action, h.BotID, params)
 	send, _ := json.Marshal(ret)
 	return send

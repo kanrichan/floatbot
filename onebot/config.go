@@ -96,7 +96,7 @@ type WSSYaml struct {
 }
 
 func (conf *Yaml) getBotConfig(bot int64) *BotYaml {
-	for i, _ := range conf.BotConfs {
+	for i := range conf.BotConfs {
 		if bot == conf.BotConfs[i].Bot {
 			return conf.BotConfs[i]
 		}
@@ -209,25 +209,25 @@ func (c *Yaml) Save(p string) {
 
 func (conf *Yaml) InitConf() {
 	conf.Meta = false
-	for i, _ := range conf.BotConfs {
+	for i := range conf.BotConfs {
 		// 如果bot没有填写的话就自动修改为当前登录账号的第一个
 		if conf.BotConfs[i].Bot == 0 && DefaultQQ() != 0 {
 			conf.BotConfs[i].Bot = DefaultQQ()
 			conf.Save(AppPath + "config.yml")
 		}
-		for j, _ := range conf.BotConfs[i].WSSConf {
+		for j := range conf.BotConfs[i].WSSConf {
 			conf.BotConfs[i].WSSConf[j].Status = 0
 			conf.BotConfs[i].WSSConf[j].BotID = conf.BotConfs[i].Bot
 			conf.BotConfs[i].WSSConf[j].Event = make(chan []byte, 100)
 			conf.BotConfs[i].WSSConf[j].Heart = make(chan []byte, 1)
 		}
-		for k, _ := range conf.BotConfs[i].WSCConf {
+		for k := range conf.BotConfs[i].WSCConf {
 			conf.BotConfs[i].WSCConf[k].Status = 0
 			conf.BotConfs[i].WSCConf[k].BotID = conf.BotConfs[i].Bot
 			conf.BotConfs[i].WSCConf[k].Event = make(chan []byte, 100)
 			conf.BotConfs[i].WSCConf[k].Heart = make(chan []byte, 1)
 		}
-		for l, _ := range conf.BotConfs[i].HTTPConf {
+		for l := range conf.BotConfs[i].HTTPConf {
 			conf.BotConfs[i].HTTPConf[l].Status = 0
 			conf.BotConfs[i].HTTPConf[l].BotID = conf.BotConfs[i].Bot
 			conf.BotConfs[i].HTTPConf[l].Event = make(chan []byte, 100)

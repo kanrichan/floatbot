@@ -1,8 +1,6 @@
 package onebot
 
 import (
-	"bytes"
-	"encoding/hex"
 	"fmt"
 	"regexp"
 	"strings"
@@ -15,7 +13,7 @@ func cqCode2Array(message string) []map[string]interface{} {
 	for _, elem := range cqCode2Elems(message) {
 		array = append(array, map[string]interface{}{
 			"type": whatCQcode(elem)["type"],
-			"data": whatCQprams(elem)["data"],
+			"data": whatCQparams(elem)["data"],
 		})
 	}
 	return array
@@ -62,7 +60,7 @@ func whatCQcode(code string) map[string]string {
 }
 
 // whatCQcode 自动解析 CQ 码参数
-func whatCQprams(code string) map[string]interface{} {
+func whatCQparams(code string) map[string]interface{} {
 	elems := map[string]string{}
 	start := 0
 	for {
@@ -160,50 +158,6 @@ func cq2xqCode(message string) string {
 		message = strings.ReplaceAll(message, oldpic, newpic)
 	}
 	return message
-}
-
-func emoji2xq(text string) string {
-	data := []byte(text)
-	ret := []byte{}
-	skip := 0
-	for i, _ := range data {
-		if skip > 1 {
-			skip -= 1
-			continue
-		}
-		if data[i] == byte(240) && data[i+1] == byte(159) {
-			code := hex.EncodeToString(data[i : i+4])
-			ret = append(ret, []byte(fmt.Sprintf("[emoji=%s]", code))...)
-			skip = 4
-		} else {
-			ret = append(ret, data[i])
-		}
-	}
-	return string(ret)
-}
-
-func xq2emoji(text string) string {
-	data := []byte(text)
-	ret := []byte{}
-	skip := 0
-	for i, _ := range data {
-		if skip > 1 {
-			skip -= 1
-			continue
-		}
-		if i+7 < len(data) && bytes.Equal(data[i:i+7], []byte("[emoji=")) {
-			end := bytes.IndexByte(data[i:], byte(93))
-			if end == -1 {
-				return text
-			}
-			code, _ := hex.DecodeString(string(data[i+7 : end+i]))
-			ret = append(ret, code...)
-			skip = end + 1
-		} else {
-			ret = append(ret, data[i])
-		}
-	}
-	return string(ret)
 }
 
 func escape(text string) string {

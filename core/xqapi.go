@@ -66,7 +66,7 @@ func GetGroupCard(selfID int64, groupID int64, userID int64) string {
 // bubble  气泡ID  整数型  已支持请自己测试
 func SendMsg(selfID int64, messageType int64, groupID int64, userID int64, message string, bubble int64) {
 	C.S3_Api_SendMsg(
-		GoInt2CStr(selfID), C.int(messageType), GoInt2CStr(groupID), GoInt2CStr(userID), CString(message), C.int(bubble),
+		GoInt2CStr(selfID), C.int(messageType), GoInt2CStr(groupID), GoInt2CStr(userID), CString(EscapeEmoji(message)), C.int(bubble),
 	)
 }
 
@@ -657,7 +657,7 @@ func UpLoadVoice(selfID int64, postType int64, groupID int64, file []byte) strin
 // anonymous  群匿名  逻辑型  不需要匿名请填写假 可调用Api_GetAnon函数 查看群是否开启匿名如果群没有开启匿名发送消息会失 败
 func SendMsgEX(selfID int64, messageType int64, groupID int64, userID int64, message string, bubble int64, anonymous bool) {
 	C.S3_Api_SendMsgEX(
-		GoInt2CStr(selfID), C.int(messageType), GoInt2CStr(groupID), GoInt2CStr(userID), CString(message), C.int(bubble), CBool(anonymous),
+		GoInt2CStr(selfID), C.int(messageType), GoInt2CStr(groupID), GoInt2CStr(userID), CString(EscapeEmoji(message)), C.int(bubble), CBool(anonymous),
 	)
 }
 
@@ -814,7 +814,7 @@ func ShakeWindow(selfID int64, userID int64) bool {
 // jsonData  附加JSON参数  文本型  以后信息发送参数增加都是依靠这个json文本
 func SendMsgEX_V2(selfID int64, messageType int64, groupID int64, userID int64, message string, bubble int64, anonymous bool, jsonData string) string {
 	return CPtr2GoStr(C.S3_Api_SendMsgEX_V2(
-		GoInt2CStr(selfID), C.int(messageType), GoInt2CStr(groupID), GoInt2CStr(userID), CString(message), C.int(bubble), CBool(anonymous), CString(jsonData),
+		GoInt2CStr(selfID), C.int(messageType), GoInt2CStr(groupID), GoInt2CStr(userID), CString(EscapeEmoji(message)), C.int(bubble), CBool(anonymous), CString(jsonData),
 	))
 }
 

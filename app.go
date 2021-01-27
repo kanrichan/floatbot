@@ -6,7 +6,9 @@ import (
 	"yaya/onebot"
 )
 
-// 插件信息
+// 生命周期详见 onebot/main.go
+
+// AppInfo XQ要求的插件信息
 type AppInfo struct {
 	Name   string `json:"name"`   // 插件名字
 	Pver   string `json:"pver"`   // 插件版本
@@ -15,6 +17,15 @@ type AppInfo struct {
 	Desc   string `json:"desc"`   // 插件说明
 }
 
+func init() {
+	// TODO 将插件信息传递给 package onebot
+	data, _ := json.Marshal(newAppInfo())
+	onebot.AppInfoJson = string(data)
+}
+
+func main() { onebot.Main() }
+
+// newAppInfo 返回插件信息
 func newAppInfo() *AppInfo {
 	return &AppInfo{
 		Name:   "OneBot-YaYa",
@@ -24,10 +35,3 @@ func newAppInfo() *AppInfo {
 		Desc:   "OneBot标准的先驱实现 项目地址: http://github.com/Yiwen-Chan/OneBot-YaYa",
 	}
 }
-
-func init() {
-	data, _ := json.Marshal(newAppInfo())
-	onebot.AppInfoJson = string(data)
-}
-
-func main() { onebot.Main() }

@@ -16,7 +16,7 @@ func (conf *Yaml) runDB() {
 			ERROR("[数据库] DB =X=> =X=> Start Error: %v", err)
 		}
 	}()
-	for i, _ := range conf.BotConfs {
+	for i := range conf.BotConfs {
 		conf.BotConfs[i].DBPath = AppPath + core.Int2Str(conf.BotConfs[i].Bot) + "/XQ.db"
 		CreatePath(conf.BotConfs[i].DBPath)
 		conf.BotConfs[i].dbCreate(&XEvent{})

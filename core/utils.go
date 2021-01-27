@@ -11,7 +11,10 @@ char * eStrPtr2CStrPtr(char * str) {
 import "C"
 
 import (
+	"bytes"
 	"encoding/binary"
+	"encoding/hex"
+	"fmt"
 	"strconv"
 	"unsafe"
 
@@ -80,4 +83,50 @@ func Int2Bytes(val int64) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, uint64(val))
 	return b
+}
+
+// EscapeEmoji 将 emoji的utf-8字符串 转化为 [emoji=FFFFFFFF]
+func EscapeEmoji(text string) string {
+	data := []byte(text)
+	ret := []byte{}
+	skip := 0
+	for i := range data {
+		if skip > 1 {
+			skip -= 1
+			continue
+		}
+		if data[i] == byte(240) && data[i+1] == byte(159) {
+			code := hex.EncodeToString(data[i : i+4])
+			ret = append(ret, []byte(fmt.Sprintf("[emoji=%s]", code))...)
+			skip = 4
+		} else {
+			ret = append(ret, data[i])
+		}
+	}
+	return string(ret)
+}
+
+// UnescapeEmoji 将 [emoji=FFFFFFFF] 转化为 emoji的utf-8字符串
+func UnescapeEmoji(text string) string {
+	data := []byte(text)
+	ret := []byte{}
+	skip := 0
+	for i := range data {
+		if skip > 1 {
+			skip -= 1
+			continue
+		}
+		if i+7 < len(data) && bytes.Equal(data[i:i+7], []byte("[emoji=")) {
+			end := bytes.IndexByte(data[i:], byte(93))
+			if end == -1 {
+				return text
+			}
+			code, _ := hex.DecodeString(string(data[i+7 : end+i]))
+			ret = append(ret, code...)
+			skip = end + 1
+		} else {
+			ret = append(ret, data[i])
+		}
+	}
+	return string(ret)
 }

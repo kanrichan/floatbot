@@ -183,7 +183,7 @@ func (this *Routers) SendMsg(bot *BotYaml, params gjson.Result) Result {
 			false,
 			"",
 		)
-		// 获取CQID返回
+		// 获取ID返回
 		if data != "" {
 			ret := gjson.Parse(data[:strings.LastIndex(data, "}")])
 			if ret.Get("sendok").Bool() {
@@ -191,7 +191,7 @@ func (this *Routers) SendMsg(bot *BotYaml, params gjson.Result) Result {
 				xe.MessageID = ret.Get("msgid").Int()
 				xe.MessageNum = ret.Get("msgno").Int()
 				xe.ID = 0
-				for i, _ := range Conf.BotConfs {
+				for i := range Conf.BotConfs {
 					if bot.Bot == Conf.BotConfs[i].Bot && bot.Bot != 0 && Conf.BotConfs[i].DB != nil {
 						time.Sleep(time.Millisecond * 100)
 						Conf.BotConfs[i].dbSelect(&xe, "message_num="+core.Int2Str(xe.MessageNum))
@@ -230,7 +230,7 @@ func messageSplit(texts string) string {
 }
 
 func (target msgTarget) cq2xqText(message gjson.Result) string {
-	return emoji2xq(message.Get("data.*").Str)
+	return message.Get("data.*").Str
 }
 
 func (target msgTarget) cq2xqFace(message gjson.Result) string {
