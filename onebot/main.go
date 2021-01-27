@@ -7,6 +7,9 @@ var AppPath = XQPath + "OneBot/"
 var ImagePath = XQPath + "OneBot/image/"
 var RecordPath = XQPath + "OneBot/record/"
 var VideoPath = XQPath + "OneBot/video/"
+var CachePath = XQPath + "OneBot/cache/"
+
+var PicPool = PicsCache{Max: 1000}
 
 func init() {
 }
