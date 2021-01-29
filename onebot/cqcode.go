@@ -7,6 +7,132 @@ import (
 	"yaya/core"
 )
 
+func cqCode2Array(text string) []map[string]interface{} {
+	elems := SplitCQText(text)
+	var (
+		array = []map[string]interface{}{}
+
+		isCQcode bool = false
+		isFirst  bool = false
+		isType   bool = false
+		isKey    bool = false
+		isValue  bool = false
+
+		cqCodetype_ string
+		cqCodeKey   []string
+		cqCodeValue []string
+	)
+	for _, r := range elems {
+		var temp = []rune{}
+	elemLoop:
+		for i := range r {
+			switch {
+			// TODO CQ码开始标记 []rune("[CQ:") = [91 67 81 58]
+			case r[i] == 91 && r[i+1] == 67 && r[i+2] == 81 && r[i+3] == 58:
+				isCQcode = true
+				isFirst = true
+			// TODO 不是CQ码
+			case !isCQcode:
+				array = append(
+					array,
+					map[string]interface{}{
+						"type": "text",
+						"data": map[string]string{
+							"text": string(r),
+						},
+					},
+				)
+				break elemLoop
+			// TODO type字段标记 []rune(":") = [58]
+			case isCQcode && isFirst && r[i] == 58:
+				isType = true
+				isFirst = false
+			// TODO 开始装载type字段 []rune(",") = [44]
+			case isType && r[i] != 44:
+				temp = append(temp, r[i])
+			// TODO 结束装载type字段 key字段标记 []rune(",") = [44]
+			case isType && r[i] == 44:
+				cqCodetype_ = string(temp)
+				temp = []rune{}
+				isType = false
+				isKey = true
+			// TODO 开始装载key []rune("=") = [61]
+			case isKey && r[i] != 61:
+				temp = append(temp, r[i])
+			// TODO 结束装载key字段 value字段标记 []rune("=") = [61]
+			case isKey && r[i] == 61:
+				cqCodeKey = append(cqCodeKey, string(temp))
+				temp = []rune{}
+				isKey = false
+				isValue = true
+			// TODO 开始装载value []rune(",") = [44] []rune("]") = [93]
+			case isValue && r[i] != 44 && r[i] != 93:
+				temp = append(temp, r[i])
+			// TODO 结束装载value字段 key字段标记 []rune(",") = [44]
+			case isValue && r[i] == 44:
+				cqCodeValue = append(cqCodeValue, string(temp))
+				temp = []rune{}
+				isValue = false
+				isKey = true
+			// TODO 结束装载value字段 结束CQ码 []rune("]") = [93]
+			case isValue && r[i] == 93:
+				cqCodeValue = append(cqCodeValue, string(temp))
+				temp = []rune{}
+				cqCodeMap := map[string]interface{}{}
+				cqCodeMap["type"] = cqCodetype_
+				keyValue := map[string]string{}
+				for i := range cqCodeKey {
+					keyValue[cqCodeKey[i]] = cqCodeValue[i]
+				}
+				cqCodeMap["data"] = keyValue
+				array = append(array, cqCodeMap)
+				isValue = false
+				isCQcode = false
+			default:
+
+				// TODO do nothing
+			}
+		}
+	}
+	return array
+}
+
+func SplitCQText(cqcode string) [][]rune {
+	var (
+		elems    [][]rune
+		temp     []rune
+		isCQcode bool = false
+	)
+	r := []rune(cqcode)
+	for i := range r {
+		switch {
+		// TODO CQ码开始标记 []rune("[CQ:") = [91 67 81 58]
+		case r[i] == 91 && r[i+1] == 67 && r[i+2] == 81 && r[i+3] == 58:
+			isCQcode = true
+			elems = append(elems, temp)
+			// TODO 清空temp，开始装CQ码
+			temp = []rune{}
+			temp = append(temp, r[i])
+		// TODO CQ码一直到出现"]"为止 []rune("]") = [93]
+		case isCQcode && r[i] != 93:
+			temp = append(temp, r[i])
+		// TODO 出现"]"，开始下一个elem
+		case isCQcode && r[i] == 93:
+			isCQcode = false
+			temp = append(temp, r[i])
+			elems = append(elems, temp)
+			temp = []rune{}
+		default:
+			temp = append(temp, r[i])
+		case i == len(r)-1:
+			temp = append(temp, r[i])
+			elems = append(elems, temp)
+		}
+	}
+	return elems
+}
+
+/*
 // cqCode2Array 字符串CQ码转数组
 func cqCode2Array(message string) []map[string]interface{} {
 	array := []map[string]interface{}{}
@@ -86,7 +212,7 @@ func whatCQparams(code string) map[string]interface{} {
 	}
 	return map[string]interface{}{"data": elems}
 }
-
+*/
 // xq2cqCode 普通XQ码转CQ码
 func xq2cqCode(message string) string {
 	// 防止注入
@@ -105,7 +231,7 @@ func xq2cqCode(message string) string {
 	}
 
 	// 转图片
-	pic := regexp.MustCompile(`\[pic={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(\..*?),(.*?)\]`)
+	pic := regexp.MustCompile(`\[pic={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(\..*?)\]`)
 	for _, p := range pic.FindAllStringSubmatch(message, -1) {
 		oldpic := p[0]
 		res := fmt.Sprintf("{%s-%s-%s-%s-%s}.jpg", p[1], p[2], p[3], p[4], p[5])
