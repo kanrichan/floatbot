@@ -55,7 +55,7 @@ func (pool *PicsCache) search(md5 string) bool {
 }
 
 func (pool *PicsCache) addPicPool(text string) {
-	pic := regexp.MustCompile(`\[pic={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(\..*?),(.*?)\]`)
+	pic := regexp.MustCompile(`\[pic={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(\..*?)\]`)
 	for _, p := range pic.FindAllStringSubmatch(text, -1) {
 		md5 := strings.ToUpper(fmt.Sprintf("%s%s%s%s%s", p[1], p[2], p[3], p[4], p[5]))
 		pool.add(md5)
