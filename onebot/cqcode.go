@@ -86,6 +86,8 @@ func cqCode2Array(text string) []map[string]interface{} {
 				}
 				cqCodeMap["data"] = keyValue
 				array = append(array, cqCodeMap)
+				cqCodeKey = []string{}
+				cqCodeValue = []string{}
 				isValue = false
 				isCQcode = false
 			default:
