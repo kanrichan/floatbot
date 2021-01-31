@@ -293,14 +293,14 @@ func (target msgTarget) cq2xqRecord(message gjson.Result) string {
 	if message.Get("data.cache").Exists() {
 		cache = message.Get("data.cache").Bool()
 	}
-	rec := picDownloader{
+	rec := recDownloader{
 		file:     file,
 		url:      url,
 		suffix:   ".mp3",
 		savePath: RecordPath,
 		iscache:  cache,
 	}
-	return fmt.Sprintf("[pic=%s]", rec.path())
+	return fmt.Sprintf("[Voi=%s]", rec.path())
 }
 
 func (target msgTarget) cq2xqVideo(message gjson.Result) string {

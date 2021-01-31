@@ -43,20 +43,22 @@ func TEST(s string, v ...interface{}) {
 	}
 }
 
+// PathExecute 返回当前运行目录
 func PathExecute() string {
 	dir, err := os.Getwd()
 	if err != nil {
-		ERROR("判断当前运行路径失败")
+		panic(err)
 	}
 	return dir + "/"
 }
 
+// CreatePath 生成路径或文件所对应的目录
 func CreatePath(path string) {
 	length := len(path)
 	switch {
-	case path[length-1:] != "/":
+	case path[length:] != "/":
 		path = path[:strings.LastIndex(path, "/")]
-	case path[length-1:] != "\\":
+	case path[length:] != "\\":
 		path = path[:strings.LastIndex(path, "\\")]
 	default:
 		//
@@ -64,14 +66,23 @@ func CreatePath(path string) {
 	if !PathExists(path) {
 		err := os.MkdirAll(path, 0644)
 		if err != nil {
-			ERROR("生成应用目录失败")
+			panic(err)
 		}
 	}
 }
 
+// PathExists 判断路径或文件是否存在
 func PathExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil || os.IsExist(err)
+}
+
+// FileSize 获取文件大小
+func FileSize(file string) int64 {
+	if fi, err := os.Stat(file); err == nil {
+		return fi.Size()
+	}
+	return 0
 }
 
 func ReadAllText(path string) string {
