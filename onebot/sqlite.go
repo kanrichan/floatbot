@@ -101,9 +101,9 @@ func (bot *BotYaml) dbInsert(objptr interface{}) int64 {
 	return id
 }
 
-// dbSelect 根据结构体查询对应的表，cmd可为" id = 0 "
+// dbSelect 根据结构体查询对应的表，cmd可为"id = 0"
 func (bot *BotYaml) dbSelect(objptr interface{}, cmd string) {
-	rows, err := bot.DB.Query(fmt.Sprintf("SELECT * FROM %s where %s", struct2name(objptr), cmd))
+	rows, err := bot.DB.Query(fmt.Sprintf("SELECT * FROM %s WHERE %s", struct2name(objptr), cmd))
 	if err != nil {
 		panic(err)
 	}

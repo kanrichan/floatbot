@@ -29,7 +29,7 @@ func main() { onebot.Main() }
 func newAppInfo() *AppInfo {
 	return &AppInfo{
 		Name:   "OneBot-YaYa",
-		Pver:   "1.1.8",
+		Pver:   "1.1.9",
 		Sver:   3,
 		Author: "kanri",
 		Desc:   "OneBot标准的先驱实现 项目地址: http://github.com/Yiwen-Chan/OneBot-YaYa",
