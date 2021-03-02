@@ -1,12 +1,11 @@
-module yaya
+module onebot
 
-go 1.14
+go 1.15
 
 require (
 	github.com/Yiwen-Chan/go-silk v0.0.5
 	github.com/gorilla/websocket v1.4.2
-	github.com/mattn/go-sqlite3 v1.14.5
-	github.com/tidwall/gjson v1.6.3
-	golang.org/x/text v0.3.4
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+	github.com/tidwall/gjson v1.6.8
+	golang.org/x/text v0.3.5
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )

@@ -1,223 +1,124 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"runtime"
-	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
+var (
+	WSSHandler = func(bot int64, data []byte) []byte { fmt.Println(string(data)); return []byte("ok") }
+)
+
 var upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
 
-func (s *WebSocketServer) Init() {
-
-	if s.Conn == nil {
-		s.Conn = []*WebSocketServerConn{}
-	}
+// 正向WS
+type WSS struct {
+	id     int64
+	token  string
+	addr   string
+	server *http.Server
+	mutex  sync.Mutex
+	conn   []*WSSConn
 }
 
-func (s *WebSocketServer) Run() {
-	switch {
-	case s.Enable && s.ConnectStatus == S_WAIT && s.Host != "":
-		if s.Port == 0 {
-			s.Port = 80
-		}
-		INFO(s, "Listen Start")
-		go s.Connect()
-		fallthrough
-	case s.Enable && s.ConnectStatus == S_OK:
-		for i := range s.Conn {
-			switch {
-			case s.Conn[i].ListenStatus == S_WAIT:
-				go s.Listen(s.Conn[i])
-				INFO(s, "Listen Start")
-			case s.Conn[i].SendStatus == S_WAIT:
-				go s.Send(s.Conn[i])
-				INFO(s, "Send Start")
-			}
-		}
-	}
+type WSSConn struct {
+	mutex sync.Mutex
+	conn  *websocket.Conn
 }
 
-func (s *WebSocketServer) Stop(force bool) {
-	switch {
-	case s.ConnectStatus == S_ERROR:
-		if s.Server != nil {
-			s.Server.Close()
-		}
-		time.Sleep(time.Second * 1)
-		s.ConnectStatus = S_WAIT
-		fallthrough
-	case s.ConnectStatus == S_OK:
-		for i := range s.Conn {
-			switch {
-			case s.Conn[i].ListenStatus == S_ERROR:
-				if s.Conn[i].SendStatus == S_OK {
-					s.Conn[i].StopSend <- true
-				}
-				if s.Conn[i].Conn != nil {
-					s.Conn[i].Conn.Close()
-					s.Conn[i].Conn = nil
-				}
-				time.Sleep(time.Second * 1)
-				s.Mutex.Lock()
-				s.Conn = append(s.Conn[:i], s.Conn[i+1:]...)
-				s.Mutex.Unlock()
-			case s.Conn[i].SendStatus == S_ERROR:
-				if s.Conn[i].Conn != nil {
-					s.Conn[i].Conn.Close()
-					s.Conn[i].Conn = nil
-				}
-				time.Sleep(time.Second * 1)
-				s.Mutex.Lock()
-				s.Conn = append(s.Conn[:i], s.Conn[i+1:]...)
-				s.Mutex.Unlock()
-			}
-		}
-	case force:
-		for i := range s.Conn {
-			switch {
-			case s.Conn[i].SendStatus == S_OK:
-				s.Conn[i].StopSend <- true
-			case s.Conn[i].ListenStatus == S_OK:
-				if s.Conn[i].Conn != nil {
-					s.Conn[i].Conn.Close()
-					s.Conn[i].Conn = nil
-				}
-			}
-		}
-		time.Sleep(time.Second * 1)
-		s.Mutex.Lock()
-		s.Conn = nil
-		s.Mutex.Unlock()
-		if s.Server != nil {
-			s.Server.Close()
-			s.Server = nil
-		}
-	}
-}
-
-func (s *WebSocketServer) Connect() {
-	// 开始监听
-	s.ConnectStatus = S_OK
+func (s *WSS) Run(id int64, addr, token string) {
 	defer func() {
-		s.ConnectStatus = S_WAIT
-		if err := recover(); err != nil {
-			// 建立监听时或监听过程发生错误
-			s.ConnectStatus = S_ERROR
-			ERROR(s, err)
-		}
+		s.server = nil
+		recover()
 	}()
-	s.ConnectStatus = S_OK
-	server := &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", s.Host, s.Port),
-		Handler: s,
-	}
-	s.Server = server
-	if err := server.ListenAndServe(); err != nil {
-		panic(err)
-	}
+	s.id = id
+	s.addr = addr
+	s.token = token
+	s.server = &http.Server{Addr: addr, Handler: s}
+	go s.heartbeat()
+	s.server.ListenAndServe()
+	s.server = nil
 }
 
-func (s *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !(r.Header.Get("Authorization") == s.AccessToken || s.AccessToken == "") {
+func (s *WSS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if !(r.Header.Get("Authorization") == s.token || s.token == "") {
 		// Token验证失败
-		ERROR(s, "Token ERROR")
 		return
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		ERROR(s, err)
 		return
 	}
-	// 元事件 表示OneBot启动成功
+	// 元事件 OneBot连接
 	// https://github.com/howmanybots/onebot/blob/master/v11/specs/event/meta.md#%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F
-	handshake, _ := json.Marshal(map[string]string{
-		"meta_event_type": "lifecycle",
-		"post_type":       "meta_event",
-		"self_id":         strconv.FormatInt(s.ID, 10),
-		"sub_type":        "connect",
-		"time":            strconv.FormatInt(time.Now().Unix(), 10),
-	})
-	if err := conn.WriteMessage(websocket.TextMessage, handshake); err != nil {
-		ERROR(s, err)
+	handshake := fmt.Sprintf(`{"meta_event_type":"lifecycle","post_type":"meta_event","self_id":%d,"sub_type":"connect","time":%d}`,
+		s.id, time.Now().Unix())
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(handshake)); err != nil {
 		return
 	}
-	s.Mutex.Lock()
-	defer s.Mutex.Unlock()
-	s.Conn = append(s.Conn, &WebSocketServerConn{
-		Conn:         conn,
-		StopSend:     make(chan bool, 1),
-		ListenStatus: S_WAIT,
-		SendStatus:   S_WAIT,
-		SendChan:     make(chan []byte, 100),
-		Handler:      WebSocketServerHandler,
-	})
+	c := &WSSConn{conn: conn}
+	s.mutex.Lock()
+	s.conn = append(s.conn, c)
+	s.mutex.Unlock()
+	go s.listen(c)
 }
 
-func (s *WebSocketServer) Listen(connect *WebSocketServerConn) {
-	connect.ListenStatus = S_OK
-	defer func() {
-		connect.ListenStatus = S_WAIT
-		if err := recover(); err != nil {
-			// 读取信息或Handler传递时发生错误
-			connect.ListenStatus = S_ERROR
-			ERROR(s, err)
-			buf := make([]byte, 1<<16)
-			runtime.Stack(buf, true)
-			ERROR(s, fmt.Sprintf("[TRACEBACK]:\n%v", string(buf)))
-		}
-	}()
+func (s *WSS) listen(conn *WSSConn) {
 	for {
-		_, buf, err := connect.Conn.ReadMessage()
-		if err != nil {
-			panic(err)
+		if conn.conn == nil || s.server == nil {
+			break
 		}
-		ret := connect.Handler(s.ID, buf)
-		connect.SendChan <- ret
+		type_, data, err := conn.conn.ReadMessage()
+		if err != nil {
+			break
+		}
+		if type_ == websocket.TextMessage {
+			go func() {
+				rep := WSSHandler(s.id, data)
+				if conn.conn == nil {
+					return
+				}
+				conn.mutex.Lock()
+				conn.conn.WriteMessage(websocket.TextMessage, rep)
+				conn.mutex.Unlock()
+			}()
+		}
 	}
 }
 
-func (s *WebSocketServer) Send(connect *WebSocketServerConn) {
-	connect.SendStatus = S_OK
-	defer func() {
-		connect.SendStatus = S_WAIT
-		if err := recover(); err != nil {
-			connect.SendStatus = S_ERROR
-			ERROR(s, err)
-		}
-	}()
-	for {
-		select {
-		case <-connect.StopSend:
-			ERROR(s, "Send 命令退出")
-			return
-		case <-time.After(time.Millisecond * time.Duration(s.HeartBeatInterval)):
-			// OneBot标准 元事件 心跳
-			// https://github.com/howmanybots/onebot/blob/master/v11/specs/event/meta.md#%E5%BF%83%E8%B7%B3
-			heartbeat, _ := json.Marshal(
-				map[string]interface{}{
-					"interval":        strconv.FormatInt(s.HeartBeatInterval, 10),
-					"meta_event_type": "heartbeat",
-					"post_type":       "meta_event",
-					"self_id":         strconv.FormatInt(s.ID, 10),
-					"status": map[string]interface{}{
-						"online": true,
-						"good":   true,
-					},
-					"time": strconv.FormatInt(time.Now().Unix(), 10),
-				},
-			)
-			connect.SendChan <- heartbeat
-		case send := <-connect.SendChan:
-			if err := connect.Conn.WriteMessage(websocket.TextMessage, send); err != nil {
-				panic(err)
+func (s *WSS) Send(data []byte) {
+	fmt.Println(s.conn)
+	for i, conn := range s.conn {
+		if conn.conn != nil && s.server != nil {
+			fmt.Println("loop")
+			conn.mutex.Lock()
+			err := conn.conn.WriteMessage(websocket.TextMessage, data)
+			conn.mutex.Unlock()
+			if err == nil {
+				continue // 没有任何错误即进入下一个循环
 			}
-
 		}
+		// 锁上当前conn并关闭
+		conn.mutex.Lock()
+		conn.conn.Close()
+		conn.conn = nil
+		conn.mutex.Unlock()
+		// 锁上conn列表并从列表上删除该conn
+		s.mutex.Lock()
+		s.conn = append(s.conn[:i], s.conn[i+1:]...)
+		s.mutex.Unlock()
+	}
+}
+
+func (s *WSS) heartbeat() {
+	for {
+		time.Sleep(time.Second * 3)
+		heartbeat := fmt.Sprintf(`{"interval":%d,"meta_event_type":"heartbeat","post_type":"meta_event","self_id":%d,"status":{"good":true,"online":true},"time":%d}`,
+			3000, s.id, time.Now().Unix())
+		s.Send([]byte(heartbeat))
 	}
 }

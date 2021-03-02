@@ -7,10 +7,15 @@ import (
 	"runtime"
 )
 
+const (
+	EnableE         = 10000
+	PrivateMessageE = 1
+)
+
 var (
 	AppInfo = newAppInfo()
 
-	OneBotPath = PathExecute() + "/OneBot/"
+	OneBotPath = PathExecute() + "OneBot\\"
 
 	OnMessagePrivate      = func(ctx *Context) {}
 	OnMessageGroup        = func(ctx *Context) {}
@@ -24,11 +29,14 @@ var (
 	OnRequestFriendAdd    = func(ctx *Context) {}
 	OnRequestGroupAdd     = func(ctx *Context) {}
 	OnEnable              = func(ctx *Context) {}
+	OnDisable             = func(ctx *Context) {}
+	OnSetting             = func(ctx *Context) {}
 
-	MessageIDCache = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
-	MessageCache   = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
-	GroupDataCache = &CacheGroupsData{Group: []*GroupData{}}
-	PicPoolCache   = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
+	MessageIDCache        = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
+	MessageCache          = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
+	GroupDataCache        = &CacheGroupsData{Group: []*GroupData{}}
+	PicPoolCache          = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
+	TemporarySessionCache = &CacheData{Max: 50, Key: []interface{}{}, Value: []interface{}{}}
 )
 
 // App XQ要求的插件信息
@@ -44,7 +52,7 @@ type App struct {
 func newAppInfo() *App {
 	return &App{
 		Name:   "OneBot-YaYa",
-		Pver:   "1.1.9",
+		Pver:   "1.2.0 beta1",
 		Sver:   3,
 		Author: "kanri",
 		Desc:   "OneBot标准的先驱实现 项目地址: http://github.com/Yiwen-Chan/OneBot-YaYa",
@@ -65,6 +73,8 @@ func GoCreate(version *C.char) *C.char {
 
 //export GoSetUp
 func GoSetUp() C.int {
+	ctx := &Context{}
+	OnSetting(ctx)
 	return C.int(0)
 }
 
@@ -120,7 +130,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 						"user_id":  userID,
 						"nickname": "unknown",
 						"sex":      "unknown",
-						"age":      "unknown",
+						"age":      0,
 					},
 				},
 			}
@@ -140,7 +150,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 				"user_id":  userID,
 				"nickname": "unknown",
 				"sex":      "unknown",
-				"age":      "unknown",
+				"age":      0,
 				"area":     "",
 				"card":     "",
 				"level":    "",
@@ -152,7 +162,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"user_id":  userID,
 					"nickname": info.Nickname,
 					"sex":      info.Sex,
-					"age":      info.Sex,
+					"age":      info.Age,
 					"area":     "",
 					"card":     "",
 					"level":    "",
@@ -178,6 +188,37 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"sender":       sender,
 				},
 			}
+			MessageIDCache.Insert(messageID, messageNum)
+			MessageCache.Insert(messageID, ctx.Response)
+			OnMessageGroup(ctx)
+		// 4：临时群聊信息
+		case 4:
+			cqMessage := xq2cqCode(message)
+			ctx := &Context{
+				Bot: bot,
+				Response: map[string]interface{}{
+					"time":         time,
+					"self_id":      bot,
+					"post_type":    "message",
+					"message_type": "private",
+					"sub_type":     "group",
+					"message_id":   messageID,
+					"user_id":      userID,
+					"message":      cqMessage,
+					"raw_message":  cqMessage,
+					"font":         0,
+					"sender": map[string]interface{}{
+						"user_id":  userID,
+						"nickname": "unknown",
+						"sex":      "unknown",
+						"age":      0,
+					},
+				},
+			}
+			XQApiOutPutLog("TemporarySessionCache")
+			XQApiOutPutLog(TemporarySessionCache)
+			TemporarySessionCache.Insert(userID, groupID)
+			XQApiOutPutLog(TemporarySessionCache)
 			MessageIDCache.Insert(messageID, messageNum)
 			MessageCache.Insert(messageID, ctx.Response)
 			OnMessageGroup(ctx)
@@ -324,7 +365,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"group_id":    groupID,
 					"operator_id": userID,
 					"user_id":     noticeID,
-					"duration":    "unknown",
+					"duration":    1,
 				},
 			}
 			OnNoticeGroupBan(ctx)
@@ -340,7 +381,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"group_id":    groupID,
 					"operator_id": userID,
 					"user_id":     noticeID,
-					"duration":    "unknown",
+					"duration":    0,
 				},
 			}
 			OnNoticeGroupBan(ctx)
@@ -447,16 +488,22 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 				},
 			}
 			OnRequestGroupAdd(ctx)
-		case 10000:
-			XQApiOutPutLog(`  ____  __     _ _____________    ____ _________ `)
-			XQApiOutPutLog(` / _   \|  \   |   |   ____|   __  ) /  __  |___   ___| `)
-			XQApiOutPutLog(`|  |   |  |    \ |  |   __|  |   __  \|   |   |  |  |  |       `)
-			XQApiOutPutLog(`|  |__|   |  | \    |   |__ _|   |_)   |   |__|  |  |  |      `)
-			XQApiOutPutLog(` \____/ |_ |  \ _|______|______/ \_____/   |_ |     `)
+		case 12001:
+			// 启动 显示 ONEBOT
+			XQApiOutPutLog(`   ____    _      __ ________ _______     _____  __________`)
+			XQApiOutPutLog(` /  __  \ |  \   |   |   ______|   ___   ) /  __    |___    ___|`)
+			XQApiOutPutLog(`|   |   |   |    \ |   |    __|   |    __   \|   |   |   |    |  |`)
+			XQApiOutPutLog(`|   |__|   |   | \    |   |_____|    |_)    ||   |__|   |    |  |`)
+			XQApiOutPutLog(` \_____/ |__|   \__|________|________/ \_______/    |_ |`)
 			ctx := &Context{
 				Bot: bot,
 			}
 			OnEnable(ctx)
+		case 12002:
+			ctx := &Context{
+				Bot: bot,
+			}
+			OnDisable(ctx)
 		default:
 			//
 		}
