@@ -6,9 +6,9 @@ OneBot-YaYa是基于GO和C语言混合编程开发的QQ机器人HTTP API，[OneB
 
 ![Badge](https://img.shields.io/badge/OneBot-v11-black)
 [![License](https://img.shields.io/github/license/Yiwen-Chan/OneBot-YaYa.svg)](https://raw.githubusercontent.com/Yiwen-Chan/OneBot-YaYa/master/LICENSE)
-[![](https://img.shields.io/badge/QQ%20gorup-1048452984-brightgreen)](https://jq.qq.com/?_wv=1027&k=QMb7x1mM)
+[![bug反馈群](https://img.shields.io/badge/bug反馈群-1048452984-red)](https://jq.qq.com/?_wv=1027&k=QMb7x1mM)
 [![Release](https://img.shields.io/github/v/release/Yiwen-Chan/OneBot-YaYa?include_prereleases)](https://github.com/Yiwen-Chan/OneBot-YaYa/releases)
-[![Downloads @latest](https://img.shields.io/github/downloads-pre/Yiwen-Chan/OneBot-YaYa/latest/total)](https://github.com/Yiwen-Chan/OneBot-YaYa/releases)
+[![Downloads](https://img.shields.io/github/downloads/Yiwen-Chan/OneBot-YaYa/total)](https://github.com/Yiwen-Chan/OneBot-YaYa/releases)
 
 ### 开始使用
 
@@ -28,16 +28,6 @@ version: 1.0.5
 master: 12345678
 # 是否开启DEBUG日志
 debug: true
-# 心跳设置，默认不动
-heratbeat:
-  enable: true
-  interval: 10000
-# 缓存设置，暂未实现
-cache:
-  database: false
-  image: false
-  record: false
-  video: false
 # 不同姬气人的设置，注意yaml中 "-" 代表一个父节点有多个子节点
 bots:
 # 被设置的姬气人QQ
@@ -64,18 +54,10 @@ bots:
     enable: false
     # 插件服务器的地址，一般只需要改端口
     url: ws://127.0.0.1:8080/ws
-    # 暂未实现
-    api_url: ws://127.0.0.1:8080/api
-    # 暂未实现
-    event_url: ws://127.0.0.1:8080/event
-    # 暂未实现
-    use_universal_client: true
     # 插件填了 Token 这里也要填
     access_token: ""
     # OneBot上报格式，可为 string 或 array ，一般不动
     post_message_format: string
-    # 掉线重连的时间间隔，单位毫秒
-    reconnect_interval: 3000
   # HTTP 和 HTTP POST
   http:
   # 连接到的服务的名字，自己起
@@ -92,8 +74,6 @@ bots:
     post_url: 
     # OneBot 上报的 Secret，一般不填
     secret: ""
-    # 等待响应时间，一般不动
-    time_out: 0
     # OneBot上报格式，可为 string 或 array ，一般不动
     post_message_format: string
 ```
@@ -102,9 +82,7 @@ bots:
 
 5. 每个姬气人都可以设置多个 正向WS 反向WS HTTP 服务，实在不懂[加群](https://jq.qq.com/?_wv=1027&k=PVW9Ol8b)问或者提 [issue](https://github.com/Yiwen-Chan/OneBot-YaYa/issues)
 
-6. 再次重启先驱框架（热重载什么的咕了）
-
-- 注：不要使用`重载插件`功能，否则会导致框架闪退，此为框架与go不兼容问题
+- 注：不要使用`重载插件`功能，修改保存配置文件后会自动热重载
 
 ### 支持的标准
 
@@ -257,7 +235,7 @@ bots:
 | /set_group_ban | [群组单人禁言](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_ban-群组单人禁言) |  |
 | /set_group_anonymous_ban | [群组匿名用户禁言](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_anonymous_ban-群组匿名用户禁言) | 暂未实现 |
 | /set_group_whole_ban | [群组全员禁言](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_whole_ban-群组全员禁言) |  |
-| /set_group_admin         | [群组设置管理员](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_admin-群组设置管理员) | 先驱不支持 |
+| /set_group_admin         | [群组设置管理员](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_admin-群组设置管理员) |  |
 | /set_group_anonymous     | [群组匿名](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_anonymous-群组匿名) |  |
 | /set_group_card          | [设置群名片群备注](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_card-设置群名片群备注) |  |
 | /set_group_name          | [设置群名](https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_name-设置群名) | 先驱不支持 |
