@@ -57,7 +57,7 @@ type App struct {
 func newAppInfo() *App {
 	return &App{
 		Name:   "OneBot-YaYa",
-		Pver:   "1.2.0 beta3",
+		Pver:   "1.2.0",
 		Sver:   3,
 		Author: "kanri",
 		Desc:   "OneBot标准的先驱实现 项目地址: http://github.com/Yiwen-Chan/OneBot-YaYa",
