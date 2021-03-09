@@ -55,6 +55,9 @@ func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(r.Body)
 		// 直接提交并返回数据
+		if len(buf.Bytes()) == 0 {
+			return
+		}
 		ret := HttpHandler(s.ID, r.URL.Path[1:], buf.Bytes())
 		w.Write(ret)
 	default:
@@ -65,6 +68,9 @@ func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		data, _ := json.Marshal(dataMap)
 		// 直接提交并返回数据
+		if len(data) == 0 {
+			return
+		}
 		ret := HttpHandler(s.ID, r.URL.Path[1:], data)
 		w.Write(ret)
 	}

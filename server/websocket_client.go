@@ -89,6 +89,9 @@ func (s *WSC) listen() {
 						s.PANIC(err, buf)
 					}
 				}()
+				if len(data) == 0 {
+					return
+				}
 				rep := WSCHandler(s.ID, data)
 				s.Send(rep)
 			}()

@@ -86,6 +86,9 @@ func (s *WSS) listen(conn *WSSConn) {
 						s.PANIC(err, buf)
 					}
 				}()
+				if len(data) == 0 {
+					return
+				}
 				rep := WSSHandler(s.ID, data)
 				if conn.conn == nil {
 					return
@@ -99,7 +102,7 @@ func (s *WSS) listen(conn *WSSConn) {
 }
 
 func (s *WSS) Send(data []byte) {
-	var temp = s.conn
+	var close []int
 	for i, conn := range s.conn {
 		if conn.conn != nil && s.server != nil {
 			conn.mutex.Lock()
@@ -114,12 +117,15 @@ func (s *WSS) Send(data []byte) {
 		conn.conn.Close()
 		conn.conn = nil
 		conn.mutex.Unlock()
-		// 锁上conn列表并从列表上删除该conn
-		temp = append(temp[:i], temp[i+1:]...)
+		// 记录该删除的conn
+		close = append(close, i)
 	}
-	s.mutex.Lock()
-	s.conn = temp
-	s.mutex.Unlock()
+	// 锁上conn列表并从列表上删除该conn
+	for i := range close {
+		s.mutex.Lock()
+		s.conn = append(s.conn[:close[i]-i], s.conn[close[i]-i+1:]...)
+		s.mutex.Unlock()
+	}
 }
 
 func (s *WSS) Close() {

@@ -20,7 +20,7 @@ func (s *WSC) ERROR(text interface{}) {
 }
 
 func (s *WSC) PANIC(err interface{}, traceback []byte) {
-	CoreInfo("[PANIC][WSC] ID: %d URL: %s \n[ERROR]\n%v\n[TRACEBACK]\n%v", s.ID, s.Addr, err, traceback)
+	CoreInfo("[PANIC][WSC] ID: %d URL: %s \n[ERROR]\n%v\n[TRACEBACK]\n%s", s.ID, s.Addr, err, string(traceback))
 }
 
 func (s *WSS) INFO(text interface{}) {
@@ -36,7 +36,7 @@ func (s *WSS) ERROR(text interface{}) {
 }
 
 func (s *WSS) PANIC(err interface{}, traceback []byte) {
-	CoreInfo("[PANIC][WSS] ID: %d URL: %s \n[ERROR]\n%v\n[TRACEBACK]\n%v", s.ID, s.Addr, err, traceback)
+	CoreInfo("[PANIC][WSS] ID: %d URL: %s \n[ERROR]\n%v\n[TRACEBACK]\n%s", s.ID, s.Addr, err, string(traceback))
 }
 
 func (s *HTTP) INFO(text interface{}) {
@@ -52,7 +52,7 @@ func (s *HTTP) ERROR(text interface{}) {
 }
 
 func (s *HTTP) PANIC(err interface{}, traceback []byte) {
-	CoreInfo("[PANIC][HTTP] ID: %d URL: %s \n[ERROR]\n%v\n[TRACEBACK]\n%v", s.ID, s.Addr, err, traceback)
+	CoreInfo("[PANIC][HTTP] ID: %d URL: %s \n[ERROR]\n%v\n[TRACEBACK]\n%s", s.ID, s.Addr, err, string(traceback))
 }
 
 type Server interface {
