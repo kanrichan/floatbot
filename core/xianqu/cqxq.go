@@ -32,7 +32,7 @@ func xq2cqCode(message string) string {
 	}
 
 	// 转图片
-	pic := regexp.MustCompile(`\[pic={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(\..*?)\]`)
+	pic := regexp.MustCompile(`\[pic={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(.*?)\]`)
 	for _, p := range pic.FindAllStringSubmatch(message, -1) {
 		oldpic := p[0]
 		res := fmt.Sprintf("{%s-%s-%s-%s-%s}.jpg", p[1], p[2], p[3], p[4], p[5])
@@ -44,9 +44,21 @@ func xq2cqCode(message string) string {
 		PicPoolCache.Insert(strings.ToLower(hash), res)
 		PicPoolCache.Insert(md5, res)
 	}
+	pic2 := regexp.MustCompile(`\[pic={(.*?)-(.*?)-(.*?)}(.*?)\]`)
+	for _, p := range pic2.FindAllStringSubmatch(message, -1) {
+		oldpic := p[0]
+		res := fmt.Sprintf("{%s}.jpg", p[3])
+		md5 := p[3]
+		newpic := fmt.Sprintf("[CQ:image,file=%s.image,url=http://gchat.qpic.cn/gchatpic_new//--%s/0]", md5, md5)
+		message = strings.ReplaceAll(message, oldpic, newpic)
+		// 记录收到过的图片
+		hash := hashText(fmt.Sprintf("http://gchat.qpic.cn/gchatpic_new//--%s/0", md5))
+		PicPoolCache.Insert(strings.ToLower(hash), res)
+		PicPoolCache.Insert(md5, res)
+	}
 
 	// 转语音
-	voi := regexp.MustCompile(`\[Voi={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(\..*?),(.*?)\]`)
+	voi := regexp.MustCompile(`\[Voi={(.*?)-(.*?)-(.*?)-(.*?)-(.*?)}(.*?)\]`)
 	for _, v := range voi.FindAllStringSubmatch(message, -1) {
 		oldpic := v[0]
 		res := fmt.Sprintf("{%s-%s-%s-%s-%s}.amr", v[1], v[2], v[3], v[4], v[5])
