@@ -49,12 +49,15 @@ func HttpHandler(bot int64, path string, data []byte) []byte {
 }
 
 // HttpPostHandler 快速回复的Handler
-func HttpPostHandler(bot int64, rsp, data []byte) {
+func HttpPostHandler(bot int64, send, data []byte) {
+	rsp := map[string]interface{}{}
+	json.Unmarshal(send, &rsp)
 	temp := map[string]interface{}{}
 	json.Unmarshal(data, &temp)
 	ctx := &core.Context{
-		Bot:     bot,
-		Request: temp,
+		Bot:      bot,
+		Response: rsp,
+		Request:  temp,
 	}
 	// 将快速回复转化成正常的onebot标准报文
 	middle.RequestFastReplyFormat(ctx)
