@@ -22,8 +22,11 @@ func ResponseToArray(ctx *core.Context) {
 
 // 将报文中Request的message转换为array格式
 func RequestToArray(ctx *core.Context) {
-	params := core.Parse(ctx.Request).Get("params")
-	fmt.Println(ctx)
+	request := core.Parse(ctx.Request)
+	if !request.Exist("params") {
+		return
+	}
+	params := request.Get("params")
 	if !params.Exist("message") {
 		return
 	}
