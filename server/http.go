@@ -17,35 +17,37 @@ var (
 	HttpHandler     = func(bot int64, path string, data []byte) []byte { fmt.Println(string(data)); return []byte("ok") }
 )
 
-type HttpServer struct {
+type HTTP struct {
 	// 参数
-	id     int64
-	addr   string
-	token  string
-	url    string
-	secret string
+	ID     int64
+	Addr   string
+	Token  string
+	URL    string
+	Secret string
+
 	server *http.Server
 }
 
-func (s *HttpServer) Run(id int64, addr, token string) {
+func (s *HTTP) Run() {
 	defer func() {
 		recover()
 	}()
-	s.id = id
-	s.addr = addr
-	s.token = token
-	s.server = &http.Server{
-		Addr:    addr,
-		Handler: s,
+	if s.Addr == "" {
+		return
 	}
+	s.server = &http.Server{Addr: s.Addr, Handler: s}
+	s.INFO("HTTP服务建立，等待API调用")
 	if err := s.server.ListenAndServe(); err != nil {
-		panic(err)
+		s.ERROR(err)
 	}
 }
 
-func (s *HttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !(r.Header.Get("Authorization") == s.token || s.token == "") {
+func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if !(r.Header.Get("Authorization") == s.Token || s.Token == "") {
 		// Token验证失败
+		return
+	}
+	if r.URL.Path == "/favicon.ico" {
 		return
 	}
 	switch r.Header.Get("Content-Type") {
@@ -53,7 +55,7 @@ func (s *HttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(r.Body)
 		// 直接提交并返回数据
-		ret := HttpHandler(s.id, r.URL.Path, buf.Bytes())
+		ret := HttpHandler(s.ID, r.URL.Path[1:], buf.Bytes())
 		w.Write(ret)
 	default:
 		r.ParseForm()
@@ -63,23 +65,26 @@ func (s *HttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		data, _ := json.Marshal(dataMap)
 		// 直接提交并返回数据
-		ret := HttpHandler(s.id, r.URL.Path, data)
+		ret := HttpHandler(s.ID, r.URL.Path[1:], data)
 		w.Write(ret)
 	}
 }
 
-func (s *HttpServer) Send(data []byte) {
+func (s *HTTP) Send(data []byte) {
+	if s.URL == "" {
+		return
+	}
 	client := &http.Client{}
 	// TODO OneBot标准 HTTP POST 上报Header
 	// https://github.com/howmanybots/onebot/blob/master/v11/specs/communication/http-post.md#%E4%B8%8A%E6%8A%A5
-	req, _ := http.NewRequest("POST", s.url, bytes.NewBuffer(data))
+	req, _ := http.NewRequest("POST", s.URL, bytes.NewBuffer(data))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Self-ID", strconv.FormatInt(s.id, 10))
+	req.Header.Set("X-Self-ID", strconv.FormatInt(s.ID, 10))
 	req.Header.Set("User-Agent", "CQHttp/4.15.0")
-	if s.secret != "" {
+	if s.Secret != "" {
 		// TODO OneBot标准 HTTP POST 签名
 		// https://github.com/howmanybots/onebot/blob/master/v11/specs/communication/http-post.md#%E7%AD%BE%E5%90%8D
-		mac := hmac.New(sha1.New, []byte(s.secret))
+		mac := hmac.New(sha1.New, []byte(s.Secret))
 		mac.Write(data)
 		req.Header.Set("X-Signature", "sha1="+hex.EncodeToString(mac.Sum(nil)))
 	}
@@ -90,7 +95,13 @@ func (s *HttpServer) Send(data []byte) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	if len(body) != 0 {
 		// 快速回复
-		HttpPostHandler(s.id, data, body)
+		HttpPostHandler(s.ID, data, body)
 	}
 	resp.Body.Close()
+}
+
+func (s *HTTP) Close() {
+	if s.server != nil {
+		s.server.Close()
+	}
 }

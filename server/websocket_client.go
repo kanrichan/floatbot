@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -16,57 +17,55 @@ var (
 
 // 反向WS
 type WSC struct {
-	id     int64
-	status int32
-	addr   string
-	token  string
+	ID    int64
+	Addr  string
+	Token string
 
 	mutex       sync.Mutex
 	conn        *websocket.Conn
+	status      bool
 	stopconnect chan bool
 }
 
-func (s *WSC) Run(id int64, addr, token string) {
+func (s *WSC) Run() {
 	defer func() {
 		recover()
 	}()
-	s.id = id
-	s.addr = addr
-	s.token = token
 	s.stopconnect = make(chan bool, 1)
 	// OneBot协议
 	header := http.Header{
 		"X-Client-Role": []string{"Universal"},
-		"X-Self-ID":     []string{strconv.FormatInt(s.id, 10)},
+		"X-Self-ID":     []string{strconv.FormatInt(s.ID, 10)},
 		"User-Agent":    []string{"CQHttp/4.15.0"},
 	}
-	if s.token != "" {
-		header["Authorization"] = []string{"Token " + s.token}
+	if s.Token != "" {
+		header["Authorization"] = []string{"Token " + s.Token}
 	}
+	s.INFO("反向WS正在尝试连接服务器")
 	for {
 		select {
 		case <-s.stopconnect:
-			fmt.Println("stop6")
 			return
 		// 重连定时发生
 		case <-time.After(time.Second * 1):
 			// 连接
-			conn, _, err := websocket.DefaultDialer.Dial(s.addr, header)
+			conn, _, err := websocket.DefaultDialer.Dial(s.Addr, header)
 			if err != nil {
-				fmt.Println(err)
+				s.DEBUG(err)
 				continue
 			}
 			// 元事件 OneBot连接
 			// https://github.com/howmanybots/onebot/blob/master/v11/specs/event/meta.md#%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F
-			handshake := fmt.Sprintf(`{"meta_event_type":"lifecycle","post_type":"meta_event","self_id":%d,"sub_type":"connect","time":%d}`,
-				s.id, time.Now().Unix())
+			handshake := fmt.Sprintf(`{"meta_event_type":"lifecycle","post_type":"meta_event","self_ID":%d,"sub_type":"connect","time":%d}`,
+				s.ID, time.Now().Unix())
 			if err := conn.WriteMessage(websocket.TextMessage, []byte(handshake)); err != nil {
-				fmt.Println(err)
+				s.DEBUG(err)
 				continue
 			}
 			// 连接成功
 			s.conn = conn
-			go s.heartbeat()
+			s.status = true
+			s.INFO("反向WS连接服务器成功")
 			s.listen()
 		}
 	}
@@ -74,7 +73,7 @@ func (s *WSC) Run(id int64, addr, token string) {
 
 func (s *WSC) listen() {
 	for {
-		if s.conn == nil {
+		if !s.status || s.conn == nil {
 			break
 		}
 		type_, data, err := s.conn.ReadMessage()
@@ -83,14 +82,32 @@ func (s *WSC) listen() {
 		}
 		if type_ == websocket.TextMessage {
 			go func() {
-				rep := WSCHandler(s.id, data)
+				defer func() {
+					if err := recover(); err != nil {
+						buf := make([]byte, 1<<16)
+						runtime.Stack(buf, true)
+						s.PANIC(err, buf)
+					}
+				}()
+				rep := WSCHandler(s.ID, data)
 				s.Send(rep)
 			}()
 		}
 	}
+	if s.conn == nil {
+		return
+	}
+	s.mutex.Lock()
+	s.conn.Close()
+	s.conn = nil
+	s.status = false
+	s.mutex.Unlock()
 }
 
 func (s *WSC) Send(data []byte) {
+	if !s.status {
+		return
+	}
 	if s.conn != nil {
 		s.mutex.Lock()
 		err := s.conn.WriteMessage(websocket.TextMessage, data)
@@ -102,25 +119,19 @@ func (s *WSC) Send(data []byte) {
 	s.mutex.Lock()
 	s.conn.Close()
 	s.conn = nil
+	s.status = false
 	s.mutex.Unlock()
 }
 
-func (s *WSC) heartbeat() {
-	for {
-		time.Sleep(time.Second * 3)
-		heartbeat := fmt.Sprintf(`{"interval":%d,"meta_event_type":"heartbeat","post_type":"meta_event","self_id":%d,"status":{"good":true,"online":true},"time":%d}`,
-			3000, s.id, time.Now().Unix())
-		s.Send([]byte(heartbeat))
+func (s *WSC) Close() {
+	if !s.status || s.conn == nil {
+		s.stopconnect <- true
+		return
 	}
-}
-
-func (s *WSC) Stop() {
-	time.Sleep(time.Second * 1)
 	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	if s.conn != nil {
-		s.conn.Close()
-		s.conn = nil
-	}
+	s.conn.Close()
+	s.conn = nil
+	s.status = false
+	s.mutex.Unlock()
 	s.stopconnect <- true
 }

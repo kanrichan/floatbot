@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"runtime"
 	"sync"
 	"time"
 
@@ -17,9 +18,10 @@ var upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { retu
 
 // 正向WS
 type WSS struct {
-	id     int64
-	token  string
-	addr   string
+	ID    int64
+	Token string
+	Addr  string
+
 	server *http.Server
 	mutex  sync.Mutex
 	conn   []*WSSConn
@@ -30,22 +32,20 @@ type WSSConn struct {
 	conn  *websocket.Conn
 }
 
-func (s *WSS) Run(id int64, addr, token string) {
+func (s *WSS) Run() {
 	defer func() {
 		s.server = nil
 		recover()
 	}()
-	s.id = id
-	s.addr = addr
-	s.token = token
-	s.server = &http.Server{Addr: addr, Handler: s}
-	go s.heartbeat()
-	s.server.ListenAndServe()
-	s.server = nil
+	s.server = &http.Server{Addr: s.Addr, Handler: s}
+	s.INFO("正向WS服务建立，等待客户端连接")
+	if err := s.server.ListenAndServe(); err != nil {
+		s.ERROR(err)
+	}
 }
 
 func (s *WSS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !(r.Header.Get("Authorization") == s.token || s.token == "") {
+	if !(r.Header.Get("Authorization") == s.Token || s.Token == "") {
 		// Token验证失败
 		return
 	}
@@ -55,8 +55,8 @@ func (s *WSS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	// 元事件 OneBot连接
 	// https://github.com/howmanybots/onebot/blob/master/v11/specs/event/meta.md#%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F
-	handshake := fmt.Sprintf(`{"meta_event_type":"lifecycle","post_type":"meta_event","self_id":%d,"sub_type":"connect","time":%d}`,
-		s.id, time.Now().Unix())
+	handshake := fmt.Sprintf(`{"meta_event_type":"lifecycle","post_type":"meta_event","self_ID":%d,"sub_type":"connect","time":%d}`,
+		s.ID, time.Now().Unix())
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(handshake)); err != nil {
 		return
 	}
@@ -65,6 +65,7 @@ func (s *WSS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.conn = append(s.conn, c)
 	s.mutex.Unlock()
 	go s.listen(c)
+	s.INFO("正向WS客户端连接成功")
 }
 
 func (s *WSS) listen(conn *WSSConn) {
@@ -78,7 +79,14 @@ func (s *WSS) listen(conn *WSSConn) {
 		}
 		if type_ == websocket.TextMessage {
 			go func() {
-				rep := WSSHandler(s.id, data)
+				defer func() {
+					if err := recover(); err != nil {
+						buf := make([]byte, 1<<16)
+						runtime.Stack(buf, true)
+						s.PANIC(err, buf)
+					}
+				}()
+				rep := WSSHandler(s.ID, data)
 				if conn.conn == nil {
 					return
 				}
@@ -91,10 +99,9 @@ func (s *WSS) listen(conn *WSSConn) {
 }
 
 func (s *WSS) Send(data []byte) {
-	fmt.Println(s.conn)
+	var temp = s.conn
 	for i, conn := range s.conn {
 		if conn.conn != nil && s.server != nil {
-			fmt.Println("loop")
 			conn.mutex.Lock()
 			err := conn.conn.WriteMessage(websocket.TextMessage, data)
 			conn.mutex.Unlock()
@@ -108,17 +115,26 @@ func (s *WSS) Send(data []byte) {
 		conn.conn = nil
 		conn.mutex.Unlock()
 		// 锁上conn列表并从列表上删除该conn
-		s.mutex.Lock()
-		s.conn = append(s.conn[:i], s.conn[i+1:]...)
-		s.mutex.Unlock()
+		temp = append(temp[:i], temp[i+1:]...)
 	}
+	s.mutex.Lock()
+	s.conn = temp
+	s.mutex.Unlock()
 }
 
-func (s *WSS) heartbeat() {
-	for {
-		time.Sleep(time.Second * 3)
-		heartbeat := fmt.Sprintf(`{"interval":%d,"meta_event_type":"heartbeat","post_type":"meta_event","self_id":%d,"status":{"good":true,"online":true},"time":%d}`,
-			3000, s.id, time.Now().Unix())
-		s.Send([]byte(heartbeat))
+func (s *WSS) Close() {
+	for _, conn := range s.conn {
+		if conn.conn == nil {
+			continue
+		}
+		// 锁上当前conn并关闭
+		conn.mutex.Lock()
+		conn.conn.Close()
+		conn.conn = nil
+		conn.mutex.Unlock()
+	}
+	s.conn = nil
+	if s.server != nil {
+		s.server.Close()
 	}
 }
