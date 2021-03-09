@@ -115,15 +115,13 @@ func (c *CacheGroupsData) GetCacheGroup(bot, groupID int64, cache bool) (group *
 		for _, value := range qqReflectValues {
 			qq := value.Interface().(string)
 			role := "member"
-			switch {
-			case qq == Int2Str(owner):
-				role = "owner"
-			default:
-				for _, admin := range admins {
-					if qq == admin.Str {
-						role = "admin"
-					}
+			for i := range admins {
+				if Str2Int(qq) == admins[i].Int() {
+					role = "admin"
 				}
+			}
+			if qq == Int2Str(owner) {
+				role = "owner"
 			}
 			nickname := strings.ReplaceAll(membersGJson.Get(qq).Get("nk").Str, "&nbsp;", " ")
 			card := strings.ReplaceAll(membersGJson.Get(qq).Get("cd").Str, "&nbsp;", " ")

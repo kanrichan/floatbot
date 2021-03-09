@@ -10,12 +10,15 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/Yiwen-Chan/go-silk/silk"
+	"github.com/tidwall/gjson"
 )
 
 func (ctx *Context) MakeOkResponse(data interface{}) {
@@ -61,7 +64,7 @@ func ApiSendMsg(ctx *Context) {
 		case "text":
 			out += data.Str("text")
 		case "at":
-			out += fmt.Sprintf("[@%s]", data.Str("id"))
+			out += fmt.Sprintf("[@%s]", data.Str("qq"))
 		case "face":
 			out += fmt.Sprintf("[Face%s.gif]", data.Str("id"))
 		case "emoji":
@@ -106,17 +109,17 @@ func ApiSendMsg(ctx *Context) {
 				// 下载图片
 				client := &http.Client{}
 				reqest, _ := http.NewRequest("GET", file, nil)
-				reqest.Header.Add("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
-				reqest.Header.Add("Net-Type", "Wifi")
+				reqest.Header.Set("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
+				reqest.Header.Set("Net-Type", "Wifi")
 				resp, err := client.Do(reqest)
 				if err != nil {
 					panic(err)
 				}
-				defer resp.Body.Close()
 				data, _ := ioutil.ReadAll(resp.Body)
 				f, _ := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-				defer f.Close()
 				f.Write(data)
+				f.Close()
+				resp.Body.Close()
 			// base64方式
 			case strings.Contains(file, "base64://"):
 				path = OneBotPath + "image\\" + hashText(file[9:]) + ".jpg"
@@ -125,11 +128,11 @@ func ApiSendMsg(ctx *Context) {
 					continue
 				}
 				f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-				defer f.Close()
 				if err != nil {
 					continue
 				}
 				f.Write(data)
+				f.Close()
 			// 本地文件方式
 			case strings.Contains(file, "file:///"):
 				path = file[8:]
@@ -171,17 +174,19 @@ func ApiSendMsg(ctx *Context) {
 				// 下载音频
 				client := &http.Client{}
 				reqest, _ := http.NewRequest("GET", file, nil)
-				reqest.Header.Add("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
-				reqest.Header.Add("Net-Type", "Wifi")
+				reqest.Header.Set("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
+				reqest.Header.Set("Net-Type", "Wifi")
+				link, _ := url.Parse(file)
+				reqest.Header.Set("Host", link.Hostname())
 				resp, err := client.Do(reqest)
 				if err != nil {
 					panic(err)
 				}
-				defer resp.Body.Close()
 				data, _ := ioutil.ReadAll(resp.Body)
 				f, _ := os.OpenFile(file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-				defer f.Close()
 				f.Write(data)
+				f.Close()
+				resp.Body.Close()
 			// base64方式
 			case strings.Contains(file, "base64://"):
 				file = OneBotPath + "image\\" + hashText(file[9:]) + ".jpg"
@@ -190,11 +195,11 @@ func ApiSendMsg(ctx *Context) {
 					continue
 				}
 				f, err := os.OpenFile(file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-				defer f.Close()
 				if err != nil {
 					continue
 				}
 				f.Write(data)
+				f.Close()
 			// 本地文件方式
 			case strings.Contains(file, "file:///"):
 				file = file[8:]
@@ -489,12 +494,12 @@ func ApiSendMsg(ctx *Context) {
 		ctx.MakeFailResponse("可能受到风控")
 		return
 	}
-	id := MessageIDCache.Hcraes(num).(int64)
-	if id == 0 {
+	id := MessageIDCache.Hcraes(num)
+	if id == nil {
 		ctx.MakeFailResponse("可能受到风控")
 		return
 	}
-	ctx.MakeOkResponse(map[string]interface{}{"message_id": id})
+	ctx.MakeOkResponse(map[string]interface{}{"message_id": id.(int64)})
 }
 
 // SendPrivateMsg 发送私聊消息
@@ -603,7 +608,46 @@ func ApiSetGroupWholeBan(ctx *Context) {
 // SetGroupAdmin 群组设置管理员
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_admin-%E7%BE%A4%E7%BB%84%E8%AE%BE%E7%BD%AE%E7%AE%A1%E7%90%86%E5%91%98
 func ApiSetGroupAdmin(ctx *Context) {
-	ctx.MakeFailResponse("暂时不支持")
+	var (
+		groupID = Parse(ctx.Request).Get("params").Str("group_id")
+		userID  = Parse(ctx.Request).Get("params").Str("user_id")
+		enable  = Parse(ctx.Request).Get("params").Int("enable")
+	)
+	temp1 := CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))
+	temp2 := CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))
+	temp3 := []byte{}
+	for i := range temp1 {
+		if temp1[i] != temp2[i] || temp1[i] == 92 {
+			break
+		}
+		temp3 = append(temp3, temp1[i])
+	}
+	cookie := string(temp3) + CPtr2GoStr(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))
+	skey := string(temp3)[strings.Index(string(temp3), "skey=")+5:]
+	bnk := 5381
+	for i := range skey {
+		bnk += (bnk << 5) + int(skey[i])
+	}
+	bnk = bnk & 2147483647
+	client := &http.Client{}
+	dataUrl := url.Values{}
+	dataUrl.Add("gc", groupID)
+	dataUrl.Add("op", Int2Str(enable))
+	dataUrl.Add("ul", userID)
+	dataUrl.Add("bkn", strconv.Itoa(bnk))
+	reqest, _ := http.NewRequest("POST", "https://qun.qq.com/cgi-bin/qun_mgr/set_group_admin", strings.NewReader(dataUrl.Encode()))
+	reqest.Header.Set("Cookie", cookie)
+	resp, err := client.Do(reqest)
+	if err != nil {
+		panic(err)
+	}
+	data, _ := ioutil.ReadAll(resp.Body)
+	ul := gjson.ParseBytes(data).Get("ul").Str
+	em := gjson.ParseBytes(data).Get("em").Str
+	if ul == userID {
+		ctx.MakeOkResponse(nil)
+	}
+	ctx.MakeFailResponse(em)
 }
 
 // SetGroupAnonymous 群组匿名
@@ -723,7 +767,21 @@ func ApiGetGroupInfo(ctx *Context) {
 // GetGroupList 获取群列表
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_list-%E8%8E%B7%E5%8F%96%E7%BE%A4%E5%88%97%E8%A1%A8
 func ApiGetGroupList(ctx *Context) {
-	ctx.MakeFailResponse("暂时不支持")
+	var temp []GroupInfo
+	list := strings.Split(
+		CPtr2GoStr(
+			C.S3_Api_GetGroupList_B(
+				GoInt2CStr(ctx.Bot),
+			),
+		),
+		"\r\n",
+	)
+	for _, groupID := range list {
+		temp = append(temp, GroupInfo{
+			GroupID: Str2Int(groupID),
+		})
+	}
+	ctx.MakeOkResponse(temp)
 }
 
 // GetGroupMemberInfo 获取群成员信息
@@ -760,7 +818,17 @@ func ApiGetGroupHonorInfo(ctx *Context) {
 // GetCookies 获取 Cookies
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_cookies-%E8%8E%B7%E5%8F%96-cookies
 func ApiGetCookies(ctx *Context) {
-	ctx.MakeFailResponse("暂时不支持")
+	switch Parse(ctx.Request).Get("params").Str("domain") {
+	case "qun.qq.com":
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + CPtr2GoStr(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))})
+		return
+	case "qzone.qq.com":
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + CPtr2GoStr(C.S3_Api_GetZonePsKey(GoInt2CStr(ctx.Bot)))})
+		return
+	default:
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))})
+		return
+	}
 }
 
 // GetCsrfToken 获取 CSRF Token
@@ -772,7 +840,17 @@ func ApiGetCsrfToken(ctx *Context) {
 // GetCredentials 获取 QQ 相关接口凭证
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_credentials-%E8%8E%B7%E5%8F%96-qq-%E7%9B%B8%E5%85%B3%E6%8E%A5%E5%8F%A3%E5%87%AD%E8%AF%81
 func ApiGetCredentials(ctx *Context) {
-	ctx.MakeFailResponse("暂时不支持")
+	switch Parse(ctx.Request).Get("params").Str("domain") {
+	case "qun.qq.com":
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + CPtr2GoStr(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))})
+		return
+	case "qzone.qq.com":
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + CPtr2GoStr(C.S3_Api_GetZonePsKey(GoInt2CStr(ctx.Bot)))})
+		return
+	default:
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))})
+		return
+	}
 }
 
 // GetRecord 获取语音

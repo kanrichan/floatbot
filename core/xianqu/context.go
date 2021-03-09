@@ -26,6 +26,12 @@ func (v value) Int(path string) int64 {
 	case int64:
 		return temp.(int64)
 	case string:
+		if temp.(string) == "true" {
+			return 1
+		}
+		if temp.(string) == "false" {
+			return 0
+		}
 		r, _ := strconv.ParseInt(temp.(string), 10, 64)
 		return r
 	case bool:
