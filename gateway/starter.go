@@ -3,45 +3,86 @@ package gateway
 import (
 	"fmt"
 	core "onebot/core/xianqu"
-	ser "onebot/server"
 	"time"
 )
 
 var (
 	// 原始配置
 	CONF = &Yaml{}
-	// 配置上已注册的bot
-	BotsMap = []int64{}
-	// 配置上所有的连接
-	Connects = make(map[int64]BotsConnect)
 	// 关闭所有连接的chan
 	StopServer = make(chan bool, 1)
 	IsRunning  = false
 )
 
-// 所有连接的表
-type BotsConnect struct {
-	HttpServers      []*ser.HttpServer
-	WebSocketClients []*ser.WebSocketClient
-	WebSocketServers *ser.WSS
-}
-
 // core触发启动事件
 func OnEnable(_ *core.Context) {
 	if IsRunning {
-		core.XQApiCallMessageBox("禁止多次启动！")
+		core.ApiCallMessageBox("禁止多次启动！")
 		return // 防止多次运行
 	}
+	IsRunning = true
+	time.Sleep(time.Second * 1)
+	// 启动 显示 ONEBOT
+	core.ApiOutPutLog(`   ____    _      __ ________ _______     _____  __________`)
+	core.ApiOutPutLog(` /  __  \ |  \   |   |   ______|   ___   ) /  __    |___    ___|`)
+	core.ApiOutPutLog(`|   |   |   |    \ |   |    __|   |    __   \|   |   |   |    |  |`)
+	core.ApiOutPutLog(`|   |__|   |   | \    |   |_____|    |_)    ||   |__|   |    |  |`)
+	core.ApiOutPutLog(` \_____/ |__|   \__|________|________/ \_______/    |_ |`)
 	CONF = configLoad(core.OneBotPath + "config.yml")
-	if CONF != nil {
-		IsRunning = true
-		if CONF.BotConfs[0].Bot == 0 {
-			ERROR("配置文件中未设置姬气人账号！")
-		}
-		connInit()
-		INFO("[初始化] 所有初始化准备就绪，开始执行连接")
-		controller()
+	if len(CONF.BotConfs) == 1 && CONF.BotConfs[0].Bot == 0 {
+		go core.ApiMessageBoxButton("配置文件中未设置姬气人账号!请自行修改配置文件并热重载")
 	}
+	INFO("[初始化] 所有初始化准备就绪，开始执行连接")
+	table := NewServersTable()
+	for i := range CONF.BotConfs {
+		for j := range CONF.BotConfs[i].WSCConf {
+			if !CONF.BotConfs[i].WSCConf[j].Enable {
+				continue
+			}
+			s, format := CONF.BotConfs[i].WSCConf[j].GetWSCServer(CONF.BotConfs[i].Bot)
+			table.Add(CONF.BotConfs[i].Bot, s, format)
+		}
+		for j := range CONF.BotConfs[i].WSSConf {
+			if !CONF.BotConfs[i].WSSConf[j].Enable {
+				continue
+			}
+			s, format := CONF.BotConfs[i].WSSConf[j].GetWSSServer(CONF.BotConfs[i].Bot)
+			table.Add(CONF.BotConfs[i].Bot, s, format)
+		}
+		for j := range CONF.BotConfs[i].HTTPConf {
+			if !CONF.BotConfs[i].HTTPConf[j].Enable {
+				continue
+			}
+			s, format := CONF.BotConfs[i].HTTPConf[j].GetHTTPServer(CONF.BotConfs[i].Bot)
+			table.Add(CONF.BotConfs[i].Bot, s, format)
+		}
+	}
+	for _, bot := range table.Bots {
+		INFO("[初始化] [%d] 连接列表%s", bot, table.Servers[bot])
+	}
+	table.Run()
+	// 检查配置文件并热重启
+	checker := NewConfChecker(core.OneBotPath + "config.yml")
+	// 阻塞至关闭
+	func() {
+		for {
+			select {
+			case <-StopServer:
+				return
+			case <-time.After(time.Second * 3):
+				for _, bot := range table.Bots {
+					heartbeat := fmt.Sprintf(`{"interval":%d,"meta_event_type":"heartbeat","post_type":"meta_event","self_id":%d,"status":{"good":true,"online":true},"time":%d}`,
+						3000, bot, time.Now().Unix())
+					table.SendByte(bot, []byte(heartbeat))
+				}
+			case <-time.After(time.Millisecond * 761):
+				if checker.Check() && core.ApiMessageBoxButton("检测到配置文件变化，是否热重载？") == 6 {
+					go OnRestart(nil)
+				}
+			}
+		}
+	}()
+	table.Close()
 }
 
 // core触发停止事件
@@ -49,93 +90,23 @@ func OnDisable(_ *core.Context) {
 	if IsRunning {
 		StopServer <- true
 	}
-	time.Sleep(time.Second * 2)
-	BotsMap = []int64{}
-	Connects = make(map[int64]BotsConnect)
-	StopServer = make(chan bool, 1)
 	IsRunning = false
-	INFO("已停止运行！")
 }
 
-// 将配置上所有连接都注册到表 Connects 上
-func connInit() {
-	for _, b := range CONF.BotConfs {
-		if b.WSCConf
-		if b.WSSConf != nil {
-			c := b.WSSConf
-			wss := &ser.WSS{}
-			wss.Run(b.Bot, c.HeartBeatInterval, fmt.Sprintf("%s:%d", c.Host, c.Port), c.AccessToken)
-		}
-
-		if len(httpServers)+len(webSocketClients) == 0 {
-			// 这个bot一个连接都没有，不注册
-			continue
-		}
-		BotsMap = append(BotsMap, b.Bot)
-		Connects[b.Bot] = BotsConnect{
-			httpServers,
-			webSocketClients,
-			wss,
-		}
-	}
-}
-func (s *WSS) heartbeat() {
-	defer func() {
-		recover()
-	}()
-	for {
-		time.Sleep(time.Millisecond * time.Duration(s.heart))
-		heartbeat := fmt.Sprintf(`{"interval":%d,"meta_event_type":"heartbeat","post_type":"meta_event","self_id":%d,"status":{"good":true,"online":true},"time":%d}`,
-			s.heart, s.id, time.Now().Unix())
-		for _, conn := range s.conn {
-			conn.mutex.Lock()
-			if err := conn.conn.WriteMessage(websocket.TextMessage, []byte(heartbeat)); err != nil {
-				conn.conn.Close()
-			}
-			conn.mutex.Unlock()
-		}
-	}
+// core触发热重载事件
+func OnRestart(_ *core.Context) {
+	OnDisable(nil)
+	time.Sleep(time.Second * 1)
+	OnEnable(nil)
 }
 
-// 管理所有连接的管理器
-func controller() {
-	for {
-		select {
-		// 关闭所有的连接并退出此goroutine
-		case <-StopServer:
-			for _, bot := range BotsMap {
-				INFO("%v", Connects[bot].WebSocketServers[0].Name)
-				INFO("停止！")
-				for _, s := range Connects[bot].HttpServers {
-					s.Stop(true)
-				}
-				for _, s := range Connects[bot].WebSocketServers {
-					INFO("停止！")
-					INFO("???")
-					s.Stop(true)
-				}
-				for _, s := range Connects[bot].WebSocketClients {
-					s.Stop(true)
-				}
+// OnEvent 将不同bot的context广播到该bot的所有连接
+func OnEvent(ctx *core.Context) {
+	INFO("[上报] %v", ctx)
+	table := GetServersTable()
+	table.Send(ctx.Bot, ctx)
+}
 
-			}
-			return
-		// 开启所有的连接并清除错误连接
-		case <-time.After(time.Second * 1):
-			for _, bot := range BotsMap {
-				for _, s := range Connects[bot].HttpServers {
-					s.Stop(false) // 检查发生错误的连接并进行关闭
-					s.Run()       // 检查等待状态的连接并进行连接
-				}
-				for _, s := range Connects[bot].WebSocketClients {
-					s.Stop(false)
-					s.Run()
-				}
-				for _, s := range Connects[bot].WebSocketServers {
-					s.Stop(false)
-					s.Run()
-				}
-			}
-		}
-	}
+func OnSetting(_ *core.Context) {
+	core.ApiCallMessageBox(fmt.Sprintf("等个好心人写UI，修改配置请到 %sconfig.yml\n", core.OneBotPath))
 }

@@ -1,50 +1,14 @@
 package gateway
 
 import (
-	"encoding/json"
-
 	core "onebot/core/xianqu"
-	middle "onebot/middleware"
-	ser "onebot/server"
+	"strings"
 )
-
-// broadcast 将不同bot的context广播到该bot的所有连接
-func broadcast(ctx *core.Context) {
-	INFO("[上报] %v", ctx)
-	// OneBot标准中的报文string格式
-	data, _ := json.Marshal(ctx.Response)
-	// OneBot标准中的报文array格式
-	newCtx := core.CopyCtx(ctx)
-	middle.ResponseToArray(newCtx)
-	data2, _ := json.Marshal(newCtx.Response)
-	// 遍历所有的HttpPost连接的服务端
-	for _, s := range Connects[ctx.Bot].HttpServers {
-		if s.Conn.SendStatus == ser.SOK {
-			if s.PostMessageFormat == "string" {
-				s.SendChan <- data
-				continue
-			}
-			s.SendChan <- data2
-		}
-	}
-	// 遍历所有的反向WS连接的服务端
-	for _, s := range Connects[ctx.Bot].WebSocketClients {
-		if s.Conn.SendStatus == ser.SOK {
-			if s.PostMessageFormat == "string" {
-				s.SendChan <- data
-				continue
-			}
-			s.SendChan <- data2
-		}
-	}
-
-	Connects[ctx.Bot].WebSocketServers.Broadcast(data)
-}
 
 // callapi 将context分发到core的各个API处
 func callapi(ctx *core.Context) {
 	INFO("[响应] %v", ctx)
-	switch ctx.Request["action"].(string) {
+	switch strings.ReplaceAll(ctx.Request["action"].(string), "_async", "") {
 	case "send_private_msg":
 		core.ApiSendPrivateMsg(ctx)
 	case "send_group_msg":

@@ -2,8 +2,8 @@ package gateway
 
 import (
 	"io/ioutil"
-	"onebot/server"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -20,10 +20,31 @@ type Yaml struct {
 
 // Bot所有连接
 type BotYaml struct {
-	Bot      int64                     `yaml:"bot"`
-	WSSConf  *WSSYaml                  `yaml:"websocket"`
-	WSCConf  []*server.WebSocketClient `yaml:"websocket_reverse"`
-	HTTPConf []*server.HttpServer      `yaml:"http"`
+	Bot      int64       `yaml:"bot"`
+	WSSConf  []*WSSYaml  `yaml:"websocket"`
+	WSCConf  []*WSCYaml  `yaml:"websocket_reverse"`
+	HTTPConf []*HTTPYaml `yaml:"http"`
+}
+
+// Http & Post
+type HTTPYaml struct {
+	Name              string `yaml:"name"`
+	Enable            bool   `yaml:"enable"`
+	Host              string `yaml:"host"`
+	Port              int64  `yaml:"port"`
+	AccessToken       string `yaml:"token"`
+	PostUrl           string `yaml:"post_url"`
+	Secret            string `yaml:"secret"`
+	PostMessageFormat string `yaml:"post_message_format"`
+}
+
+// 反向WS
+type WSCYaml struct {
+	Name              string `yaml:"name"`
+	Enable            bool   `yaml:"enable"`
+	Url               string `yaml:"url"`
+	AccessToken       string `yaml:"access_token"`
+	PostMessageFormat string `yaml:"post_message_format"`
 }
 
 // 正向WS
@@ -34,15 +55,14 @@ type WSSYaml struct {
 	Port              int64  `yaml:"port"`
 	AccessToken       string `yaml:"access_token"`
 	PostMessageFormat string `yaml:"post_message_format"`
-	HeartBeatInterval int64  `yaml:"heartbeat_interval"`
 }
 
 // defaultConfig 默认配置文件
 func defaultConfig() *Yaml {
 	return &Yaml{
 		Version:  "1.2.0",
-		Master:   12345678,
-		Debug:    true,
+		Master:   0,
+		Debug:    false,
 		BotConfs: []*BotYaml{defaultBotConfig()},
 	}
 }
@@ -50,30 +70,33 @@ func defaultConfig() *Yaml {
 func defaultBotConfig() *BotYaml {
 	return &BotYaml{
 		Bot: 0,
-		WSSConf: &WSSYaml{
-			Name:              "WSS EXAMPLE",
-			Enable:            true,
-			Host:              "127.0.0.1",
-			Port:              6700,
-			AccessToken:       "",
-			PostMessageFormat: "string",
-			HeartBeatInterval: 10000,
-		},
-		WSCConf: []*server.WebSocketClient{
+		WSSConf: []*WSSYaml{
 			{
-				Name:               "WSC EXAMPLE",
-				Enable:             true,
-				Url:                "ws://127.0.0.1:8080/ws",
-				ApiUrl:             "ws://127.0.0.1:8080/api",
-				EventUrl:           "ws://127.0.0.1:8080/event",
-				UseUniversalClient: true,
-				AccessToken:        "",
-				PostMessageFormat:  "string",
-				HeartBeatInterval:  10000,
-				ReconnectInterval:  3000,
+				Name:              "WSS EXAMPLE",
+				Enable:            true,
+				Host:              "127.0.0.1",
+				Port:              6700,
+				AccessToken:       "",
+				PostMessageFormat: "string",
 			},
 		},
-		HTTPConf: []*server.HttpServer{
+		WSCConf: []*WSCYaml{
+			{
+				Name:              "WSC EXAMPLE",
+				Enable:            true,
+				Url:               "ws://127.0.0.1:8080/ws",
+				AccessToken:       "",
+				PostMessageFormat: "string",
+			},
+			{
+				Name:              "WSC EXAMPLE 2",
+				Enable:            false,
+				Url:               "ws://127.0.0.1:8081/ws",
+				AccessToken:       "",
+				PostMessageFormat: "string",
+			},
+		},
+		HTTPConf: []*HTTPYaml{
 			{
 				Name:              "HTTP EXAMPLE",
 				Enable:            true,
@@ -82,9 +105,7 @@ func defaultBotConfig() *BotYaml {
 				AccessToken:       "",
 				PostUrl:           "",
 				Secret:            "",
-				TimeOut:           0,
 				PostMessageFormat: "string",
-				HeartBeatInterval: 10000,
 			},
 		},
 	}
@@ -124,6 +145,12 @@ func (c *Yaml) read(file string) (err error) {
 }
 
 func (c *Yaml) save(file string) (err error) {
+	if !c.isExists(filepath.Dir(file)) {
+		err := os.MkdirAll(filepath.Dir(file), 0644)
+		if err != nil {
+			return err
+		}
+	}
 	data, _ := yaml.Marshal(c)
 	err = ioutil.WriteFile(file, data, 0644)
 	if err != nil {
@@ -135,4 +162,28 @@ func (c *Yaml) save(file string) (err error) {
 func (c *Yaml) isExists(file string) bool {
 	_, err := os.Stat(file)
 	return err == nil || os.IsExist(err)
+}
+
+type ConfChecker struct {
+	file string
+	data time.Time
+}
+
+func NewConfChecker(file string) *ConfChecker {
+	f, _ := os.Open(file)
+	fi, _ := f.Stat()
+	return &ConfChecker{
+		file: file,
+		data: fi.ModTime(),
+	}
+}
+
+func (c *ConfChecker) Check() bool {
+	f, _ := os.Open(c.file)
+	fi, _ := f.Stat()
+	if fi.ModTime() != c.data {
+		c.data = fi.ModTime()
+		return true
+	}
+	return false
 }

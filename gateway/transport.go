@@ -91,35 +91,35 @@ func WebSocketServerHandler(bot int64, data []byte) []byte {
 }
 
 func OnMessagePrivate(ctx *core.Context) {
-	broadcast(ctx)
+	OnEvent(ctx)
 }
 func OnMessageGroup(ctx *core.Context) {
-	broadcast(ctx)
+	OnEvent(ctx)
 }
 func OnNoticeFileUpload(ctx *core.Context) {
-	broadcast(ctx)
+	OnEvent(ctx)
 }
 func OnNoticeAdminChange(ctx *core.Context) {
-	broadcast(ctx)
+	OnEvent(ctx)
 }
 func OnNoticeGroupDecrease(ctx *core.Context) {
-	broadcast(ctx)
+	OnEvent(ctx)
 }
 func OnNoticeGroupIncrease(ctx *core.Context) {
-	broadcast(ctx)
+	OnEvent(ctx)
 }
 func OnNoticeGroupBan(ctx *core.Context) {
-	broadcast(ctx)
+	OnEvent(ctx)
 }
 func OnNoticeFriendAdd(ctx *core.Context) {
-	broadcast(ctx)
+	OnEvent(ctx)
 }
 func OnNoticeMessageRecall(ctx *core.Context) {
-	broadcast(ctx)
+	OnEvent(ctx)
 }
 func OnRequestFriendAdd(ctx *core.Context) {
-	broadcast(ctx)
+	OnEvent(ctx)
 }
 func OnRequestGroupAdd(ctx *core.Context) {
-	broadcast(ctx)
+	OnEvent(ctx)
 }
