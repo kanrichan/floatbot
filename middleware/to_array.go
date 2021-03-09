@@ -22,19 +22,22 @@ func ResponseToArray(ctx *core.Context) {
 
 // 将报文中Request的message转换为array格式
 func RequestToArray(ctx *core.Context) {
+	params := core.Parse(ctx.Request).Get("params")
 	fmt.Println(ctx)
-	if !core.Parse(ctx.Request).Get("params").Exist("message") {
+	if !params.Exist("message") {
 		return
 	}
-	message := core.Parse(ctx.Request).Get("params").Str("message")
+	// 如果本来就是数组格式则不转化
+	if len(params.Array("message")) != 0 {
+		return
+	}
+	message := params.Str("message")
 	fmt.Println(message)
 	if message == "" {
 		return
 	}
-	switch ctx.Request["params"].(type) {
-	case map[string]interface{}:
-		ctx.Request["params"].(map[string]interface{})["message"] = CqCode2Array(message)
-	}
+	// 保证不是拷贝的
+	ctx.Request["params"].(map[string]interface{})["message"] = CqCode2Array(message)
 	return
 }
 
