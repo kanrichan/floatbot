@@ -80,13 +80,10 @@ func (ctx *Context) XQMessageType() int64 {
 	default:
 		//
 	}
-	XQApiOutPutLog(TemporarySessionCache.Value)
 	tempGroup := TemporarySessionCache.Search(params.Int("user_id"))
 	if tempGroup == nil {
 		return 1
 	}
-	XQApiOutPutLog(tempGroup)
 	ctx.Request["params"].(map[string]interface{})["group_id"] = tempGroup.(int64)
-	XQApiOutPutLog(ctx.Request)
 	return 4
 }

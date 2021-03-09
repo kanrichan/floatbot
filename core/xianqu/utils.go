@@ -216,3 +216,13 @@ func hashText(input string) string {
 	m.Write([]byte(input))
 	return hex.EncodeToString(m.Sum(nil))
 }
+
+func FileMD5(path string) string {
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	m := md5.New()
+	m.Write(b)
+	return strings.ToUpper(hex.EncodeToString(m.Sum(nil)))
+}

@@ -73,8 +73,7 @@ func GoCreate(version *C.char) *C.char {
 
 //export GoSetUp
 func GoSetUp() C.int {
-	ctx := &Context{}
-	OnSetting(ctx)
+	OnSetting(nil)
 	return C.int(0)
 }
 
@@ -102,10 +101,10 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				XQApiOutPutLog(fmt.Sprintf("[PANIC] 发生了不可预知的错误，请在GitHub提交issue：%v", err))
+				ApiOutPutLog(fmt.Sprintf("[PANIC] 发生了不可预知的错误，请在GitHub提交issue：%v", err))
 				buf := make([]byte, 1<<16)
 				runtime.Stack(buf, true)
-				XQApiOutPutLog(fmt.Sprintf("[TRACEBACK]:\n%v", string(buf)))
+				ApiOutPutLog(fmt.Sprintf("[TRACEBACK]:\n%v", string(buf)))
 			}
 		}()
 		switch messageType {
@@ -215,10 +214,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					},
 				},
 			}
-			XQApiOutPutLog("TemporarySessionCache")
-			XQApiOutPutLog(TemporarySessionCache)
 			TemporarySessionCache.Insert(userID, groupID)
-			XQApiOutPutLog(TemporarySessionCache)
 			MessageIDCache.Insert(messageID, messageNum)
 			MessageCache.Insert(messageID, ctx.Response)
 			OnMessageGroup(ctx)
@@ -489,21 +485,9 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 			}
 			OnRequestGroupAdd(ctx)
 		case 12001:
-			// 启动 显示 ONEBOT
-			XQApiOutPutLog(`   ____    _      __ ________ _______     _____  __________`)
-			XQApiOutPutLog(` /  __  \ |  \   |   |   ______|   ___   ) /  __    |___    ___|`)
-			XQApiOutPutLog(`|   |   |   |    \ |   |    __|   |    __   \|   |   |   |    |  |`)
-			XQApiOutPutLog(`|   |__|   |   | \    |   |_____|    |_)    ||   |__|   |    |  |`)
-			XQApiOutPutLog(` \_____/ |__|   \__|________|________/ \_______/    |_ |`)
-			ctx := &Context{
-				Bot: bot,
-			}
-			OnEnable(ctx)
+			OnEnable(nil)
 		case 12002:
-			ctx := &Context{
-				Bot: bot,
-			}
-			OnDisable(ctx)
+			OnDisable(nil)
 		default:
 			//
 		}

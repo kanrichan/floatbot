@@ -4,7 +4,6 @@ package xianqu
 import "C"
 
 import (
-	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -12,6 +11,8 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/Yiwen-Chan/go-silk/silk"
@@ -38,7 +39,6 @@ func (ctx *Context) MakeFailResponse(err string) {
 // ApiSendMsg 发送私聊消息
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#send_private_msg-%E5%8F%91%E9%80%81%E7%A7%81%E8%81%8A%E6%B6%88%E6%81%AF
 func ApiSendMsg(ctx *Context) {
-	XQApiOutPutLog("!!!!!!!!!!!!!!!!")
 	var (
 		params = Parse(ctx.Request).Get("params")
 		// 先计算好发送信息类型以便更新group_id
@@ -74,142 +74,150 @@ func ApiSendMsg(ctx *Context) {
 			bubble = data.Int("id")
 		// 媒体
 		case "image":
+			// 是否使用缓存
 			cache := true
 			if data.Exist("cache") {
 				cache = data.Bool("cache")
 			}
+			// OneBot标准的字段
 			file := data.Str("file")
 			url := data.Str("url")
 			if url != "" {
 				file = url
 			}
-			hash := hashText(file)
-			name := hash + ".jpg"
-			path := OneBotPath + "image/" + name
-			txres := PicPoolCache.Search(hash)
+			var (
+				path string
+				res  string
+			)
+			// 判断file字段为哪种类型
 			switch {
-			case txres != nil && cache:
-				path = txres.(string)
-			case PathExists(path):
+			// 链接方式
+			case strings.Contains(file, "http://") || strings.Contains(file, "https://"):
+				// 解决tx图片链接不落地
+				temp := PicPoolCache.Search(hashText(file))
+				if temp != nil && cache {
+					res = temp.(string)
+					break // 存在tx图片链接并且使用缓存
+				}
+				path = OneBotPath + "image\\" + hashText(file) + ".jpg"
+				if PathExists(path) && cache {
+					break // 存在链接图片
+				}
+				// 下载图片
+				client := &http.Client{}
+				reqest, _ := http.NewRequest("GET", file, nil)
+				reqest.Header.Add("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
+				reqest.Header.Add("Net-Type", "Wifi")
+				resp, err := client.Do(reqest)
+				if err != nil {
+					panic(err)
+				}
+				defer resp.Body.Close()
+				data, _ := ioutil.ReadAll(resp.Body)
+				f, _ := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+				defer f.Close()
+				f.Write(data)
+			// base64方式
+			case strings.Contains(file, "base64://"):
+				path = OneBotPath + "image\\" + hashText(file[9:]) + ".jpg"
+				data, err := base64.StdEncoding.DecodeString(file[9:])
+				if err != nil {
+					continue
+				}
 				f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
 				defer f.Close()
 				if err != nil {
 					continue
 				}
-				var data []byte
-				_, err = f.Read(data)
-				md5 := fmt.Sprintf("%x", md5.Sum(data))
-				res := PicPoolCache.Search(md5)
-				if res != nil {
-					path = res.(string)
-				}
-			case !PathExists(path) || !cache:
-				switch {
-				case strings.Contains(file, "http://"):
-					fallthrough
-				case strings.Contains(file, "https://"):
-					// 下载图片
-					client := &http.Client{}
-					reqest, _ := http.NewRequest("GET", file, nil)
-					reqest.Header.Add("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
-					reqest.Header.Add("Net-Type", "Wifi")
-					resp, err := client.Do(reqest)
-					if err != nil {
-						panic(err)
-					}
-					defer resp.Body.Close()
-					// 写入文件
-					data, _ := ioutil.ReadAll(resp.Body)
-					f, _ := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-					defer f.Close()
-					f.Write(data)
-				case strings.Contains(file, "base64://"):
-					res := file[9:]
-					data, err := base64.StdEncoding.DecodeString(res)
-					if err != nil {
-						continue
-					}
-					f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-					defer f.Close()
-					if err != nil {
-						continue
-					}
-					f.Write(data)
-				case strings.Contains(file, "file:///"):
-					path = file[8:]
-				default:
-					path = file
+				f.Write(data)
+			// 本地文件方式
+			case strings.Contains(file, "file:///"):
+				path = file[8:]
+			// 默认方式
+			default:
+				path = file
+			}
+			if res == "" {
+				// 用文件md5判断缓冲池是否存在该图片
+				temp := PicPoolCache.Search(FileMD5(path))
+				if temp != nil && cache {
+					res = temp.(string)
+				} else {
+					res = path
 				}
 			}
 			switch data.Str("type") {
 			default:
-				out += fmt.Sprintf("[pic=%s]", path)
+				out += fmt.Sprintf("[pic=%s]", res)
 			case "show":
-				out += fmt.Sprintf("[ShowPic=%s,type=%d]", path, data.Int("id")+40000)
+				out += fmt.Sprintf("[ShowPic=%s,type=%d]", res, data.Int("id")+40000)
 			}
 		case "record":
+			// 是否使用缓存
 			cache := true
 			if data.Exist("cache") {
 				cache = data.Bool("cache")
 			}
+			// OneBot标准的字段
 			file := data.Str("file")
-			hash := hashText(file)
-			path := OneBotPath + "record/" + hash
+			// 判断file字段为哪种类型
 			switch {
-			case !PathExists(path+".mp3") || !cache:
-				switch {
-				case strings.Contains(file, "http://"):
-					fallthrough
-				case strings.Contains(file, "https://"):
-					// 下载语音
-					client := &http.Client{}
-					reqest, _ := http.NewRequest("GET", file, nil)
-					reqest.Header.Add("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
-					reqest.Header.Add("Net-Type", "Wifi")
-					resp, err := client.Do(reqest)
-					if err != nil {
-						panic(err)
-					}
-					defer resp.Body.Close()
-					// 写入文件
-					data, _ := ioutil.ReadAll(resp.Body)
-					f, _ := os.OpenFile(path+".mp3", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-					defer f.Close()
-					f.Write(data)
-
-				case strings.Contains(file, "base64://"):
-					res := file[9:]
-					data, err := base64.StdEncoding.DecodeString(res)
-					if err != nil {
-						continue
-					}
-					f, err := os.OpenFile(path+".mp3", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-					defer f.Close()
-					if err != nil {
-						continue
-					}
-					f.Write(data)
-				case strings.Contains(file, "file:///"):
-					path = file[8:]
-				default:
-					out += fmt.Sprintf("[Voi=%s]", file)
+			// 链接方式
+			case strings.Contains(file, "http://") || strings.Contains(file, "https://"):
+				file = OneBotPath + "image\\" + hashText(file) + ".mp3"
+				if PathExists(file) && cache {
+					break // 存在链接音频
+				}
+				// 下载音频
+				client := &http.Client{}
+				reqest, _ := http.NewRequest("GET", file, nil)
+				reqest.Header.Add("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
+				reqest.Header.Add("Net-Type", "Wifi")
+				resp, err := client.Do(reqest)
+				if err != nil {
+					panic(err)
+				}
+				defer resp.Body.Close()
+				data, _ := ioutil.ReadAll(resp.Body)
+				f, _ := os.OpenFile(file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+				defer f.Close()
+				f.Write(data)
+			// base64方式
+			case strings.Contains(file, "base64://"):
+				file = OneBotPath + "image\\" + hashText(file[9:]) + ".jpg"
+				data, err := base64.StdEncoding.DecodeString(file[9:])
+				if err != nil {
 					continue
 				}
+				f, err := os.OpenFile(file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+				defer f.Close()
+				if err != nil {
+					continue
+				}
+				f.Write(data)
+			// 本地文件方式
+			case strings.Contains(file, "file:///"):
+				file = file[8:]
+			// 默认方式
+			default:
 			}
+			// 获取本地文件的文件名
+			name := strings.ReplaceAll(filepath.Base(file), path.Ext(file), "")
 			silkEncoder := &silk.Encoder{}
 			err := silkEncoder.Init("OneBot/record", "OneBot/codec")
 			if err != nil {
 				continue
 			}
-			data, err := ioutil.ReadFile(path + ".mp3")
+			data, err := ioutil.ReadFile(file + ".mp3")
 			if err != nil {
 				continue
 			}
-			_, err = silkEncoder.EncodeToSilk(data, hash, true)
+			_, err = silkEncoder.EncodeToSilk(data, name, true)
 			if err != nil {
 				continue
 			}
-			out += fmt.Sprintf("[Voi=%s]", path+".silk")
+			res := OneBotPath + "record/" + name + ".silk"
+			out += fmt.Sprintf("[Voi=%s]", res)
 		case "video":
 			// TODO
 		// 富文本
@@ -834,14 +842,6 @@ func ApiCleanCache(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
 
-// OutPutLog 向XQ框架发送日志记录
-// ex out_put_log(text=xxx)
-func ApiOutPutLog(ctx *Context) {
-	C.S3_Api_OutPutLog(
-		CString(Parse(ctx.Request).Get("params").Str("text")),
-	)
-}
-
 // SendXml 发送xml信息，相比cqcode方式不用处理转义
 // ex: send_xml(group_id=xxx,data=xxx)
 func ApiSendXml(ctx *Context) {
@@ -854,13 +854,13 @@ func ApiSendJson(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
 
-func XQApiOutPutLog1(text interface{}) {
+func ApiOutPutLog(text interface{}) {
 	C.S3_Api_OutPutLog(
 		CString(fmt.Sprintln(text)),
 	)
 }
 
-func XQApiOutPutLog(text interface{}) {
+func ApiOutPutLog1(text interface{}) {
 	fmt.Println(text)
 }
 
@@ -930,8 +930,29 @@ func XQApiIsFriend(bot, userID int64) bool {
 	)
 }
 
-func XQApiCallMessageBox(text string) {
+func ApiCallMessageBox(text string) {
 	C.S3_Api_CallMessageBox(
 		CString(text),
 	)
+}
+
+func ApiMessageBoxButton(text string) int64 {
+	// 6 为是
+	// 7 为否
+	return int64(
+		C.S3_Api_MessageBoxButton(
+			CString(text),
+		),
+	)
+}
+
+func ApiDefaultQQ() int64 {
+	botList := strings.Split(
+		GoString(C.S3_Api_GetQQList()),
+		"/n",
+	)
+	if len(botList) < 0 {
+		return 0
+	}
+	return Str2Int(botList[0])
 }

@@ -2,7 +2,6 @@ package xianqu
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
 )
 
@@ -82,8 +81,15 @@ func (v value) Bool(path string) bool {
 
 func (v value) Array(path string) []value {
 	temp := []value{}
-	for _, e := range v[path].([]map[string]interface{}) {
-		temp = append(temp, e)
+	switch v[path].(type) {
+	case []map[string]interface{}:
+		for _, e := range v[path].([]map[string]interface{}) {
+			temp = append(temp, e)
+		}
+	case []interface{}:
+		for _, e := range v[path].([]interface{}) {
+			temp = append(temp, e.(map[string]interface{}))
+		}
 	}
 	return temp
 }
@@ -93,11 +99,4 @@ func (v value) Exist(path string) bool {
 		return false
 	}
 	return true
-}
-
-func CopyCtx(ctx *Context) *Context {
-	vt := reflect.TypeOf(ctx).Elem()
-	newCtx := reflect.New(vt)
-	newCtx.Elem().Set(reflect.ValueOf(ctx).Elem())
-	return newCtx.Interface().(*Context)
 }

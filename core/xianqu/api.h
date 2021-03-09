@@ -1172,3 +1172,9 @@ void S3_Api_CallMessageBox(char *text) {
     MessageBox(NULL, ch, TEXT("OneBot-YaYa"), 0);
     return;
 }
+
+int S3_Api_MessageBoxButton(char *text) {
+    TCHAR ch[1000];
+    _stprintf(ch, TEXT("%s"), text);
+    return MessageBox(NULL, ch, TEXT("OneBot-YaYa"), MB_YESNO|MB_ICONQUESTION|MB_SYSTEMMODAL);
+}
