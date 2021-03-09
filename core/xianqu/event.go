@@ -39,6 +39,11 @@ var (
 	TemporarySessionCache = &CacheData{Max: 50, Key: []interface{}{}, Value: []interface{}{}}
 )
 
+func init() {
+	CreatePath(OneBotPath + "\\image\\")
+	CreatePath(OneBotPath + "\\record\\")
+}
+
 // App XQ要求的插件信息
 type App struct {
 	Name   string `json:"name"`   // 插件名字
@@ -52,7 +57,7 @@ type App struct {
 func newAppInfo() *App {
 	return &App{
 		Name:   "OneBot-YaYa",
-		Pver:   "1.2.0 beta2",
+		Pver:   "1.2.0 beta3",
 		Sver:   3,
 		Author: "kanri",
 		Desc:   "OneBot标准的先驱实现 项目地址: http://github.com/Yiwen-Chan/OneBot-YaYa",
@@ -127,9 +132,9 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"font":         0,
 					"sender": map[string]interface{}{
 						"user_id":  userID,
-						"nickname": "unknown",
-						"sex":      "unknown",
-						"age":      0,
+						"nickname": XQApiGetNick(bot, userID),
+						"sex":      XQApiGetGender(bot, userID),
+						"age":      XQApiGetAge(bot, userID),
 					},
 				},
 			}

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -168,17 +169,8 @@ func PathExecute() string {
 
 // CreatePath 生成路径或文件所对应的目录
 func CreatePath(path string) {
-	length := len(path)
-	switch {
-	case path[length:] != "/":
-		path = path[:strings.LastIndex(path, "/")]
-	case path[length:] != "\\":
-		path = path[:strings.LastIndex(path, "\\")]
-	default:
-		//
-	}
-	if !PathExists(path) {
-		err := os.MkdirAll(path, 0644)
+	if !PathExists(filepath.Dir(path)) {
+		err := os.MkdirAll(filepath.Dir(path), 0644)
 		if err != nil {
 			panic(err)
 		}
