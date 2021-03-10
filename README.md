@@ -2,7 +2,7 @@
 
 # OneBot-YaYa
 
-OneBot-YaYa是基于GO和C语言混合编程开发的QQ机器人HTTP API，[OneBot标准](https://github.com/howmanybots/onebot)的先驱QQ机器人平台实现
+OneBot-YaYa是基于CGO开发的QQ机器人HTTP API，[OneBot标准](https://github.com/howmanybots/onebot)的先驱QQ机器人平台实现，高效稳定简单
 
 ![Badge](https://img.shields.io/badge/OneBot-v11-black)
 [![License](https://img.shields.io/github/license/Yiwen-Chan/OneBot-YaYa.svg)](https://raw.githubusercontent.com/Yiwen-Chan/OneBot-YaYa/master/LICENSE)
