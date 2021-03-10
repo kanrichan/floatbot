@@ -7,7 +7,7 @@ import (
 	core "onebot/core/xianqu"
 )
 
-// 将报文中Response的message转换为array格式
+// ResponseToArray 将报文中Response的message转换为array格式
 func ResponseToArray(ctx *core.Context) {
 	message := ctx.Response["message"]
 	switch message.(type) {
@@ -16,11 +16,11 @@ func ResponseToArray(ctx *core.Context) {
 	default:
 		return
 	}
-	ctx.Response["message"] = CqCode2Array(message.(string))
+	ctx.Response["message"] = toArray(message.(string))
 	return
 }
 
-// 将报文中Request的message转换为array格式
+// RequestToArray 将报文中Request的message转换为array格式
 func RequestToArray(ctx *core.Context) {
 	request := core.Parse(ctx.Request)
 	if !request.Exist("params") {
@@ -40,12 +40,12 @@ func RequestToArray(ctx *core.Context) {
 		return
 	}
 	// 保证不是拷贝的
-	ctx.Request["params"].(map[string]interface{})["message"] = CqCode2Array(message)
+	ctx.Request["params"].(map[string]interface{})["message"] = toArray(message)
 	return
 }
 
-func CqCode2Array(text string) []map[string]interface{} {
-	elems := SplitCQText(text)
+func toArray(text string) []map[string]interface{} {
+	elems := cqcodeSplit(text)
 	var (
 		array = []map[string]interface{}{}
 
@@ -136,7 +136,7 @@ func CqCode2Array(text string) []map[string]interface{} {
 	return array
 }
 
-func SplitCQText(cqcode string) [][]rune {
+func cqcodeSplit(cqcode string) [][]rune {
 	var (
 		elems    [][]rune
 		temp     []rune

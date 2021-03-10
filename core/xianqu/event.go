@@ -1,20 +1,17 @@
 package xianqu
 
 import "C"
+
 import (
 	"encoding/json"
 	"fmt"
 	"runtime"
 )
 
-const (
-	EnableE         = 10000
-	PrivateMessageE = 1
-)
-
 var (
+	// 先驱插件信息
 	AppInfo = newAppInfo()
-
+	// 当前OneBot目录
 	OneBotPath = PathExecute() + "OneBot\\"
 
 	OnMessagePrivate      = func(ctx *Context) {}
@@ -32,14 +29,20 @@ var (
 	OnDisable             = func(ctx *Context) {}
 	OnSetting             = func(ctx *Context) {}
 
-	MessageIDCache        = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
-	MessageCache          = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
-	GroupDataCache        = &CacheGroupsData{Group: []*GroupData{}}
-	PicPoolCache          = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
+	// 信息 id 与 num 对应缓冲池
+	MessageIDCache = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
+	// 信息 id 与 数据 对应缓冲池
+	MessageCache = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
+	// 群数据缓冲池
+	GroupDataCache = &CacheGroupsData{Group: []*GroupData{}}
+	// 图片链接 或 md5 对应 xq 资源缓冲池
+	PicPoolCache = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
+	// 群临时会话缓冲此
 	TemporarySessionCache = &CacheData{Max: 50, Key: []interface{}{}, Value: []interface{}{}}
 )
 
 func init() {
+	// 创建数据目录
 	CreatePath(OneBotPath + "\\image\\")
 	CreatePath(OneBotPath + "\\record\\")
 }
@@ -64,6 +67,7 @@ func newAppInfo() *App {
 	}
 }
 
+// 上下报文，包括了上报数据以及api调用数据
 type Context struct {
 	Bot      int64
 	Request  map[string]interface{}

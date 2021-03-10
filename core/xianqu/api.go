@@ -97,12 +97,12 @@ func ApiSendMsg(ctx *Context) {
 			// 链接方式
 			case strings.Contains(file, "http://") || strings.Contains(file, "https://"):
 				// 解决tx图片链接不落地
-				temp := PicPoolCache.Search(hashText(file))
+				temp := PicPoolCache.Search(TextMD5(file))
 				if temp != nil && cache {
 					res = temp.(string)
 					break // 存在tx图片链接并且使用缓存
 				}
-				path = OneBotPath + "image\\" + hashText(file) + ".jpg"
+				path = OneBotPath + "image\\" + TextMD5(file) + ".jpg"
 				if PathExists(path) && cache {
 					break // 存在链接图片
 				}
@@ -122,7 +122,7 @@ func ApiSendMsg(ctx *Context) {
 				resp.Body.Close()
 			// base64方式
 			case strings.Contains(file, "base64://"):
-				path = OneBotPath + "image\\" + hashText(file[9:]) + ".jpg"
+				path = OneBotPath + "image\\" + TextMD5(file[9:]) + ".jpg"
 				data, err := base64.StdEncoding.DecodeString(file[9:])
 				if err != nil {
 					continue
@@ -167,7 +167,7 @@ func ApiSendMsg(ctx *Context) {
 			switch {
 			// 链接方式
 			case strings.Contains(file, "http://") || strings.Contains(file, "https://"):
-				file = OneBotPath + "image\\" + hashText(file) + ".mp3"
+				file = OneBotPath + "image\\" + TextMD5(file) + ".mp3"
 				if PathExists(file) && cache {
 					break // 存在链接音频
 				}
@@ -189,7 +189,7 @@ func ApiSendMsg(ctx *Context) {
 				resp.Body.Close()
 			// base64方式
 			case strings.Contains(file, "base64://"):
-				file = OneBotPath + "image\\" + hashText(file[9:]) + ".jpg"
+				file = OneBotPath + "image\\" + TextMD5(file[9:]) + ".jpg"
 				data, err := base64.StdEncoding.DecodeString(file[9:])
 				if err != nil {
 					continue

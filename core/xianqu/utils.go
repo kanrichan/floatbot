@@ -15,6 +15,7 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -26,16 +27,19 @@ import (
 	sc "golang.org/x/text/encoding/simplifiedchinese"
 )
 
+// CString 将 GO 字符串 转为 C char指针
 func CString(str string) *C.char {
 	gbstr, _ := sc.GB18030.NewEncoder().String(str)
 	return C.CString(gbstr)
 }
 
+// GoString 将 C char指针 转为 GO 字符串
 func GoString(str *C.char) string {
 	utf8str, _ := sc.GB18030.NewDecoder().String(C.GoString(str))
 	return utf8str
 }
 
+// CPtr2GoStr 解决易语言返回的字符串胖指针的问题
 func CPtr2GoStr(str *C.char) string {
 	ptr := C.eStrPtr2CStrPtr(str)
 	if ptr != nil {
@@ -45,6 +49,7 @@ func CPtr2GoStr(str *C.char) string {
 	return ""
 }
 
+// CBool 将 GO 布尔型 转为 C 整数
 func CBool(b bool) C.int {
 	if b {
 		return 1
@@ -52,6 +57,7 @@ func CBool(b bool) C.int {
 	return 0
 }
 
+// GoBool 将 C 整数 转为 GO 布尔型
 func GoBool(b C.int) bool {
 	if b == 1 {
 		return true
@@ -59,20 +65,24 @@ func GoBool(b C.int) bool {
 	return false
 }
 
+// CByte 将 GO 字节数组 转为 C 字符串指针
 func CByte(bt []byte) *C.char {
 	return (*C.char)(unsafe.Pointer(&bt))
 }
 
+// Str2Int 将string转为int64
 func Str2Int(str string) int64 {
 	val, _ := strconv.ParseInt(str, 10, 64)
 	return val
 }
 
+// Int2Str 将int64转为string
 func Int2Str(val int64) string {
 	str := strconv.FormatInt(val, 10)
 	return str
 }
 
+// GoInt2CStr 将 GO int64 转为 C char指针
 func GoInt2CStr(val int64) *C.char {
 	if val == 0 {
 		return CString("")
@@ -80,17 +90,19 @@ func GoInt2CStr(val int64) *C.char {
 	return CString(Int2Str(val))
 }
 
+// CStr2GoInt 将 C char指针 转为 GO int64
 func CStr2GoInt(str *C.char) int64 {
 	return Str2Int(GoString(str))
 }
 
+// Int2Bytes 将 int64 转为字节数组
 func Int2Bytes(val int64) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, uint64(val))
 	return b
 }
 
-// EscapeEmoji 将 emoji的utf-8字符串 转化为 [emoji=FFFFFFFF]
+// EscapeEmoji 将 emoji 转化为 先驱[emoji=FFFFFFFF]
 func EscapeEmoji(text string) string {
 	data := []byte(text)
 	ret := []byte{}
@@ -111,7 +123,7 @@ func EscapeEmoji(text string) string {
 	return string(ret)
 }
 
-// UnescapeEmoji 将 [emoji=FFFFFFFF] 转化为 emoji的utf-8字符串
+// UnescapeEmoji 将 先驱[emoji=FFFFFFFF] 转化为 emoji
 func UnescapeEmoji(text string) string {
 	data := []byte(text)
 	ret := []byte{}
@@ -136,26 +148,11 @@ func UnescapeEmoji(text string) string {
 	return string(ret)
 }
 
-func unicode2chinese(text string) string {
-	if !strings.Contains(text, "\\u") {
-		return text
-	}
-	t := strings.Split(text, "\\u")
-	var out string
-	for _, v := range t {
-		if len(v) < 1 {
-			continue
-		}
-		if len(v) == 4 {
-			temp, _ := strconv.ParseInt(v, 16, 32)
-			out += fmt.Sprintf("%c", temp)
-		} else {
-			temp, _ := strconv.ParseInt(v[:3], 16, 32)
-			out += fmt.Sprintf("%c", temp)
-			out += fmt.Sprintf("%s", v[4:])
-		}
-	}
-	return out
+// XmlEscape XML 编码
+func XmlEscape(c string) string {
+	buf := new(bytes.Buffer)
+	_ = xml.EscapeText(buf, []byte(c))
+	return buf.String()
 }
 
 // PathExecute 返回当前运行目录
@@ -183,7 +180,7 @@ func PathExists(path string) bool {
 	return err == nil || os.IsExist(err)
 }
 
-// FileSize 获取文件大小
+// FileSize 返回文件大小
 func FileSize(file string) int64 {
 	if fi, err := os.Stat(file); err == nil {
 		return fi.Size()
@@ -191,6 +188,7 @@ func FileSize(file string) int64 {
 	return 0
 }
 
+// ReadAllText 返回文件字符串
 func ReadAllText(path string) string {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -199,16 +197,19 @@ func ReadAllText(path string) string {
 	return string(b)
 }
 
+// WriteAllText 向文件写入字符串
 func WriteAllText(path, text string) {
 	_ = ioutil.WriteFile(path, []byte(text), 0644)
 }
 
-func hashText(input string) string {
+// TextMD5 返回字符串的MD5值
+func TextMD5(input string) string {
 	m := md5.New()
 	m.Write([]byte(input))
 	return hex.EncodeToString(m.Sum(nil))
 }
 
+// FileMD5 返回文件的MD5值
 func FileMD5(path string) string {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {

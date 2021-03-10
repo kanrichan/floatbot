@@ -6,22 +6,19 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 )
 
-var (
-	HttpPostHandler = func(bot int64, send []byte, data []byte) { fmt.Println(string(data)) }
-	HttpHandler     = func(bot int64, path string, data []byte) []byte { fmt.Println(string(data)); return []byte("ok") }
-)
-
+// HTTP & HTTP POST
 type HTTP struct {
-	// 参数
-	ID     int64
-	Addr   string
-	Token  string
+	// Bot的qq号
+	ID int64
+	// 监听的地址
+	Addr  string
+	Token string
+	// 上报数据的地址
 	URL    string
 	Secret string
 
@@ -76,6 +73,7 @@ func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Send 向 POST_URL 发送上报数据
 func (s *HTTP) Send(data []byte) {
 	if s.URL == "" {
 		return
@@ -106,6 +104,7 @@ func (s *HTTP) Send(data []byte) {
 	resp.Body.Close()
 }
 
+// Close 关闭HTTP监听
 func (s *HTTP) Close() {
 	if s.server != nil {
 		s.server.Close()

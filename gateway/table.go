@@ -3,12 +3,14 @@ package gateway
 import (
 	"encoding/json"
 	"fmt"
+
 	core "onebot/core/xianqu"
 	middle "onebot/middleware"
 	ser "onebot/server"
 )
 
 var (
+	// 当前的table
 	Servers = &ServersTable{}
 )
 
@@ -22,6 +24,7 @@ type ServersTable struct {
 	Format map[int64][]string
 }
 
+// NewServersTable 新建一个table
 func NewServersTable() *ServersTable {
 	Servers = &ServersTable{
 		Servers: make(map[int64][]ser.Server),
@@ -30,10 +33,12 @@ func NewServersTable() *ServersTable {
 	return Servers
 }
 
+// GetServersTable 返回当前的table
 func GetServersTable() *ServersTable {
 	return Servers
 }
 
+// Add 向table里面增加一个连接
 func (t *ServersTable) Add(id int64, server ser.Server, format string) {
 	func() {
 		for i := range t.Bots {
@@ -48,6 +53,7 @@ func (t *ServersTable) Add(id int64, server ser.Server, format string) {
 	t.Format[id] = append(t.Format[id], format)
 }
 
+// Run 建立table里面所有qq的所有连接
 func (t *ServersTable) Run() {
 	for i := range t.Bots {
 		for j := range t.Servers[t.Bots[i]] {
@@ -56,6 +62,7 @@ func (t *ServersTable) Run() {
 	}
 }
 
+// Close 关闭table里面所有qq的所有连接
 func (t *ServersTable) Close() {
 	for i := range t.Bots {
 		for j := range t.Servers[t.Bots[i]] {
@@ -64,6 +71,7 @@ func (t *ServersTable) Close() {
 	}
 }
 
+// Send 向table里面所有qq的所有连接发送上报
 func (t *ServersTable) Send(id int64, ctx *core.Context) {
 	dataString, _ := json.Marshal(ctx.Response)
 	middle.ResponseToArray(ctx)
@@ -77,12 +85,14 @@ func (t *ServersTable) Send(id int64, ctx *core.Context) {
 	}
 }
 
+// SendByte 向table里面所有qq的所有连接发送数据
 func (t *ServersTable) SendByte(id int64, data []byte) {
 	for i := range t.Servers[id] {
 		t.Servers[id][i].Send(data)
 	}
 }
 
+// GetWSCServer 返回 WSCServer
 func (y *WSCYaml) GetWSCServer(id int64) (s *ser.WSC, format string) {
 	s = &ser.WSC{}
 	s.ID = id
@@ -91,6 +101,7 @@ func (y *WSCYaml) GetWSCServer(id int64) (s *ser.WSC, format string) {
 	return s, y.PostMessageFormat
 }
 
+// GetWSSServer 返回 WSSServer
 func (y *WSSYaml) GetWSSServer(id int64) (s *ser.WSS, format string) {
 	s = &ser.WSS{}
 	s.ID = id
@@ -99,6 +110,7 @@ func (y *WSSYaml) GetWSSServer(id int64) (s *ser.WSS, format string) {
 	return s, y.PostMessageFormat
 }
 
+// GetHTTPServer 返回HTTPServer
 func (y *HTTPYaml) GetHTTPServer(id int64) (s *ser.HTTP, format string) {
 	s = &ser.HTTP{}
 	s.ID = id

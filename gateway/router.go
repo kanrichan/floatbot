@@ -1,8 +1,9 @@
 package gateway
 
 import (
-	core "onebot/core/xianqu"
 	"strings"
+
+	core "onebot/core/xianqu"
 )
 
 // callapi 将context分发到core的各个API处

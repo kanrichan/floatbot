@@ -3,6 +3,11 @@ package server
 import "fmt"
 
 var (
+	WSSHandler      = func(bot int64, data []byte) []byte { fmt.Println(string(data)); return []byte("ok") }
+	WSCHandler      = func(bot int64, data []byte) []byte { fmt.Println(string(data)); return []byte("ok") }
+	HttpPostHandler = func(bot int64, send []byte, data []byte) { fmt.Println(string(data)) }
+	HttpHandler     = func(bot int64, path string, data []byte) []byte { fmt.Println(string(data)); return []byte("ok") }
+
 	CoreInfo  = func(s string, v ...interface{}) { fmt.Printf(s, v...) }
 	CoreDebug = func(s string, v ...interface{}) { fmt.Printf(s, v...) }
 )

@@ -88,6 +88,7 @@ type GroupMember struct {
 	CardChangeable  bool   `json:"card_changeable"`
 }
 
+// GetCacheGroup 获取群信息，不存在则请求
 func (c *CacheGroupsData) GetCacheGroup(bot, groupID int64, cache bool) (group *GroupData) {
 	if cache { // 使用缓存
 		for i := range c.Group {
@@ -190,6 +191,7 @@ func (c *CacheGroupsData) GetCacheGroup(bot, groupID int64, cache bool) (group *
 	return nil
 }
 
+// GetCacheGroupMember 获取群成员信息，不存在则请求
 func (c *CacheGroupsData) GetCacheGroupMember(bot, groupID, userID int64, cache bool) (member *GroupMember) {
 	members := c.GetCacheGroup(bot, groupID, cache).GroupMembers
 	if members == nil {

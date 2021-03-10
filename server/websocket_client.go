@@ -11,22 +11,22 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var (
-	WSCHandler = func(bot int64, data []byte) []byte { fmt.Println(string(data)); return []byte("ok") }
-)
-
 // 反向WS
 type WSC struct {
+	// Bot的qq号
 	ID    int64
 	Addr  string
 	Token string
 
-	mutex       sync.Mutex
-	conn        *websocket.Conn
-	status      bool
+	mutex sync.Mutex
+	conn  *websocket.Conn
+	// 判断是否可以上报数据
+	status bool
+	// 关闭重连的goroutine
 	stopconnect chan bool
 }
 
+// Run 建立反向WS
 func (s *WSC) Run() {
 	defer func() {
 		recover()
@@ -45,6 +45,7 @@ func (s *WSC) Run() {
 	for {
 		select {
 		case <-s.stopconnect:
+			// 立刻停止重连
 			return
 		// 重连定时发生
 		case <-time.After(time.Second * 1):
@@ -66,11 +67,12 @@ func (s *WSC) Run() {
 			s.conn = conn
 			s.status = true
 			s.INFO("反向WS连接服务器成功")
-			s.listen()
+			s.listen() // 阻塞至监听错误，错误后继续重连
 		}
 	}
 }
 
+// listen 持续监听服务端数据
 func (s *WSC) listen() {
 	for {
 		if !s.status || s.conn == nil {
@@ -81,20 +83,7 @@ func (s *WSC) listen() {
 			break
 		}
 		if type_ == websocket.TextMessage {
-			go func() {
-				defer func() {
-					if err := recover(); err != nil {
-						buf := make([]byte, 1<<16)
-						runtime.Stack(buf, true)
-						s.PANIC(err, buf)
-					}
-				}()
-				if len(data) == 0 {
-					return
-				}
-				rep := WSCHandler(s.ID, data)
-				s.Send(rep)
-			}()
+			go s.call(data)
 		}
 	}
 	if s.conn == nil {
@@ -107,6 +96,19 @@ func (s *WSC) listen() {
 	s.mutex.Unlock()
 }
 
+func (s *WSC) call(data []byte) {
+	defer func() {
+		if err := recover(); err != nil {
+			buf := make([]byte, 1<<16)
+			runtime.Stack(buf, true)
+			s.PANIC(err, buf)
+		}
+	}()
+	rep := WSCHandler(s.ID, data)
+	s.Send(rep)
+}
+
+// Send 向服务端发送字节数组
 func (s *WSC) Send(data []byte) {
 	if !s.status {
 		return
@@ -126,6 +128,7 @@ func (s *WSC) Send(data []byte) {
 	s.mutex.Unlock()
 }
 
+// 关闭反向WS的连接
 func (s *WSC) Close() {
 	if !s.status || s.conn == nil {
 		s.stopconnect <- true

@@ -7,14 +7,17 @@ import (
 
 type value map[string]interface{}
 
+// Parse 将 map[string]interface{} 解析成 value
 func Parse(m map[string]interface{}) value {
 	return m
 }
 
+// Get 返回 path 的 value
 func (v value) Get(path string) value {
 	return Parse(v[path].(map[string]interface{}))
 }
 
+// Int 返回 path 的 Int
 func (v value) Int(path string) int64 {
 	if v[path] == nil {
 		return 0
@@ -45,6 +48,7 @@ func (v value) Int(path string) int64 {
 	return 0
 }
 
+// Str 返回 path 的 Str
 func (v value) Str(path string) string {
 	if v[path] == nil {
 		return ""
@@ -63,6 +67,7 @@ func (v value) Str(path string) string {
 	return ""
 }
 
+// Bool 返回 path 的 Bool
 func (v value) Bool(path string) bool {
 	if v[path] == nil {
 		return false
@@ -85,6 +90,7 @@ func (v value) Bool(path string) bool {
 	return false
 }
 
+// Array 返回 path 的 Array
 func (v value) Array(path string) []value {
 	temp := []value{}
 	switch v[path].(type) {
@@ -100,6 +106,7 @@ func (v value) Array(path string) []value {
 	return temp
 }
 
+// Exist 判断 path 是否存在
 func (v value) Exist(path string) bool {
 	if v[path] == nil {
 		return false

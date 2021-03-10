@@ -2,8 +2,9 @@ package gateway
 
 import (
 	"fmt"
-	core "onebot/core/xianqu"
 	"time"
+
+	core "onebot/core/xianqu"
 )
 
 var (

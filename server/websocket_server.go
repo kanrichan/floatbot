@@ -10,14 +10,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var (
-	WSSHandler = func(bot int64, data []byte) []byte { fmt.Println(string(data)); return []byte("ok") }
-)
-
 var upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
 
 // 正向WS
 type WSS struct {
+	// Bot的qq号
 	ID    int64
 	Token string
 	Addr  string
@@ -27,11 +24,13 @@ type WSS struct {
 	conn   []*WSSConn
 }
 
+// 正向WS的连接
 type WSSConn struct {
 	mutex sync.Mutex
 	conn  *websocket.Conn
 }
 
+// Run 建立正向WS
 func (s *WSS) Run() {
 	defer func() {
 		s.server = nil
@@ -60,14 +59,15 @@ func (s *WSS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(handshake)); err != nil {
 		return
 	}
+	s.INFO("正向WS客户端连接成功")
 	c := &WSSConn{conn: conn}
 	s.mutex.Lock()
 	s.conn = append(s.conn, c)
 	s.mutex.Unlock()
 	go s.listen(c)
-	s.INFO("正向WS客户端连接成功")
 }
 
+// listen 持续监听客户端数据
 func (s *WSS) listen(conn *WSSConn) {
 	for {
 		if conn.conn == nil || s.server == nil {
@@ -75,32 +75,33 @@ func (s *WSS) listen(conn *WSSConn) {
 		}
 		type_, data, err := conn.conn.ReadMessage()
 		if err != nil {
-			break
+			break // 发生错误跳出监听
 		}
 		if type_ == websocket.TextMessage {
-			go func() {
-				defer func() {
-					if err := recover(); err != nil {
-						buf := make([]byte, 1<<16)
-						runtime.Stack(buf, true)
-						s.PANIC(err, buf)
-					}
-				}()
-				if len(data) == 0 {
-					return
-				}
-				rep := WSSHandler(s.ID, data)
-				if conn.conn == nil {
-					return
-				}
-				conn.mutex.Lock()
-				conn.conn.WriteMessage(websocket.TextMessage, rep)
-				conn.mutex.Unlock()
-			}()
+			go s.call(conn, data) // 收到数据调用，不阻塞
 		}
 	}
 }
 
+func (s *WSS) call(conn *WSSConn, data []byte) {
+	defer func() {
+		if err := recover(); err != nil {
+			buf := make([]byte, 1<<16)
+			runtime.Stack(buf, true)
+			s.PANIC(err, buf)
+		}
+	}()
+	rep := WSSHandler(s.ID, data)
+	if conn.conn == nil {
+		return
+	}
+	// 将返回的数据向conn发送
+	conn.mutex.Lock()
+	conn.conn.WriteMessage(websocket.TextMessage, rep)
+	conn.mutex.Unlock()
+}
+
+// Send 向所有客户端发送字节数组
 func (s *WSS) Send(data []byte) {
 	var close []int
 	for i, conn := range s.conn {
@@ -128,7 +129,9 @@ func (s *WSS) Send(data []byte) {
 	}
 }
 
+// Close 关闭正向WS的连接
 func (s *WSS) Close() {
+	// 关闭所有的客户端连接
 	for _, conn := range s.conn {
 		if conn.conn == nil {
 			continue
@@ -139,8 +142,11 @@ func (s *WSS) Close() {
 		conn.conn = nil
 		conn.mutex.Unlock()
 	}
+	s.mutex.Lock()
 	s.conn = nil
+	// 关闭WS服务器
 	if s.server != nil {
 		s.server.Close()
 	}
+	s.mutex.Unlock()
 }

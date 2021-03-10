@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"fmt"
+
 	core "onebot/core/xianqu"
 	ser "onebot/server"
 )
@@ -16,18 +17,22 @@ func init() {
 	}
 }
 
+// 向框架发送 INFO 日志
 func INFO(s string, v ...interface{}) {
-	core.ApiOutPutLog("[INFO] " + fmt.Sprintf(s, v...))
+	core.ApiOutPutLog("[INFO]" + fmt.Sprintf(s, v...))
 }
 
+// 向框架发送 WARN 日志
 func WARN(s string, v ...interface{}) {
-	core.ApiOutPutLog("[WARN] " + fmt.Sprintf(s, v...))
+	core.ApiOutPutLog("[WARN]" + fmt.Sprintf(s, v...))
 }
 
+// 向框架发送 DEBUG 日志
 func DEBUG(s string, v ...interface{}) {
-	core.ApiOutPutLog("[DEBUG] " + fmt.Sprintf(s, v...))
+	core.ApiOutPutLog("[DEBUG]" + fmt.Sprintf(s, v...))
 }
 
+// 向框架发送 ERROR 日志
 func ERROR(s string, v ...interface{}) {
-	core.ApiOutPutLog("[ERROR] " + fmt.Sprintf(s, v...))
+	core.ApiOutPutLog("[ERROR]" + fmt.Sprintf(s, v...))
 }

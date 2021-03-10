@@ -1,22 +1,14 @@
 package xianqu
 
 import (
-	"bytes"
-	"encoding/xml"
 	"fmt"
 	"regexp"
 	"strings"
 )
 
-func XmlEscape(c string) string {
-	buf := new(bytes.Buffer)
-	_ = xml.EscapeText(buf, []byte(c))
-	return buf.String()
-}
-
 // xq2cqCode 普通XQ码转CQ码
 func xq2cqCode(message string) string {
-	// 防止注入
+	// TODO 有cq码注入风险
 	// message = strings.ReplaceAll(message, "[CQ", "[YaYa")
 	// 转艾特
 	message = strings.ReplaceAll(message, "[@", "[CQ:at,qq=")
@@ -40,7 +32,7 @@ func xq2cqCode(message string) string {
 		newpic := fmt.Sprintf("[CQ:image,file=%s.image,url=http://gchat.qpic.cn/gchatpic_new//--%s/0]", md5, md5)
 		message = strings.ReplaceAll(message, oldpic, newpic)
 		// 记录收到过的图片
-		hash := hashText(fmt.Sprintf("http://gchat.qpic.cn/gchatpic_new//--%s/0", md5))
+		hash := TextMD5(fmt.Sprintf("http://gchat.qpic.cn/gchatpic_new//--%s/0", md5))
 		PicPoolCache.Insert(strings.ToLower(hash), res)
 		PicPoolCache.Insert(md5, res)
 	}
@@ -52,7 +44,7 @@ func xq2cqCode(message string) string {
 		newpic := fmt.Sprintf("[CQ:image,file=%s.image,url=http://gchat.qpic.cn/gchatpic_new//--%s/0]", md5, md5)
 		message = strings.ReplaceAll(message, oldpic, newpic)
 		// 记录收到过的图片
-		hash := hashText(fmt.Sprintf("http://gchat.qpic.cn/gchatpic_new//--%s/0", md5))
+		hash := TextMD5(fmt.Sprintf("http://gchat.qpic.cn/gchatpic_new//--%s/0", md5))
 		PicPoolCache.Insert(strings.ToLower(hash), res)
 		PicPoolCache.Insert(md5, res)
 	}

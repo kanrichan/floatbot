@@ -2,10 +2,11 @@ package middleware
 
 import (
 	"fmt"
+
 	core "onebot/core/xianqu"
 )
 
-// 将快速回复的报文的Request转换为标准OneBot报文
+// RequestFastReplyFormat 将快速回复的报文的Request转换为标准OneBot报文
 func RequestFastReplyFormat(ctx *core.Context) {
 	switch ctx.Response["post_type"].(string) {
 	case "message":
