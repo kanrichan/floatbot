@@ -7,6 +7,14 @@ import (
 	core "onebot/core/xianqu"
 )
 
+const (
+	LEFT_COLON  = 91 // "["
+	RIGHT_COLON = 93 // "]"
+	SEMI_COLON  = 58 // ":"
+	COMMA       = 44 // ","
+	EQUAL       = 61 // "="
+)
+
 // ResponseToArray 将报文中Response的message转换为array格式
 func ResponseToArray(ctx *core.Context) {
 	message := ctx.Response["message"]
@@ -44,133 +52,153 @@ func RequestToArray(ctx *core.Context) {
 	return
 }
 
-func toArray(text string) []map[string]interface{} {
-	elems := cqcodeSplit(text)
-	var (
-		array = []map[string]interface{}{}
+// 缓存字节数组
+type temp struct {
+	data []byte
+}
 
-		isCQcode bool = false
-		isFirst  bool = false
-		isType   bool = false
-		isKey    bool = false
-		isValue  bool = false
+// newTemp 返回一个空 temp
+func newTemp() *temp {
+	return &temp{}
+}
 
-		cqCodetype_ string
-		cqCodeKey   []string
-		cqCodeValue []string
+// push 将元素放到数组的最后
+func (b *temp) push(v byte) {
+	b.data = append(b.data, v)
+}
+
+// pop 取出所有的元素
+func (b *temp) pop() (v []byte) {
+	v = b.data
+	b.data = nil
+	return v
+}
+
+func (b *temp) size() int {
+	return len(b.data)
+}
+
+// 先进先出
+type heap struct {
+	data []interface{}
+}
+
+// newHeap 返回一个空 heap
+func newHeap() *heap {
+	return &heap{}
+}
+
+// push 将元素放到数组的最后
+func (t *heap) push(v interface{}) {
+	t.data = append(t.data, v)
+}
+
+// pop 取出首元素，后面元素往前移
+func (t *heap) pop() (v interface{}) {
+	switch len(t.data) {
+	case 0:
+		return nil
+	case 1:
+		v = t.data[0]
+		t.data = nil
+	default:
+		v = t.data[0]
+		t.data = t.data[1:]
+	}
+	return v
+}
+
+// size 返回 heap 的大小
+func (t *heap) size() int {
+	return len(t.data)
+}
+
+// 存 message 的数组 map
+type maps struct {
+	data []map[string]interface{}
+}
+
+// newMaps 返回一个 maps
+func newMaps() *maps {
+	return &maps{}
+}
+
+// buildMaps 返回 message 的数组map
+func (b *maps) buildMaps(type_ *heap, key *heap, val *heap) {
+	kv := map[string]interface{}{}
+	if key.data != nil {
+		size := key.size()
+		for i := 0; i < size; i++ {
+			kv[key.pop().(string)] = escape(val.pop().(string))
+		}
+	}
+	b.data = append(
+		b.data,
+		map[string]interface{}{
+			"type": type_.pop(),
+			"data": kv,
+		},
 	)
-	for _, r := range elems {
-		var temp = []rune{}
-	elemLoop:
-		for i := range r {
-			switch {
-			// TODO CQ码开始标记 []rune("[CQ:") = [91 67 81 58]
-			case r[i] == 91 && r[i+1] == 67 && r[i+2] == 81 && r[i+3] == 58:
-				isCQcode = true
-				isFirst = true
-			// TODO 不是CQ码
-			case !isCQcode:
-				array = append(
-					array,
-					map[string]interface{}{
-						"type": "text",
-						"data": map[string]interface{}{
-							"text": string(r),
-						},
-					},
-				)
-				break elemLoop
-			// TODO type字段标记 []rune(":") = [58]
-			case isCQcode && isFirst && r[i] == 58:
-				isType = true
-				isFirst = false
-			// TODO 开始装载type字段 []rune(",") = [44]
-			case isType && r[i] != 44:
-				temp = append(temp, r[i])
-			// TODO 结束装载type字段 key字段标记 []rune(",") = [44]
-			case isType && r[i] == 44:
-				cqCodetype_ = string(temp)
-				temp = []rune{}
-				isType = false
-				isKey = true
-			// TODO 开始装载key []rune("=") = [61]
-			case isKey && r[i] != 61:
-				temp = append(temp, r[i])
-			// TODO 结束装载key字段 value字段标记 []rune("=") = [61]
-			case isKey && r[i] == 61:
-				cqCodeKey = append(cqCodeKey, string(temp))
-				temp = []rune{}
-				isKey = false
-				isValue = true
-			// TODO 开始装载value []rune(",") = [44] []rune("]") = [93]
-			case isValue && r[i] != 44 && r[i] != 93:
-				temp = append(temp, r[i])
-			// TODO 结束装载value字段 key字段标记 []rune(",") = [44]
-			case isValue && r[i] == 44:
-				cqCodeValue = append(cqCodeValue, string(temp))
-				temp = []rune{}
-				isValue = false
-				isKey = true
-			// TODO 结束装载value字段 结束CQ码 []rune("]") = [93]
-			case isValue && r[i] == 93:
-				cqCodeValue = append(cqCodeValue, string(temp))
-				temp = []rune{}
-				cqCodeMap := map[string]interface{}{}
-				cqCodeMap["type"] = cqCodetype_
-				keyValue := map[string]interface{}{}
-				for i := range cqCodeKey {
-					keyValue[cqCodeKey[i]] = cqCodeValue[i]
-				}
-				cqCodeMap["data"] = keyValue
-				array = append(array, cqCodeMap)
-				cqCodeKey = []string{}
-				cqCodeValue = []string{}
-				isValue = false
-				isCQcode = false
-			default:
+}
 
-				// TODO do nothing
+// toArray 快速解析 message 字符串 --> 数组
+func toArray(message string) []map[string]interface{} {
+	data := []byte(message)
+	var (
+		top   = len(data) - 1
+		build = newMaps() // 输出的数组格式的message
+		text  = newTemp() // 字符串message的缓存
+		type_ = newHeap() // cq码中的type
+		key   = newHeap() // cq码中的key
+		val   = newHeap() // cq码中的val
+	)
+	for i := range data {
+		switch data[i] {
+		case LEFT_COLON:
+			if text.size() == 0 {
+				break // "[" 前面没有文本
 			}
-		}
-	}
-	return array
-}
-
-func cqcodeSplit(cqcode string) [][]rune {
-	var (
-		elems    [][]rune
-		temp     []rune
-		isCQcode bool = false
-	)
-	r := []rune(cqcode)
-	for i := range r {
-		switch {
-		// TODO CQ码开始标记 []rune("[CQ:") = [91 67 81 58]
-		case r[i] == 91 && r[i+1] == 67 && r[i+2] == 81 && r[i+3] == 58:
-			isCQcode = true
-			elems = append(elems, temp)
-			// TODO 清空temp，开始装CQ码
-			temp = []rune{}
-			temp = append(temp, r[i])
-		// TODO CQ码一直到出现"]"为止 []rune("]") = [93]
-		case isCQcode && r[i] != 93:
-			temp = append(temp, r[i])
-		// TODO 出现"]"，开始下一个elem
-		case isCQcode && r[i] == 93:
-			isCQcode = false
-			temp = append(temp, r[i])
-			elems = append(elems, temp)
-			temp = []rune{}
+			// "[" 前面有文本
+			type_.push("text")
+			key.push("text")
+			val.push(string(text.pop()))
+			build.buildMaps(type_, key, val)
+		case SEMI_COLON:
+			text.pop() // 删除 ":" 前的 temp
+		case COMMA:
+			switch len(type_.data) {
+			case 0: // 没有 type ，所以 "," 前的是 type
+				type_.push(string(text.pop()))
+			default: // 有 type ，所以 "," 前的是 val
+				val.push(string(text.pop()))
+			}
+		case EQUAL:
+			// "=" 前面的是 key
+			key.push(string(text.pop()))
+		case RIGHT_COLON:
+			switch len(type_.data) {
+			case 0: // 没有 type ，所以 "]" 前的是 type
+				type_.push(string(text.pop()))
+			default: // 有 type ，所以 "]" 前的是 val
+				val.push(string(text.pop()))
+			}
+			build.buildMaps(type_, key, val)
 		default:
-			temp = append(temp, r[i])
-		case i == len(r)-1:
-			temp = append(temp, r[i])
-			elems = append(elems, temp)
+			if i == top {
+				// 结束前有文本
+				text.push(data[i])
+				type_.push("text")
+				key.push("text")
+				val.push(string(text.pop()))
+				build.buildMaps(type_, key, val)
+			}
+			text.push(data[i])
 		}
 	}
-	return elems
+	return build.data
 }
 
+// escape CQ码转义
 func escape(text string) string {
 	text = strings.ReplaceAll(text, "&amp;", "&")
 	text = strings.ReplaceAll(text, "&#44;", ",")
