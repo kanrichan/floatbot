@@ -518,18 +518,31 @@ func ApiSendGroupMsg(ctx *Context) {
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#delete_msg-%E6%92%A4%E5%9B%9E%E6%B6%88%E6%81%AF
 func ApiDeleteMsg(ctx *Context) {
 	var (
-		id    = Parse(ctx.Request).Get("params").Int("message_id")
-		num   = MessageIDCache.Search(id).(int64)
-		type_ = ctx.XQMessageType()
+		id            = Parse(ctx.Request).Get("params").Int("message_id")
+		num           = MessageIDCache.Search(id).(int64)
+		type_   int64 = 1
+		groupID int64 = 0
+		userID  int64 = 0
 	)
+	res := MessageCache.Search(id)
+	if res != nil {
+		ctx.Response = MessageCache.Search(id).(map[string]interface{})
+	}
+	groupID = Parse(ctx.Response).Int("group_id")
+	if groupID != 0 {
+		type_ = 2
+	} else {
+		type_ = 1
+		userID = Parse(ctx.Response).Int("user_id")
+	}
 	C.S3_Api_WithdrawMsgEX(
 		GoInt2CStr(ctx.Bot),
-		C.int(type_),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("user_id")),
+		C.int(type_), // 暂时写死群聊
+		GoInt2CStr(groupID),
+		GoInt2CStr(userID), // 暂时写死群聊
 		GoInt2CStr(num),
 		GoInt2CStr(id),
-		GoInt2CStr(0),
+		GoInt2CStr(Parse(ctx.Response).Int("time")),
 	)
 	ctx.MakeOkResponse(nil)
 }
