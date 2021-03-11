@@ -474,7 +474,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"group_id":  groupID,
 					"user_id":   noticeID,
 					"comment":   message,
-					"flag":      fmt.Sprintf("%v|%v|%v", subType, groupID, rawMessage),
+					"flag":      fmt.Sprintf("%v|%v|%v", messageType, groupID, rawMessage),
 				},
 			}
 			OnRequestGroupAdd(ctx)
@@ -489,7 +489,22 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"group_id":  groupID,
 					"user_id":   noticeID,
 					"comment":   message,
-					"flag":      fmt.Sprintf("%v|%v|%v", subType, groupID, rawMessage),
+					"flag":      fmt.Sprintf("%v|%v|%v|%v", messageType, groupID, rawMessage, userID),
+				},
+			}
+			OnRequestGroupAdd(ctx)
+		case 215:
+			ctx := &Context{
+				Bot: bot,
+				Response: map[string]interface{}{
+					"time":      time,
+					"self_id":   bot,
+					"post_type": "request",
+					"sub_type":  "add",
+					"group_id":  groupID,
+					"user_id":   noticeID,
+					"comment":   message,
+					"flag":      fmt.Sprintf("%v|%v|%v", messageType, groupID, rawMessage),
 				},
 			}
 			OnRequestGroupAdd(ctx)

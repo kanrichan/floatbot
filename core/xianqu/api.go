@@ -730,7 +730,27 @@ func ApiSetFriendAddRequest(ctx *Context) {
 // SetGroupAddRequest 处理加群请求／邀请
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_add_request-%E5%A4%84%E7%90%86%E5%8A%A0%E7%BE%A4%E8%AF%B7%E6%B1%82%E9%82%80%E8%AF%B7
 func ApiSetGroupAddRequest(ctx *Context) {
-	ctx.MakeFailResponse("暂时不支持")
+	var (
+		flag    = strings.Split(Parse(ctx.Request).Get("params").Str("flag"), "|")
+		reason  = Parse(ctx.Request).Get("params").Str("reason")
+		approve = 20
+		userID  = "0"
+	)
+	if Parse(ctx.Request).Get("params").Bool("approve") {
+		approve = 10
+	}
+	if flag[0] == "214" {
+		userID = flag[3]
+	}
+	C.S3_Api_HandleGroupEvent(
+		GoInt2CStr(ctx.Bot),
+		C.int(Str2Int(flag[0])),
+		CString(userID),
+		CString(flag[1]),
+		CString(flag[2]),
+		C.int(approve),
+		CString(reason),
+	)
 }
 
 // GetLoginInfo 获取登录号信息
