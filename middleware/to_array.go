@@ -13,6 +13,8 @@ const (
 	SEMI_COLON  = 58 // ":"
 	COMMA       = 44 // ","
 	EQUAL       = 61 // "="
+	B_C         = 67 // "C"
+	B_Q         = 81 // "Q"
 )
 
 // ResponseToArray 将报文中Response的message转换为array格式
@@ -145,26 +147,49 @@ func (b *maps) buildMaps(type_ *heap, key *heap, val *heap) {
 func toArray(message string) []map[string]interface{} {
 	data := []byte(message)
 	var (
-		top   = len(data) - 1
-		build = newMaps() // 输出的数组格式的message
-		text  = newTemp() // 字符串message的缓存
-		type_ = newHeap() // cq码中的type
-		key   = newHeap() // cq码中的key
-		val   = newHeap() // cq码中的val
+		top      = len(data) - 1
+		build    = newMaps() // 输出的数组格式的message
+		text     = newTemp() // 字符串message的缓存
+		type_    = newHeap() // CQ CODE 中的type
+		key      = newHeap() // CQ CODE 中的key
+		val      = newHeap() // CQ CODE 中的val
+		isCqCode = false     // CQ CODE 标记
 	)
 	for i := range data {
-		switch data[i] {
-		case LEFT_COLON:
-			if text.size() == 0 {
-				break // "[" 前面没有文本
+		// 纯文本解析，以下情况触发文本出栈构建纯文本
+		// 1. CQ CODE 开始的时候
+		// 2. 文本到顶的时候
+		switch {
+		case isCqCode:
+			// 是 CQ CODE 顺序执行解析
+		case top-i >= 4 && data[i] == LEFT_COLON && data[i+1] == B_C && data[i+2] == B_Q && data[i+3] == SEMI_COLON:
+			// CQ CODE 开始
+			isCqCode = true
+			if text.size() != 0 {
+				type_.push("text")
+				key.push("text")
+				val.push(string(text.pop()))
+				build.buildMaps(type_, key, val)
 			}
-			// "[" 前面有文本
+			continue
+		case i == top:
+			// 文本到顶
+			text.push(data[i])
 			type_.push("text")
 			key.push("text")
 			val.push(string(text.pop()))
 			build.buildMaps(type_, key, val)
+			continue
+		default:
+			text.push(data[i])
+			continue
+		}
+		// CQ CODE 解析
+		switch data[i] {
+		case LEFT_COLON:
+			//
 		case SEMI_COLON:
-			text.pop() // 删除 ":" 前的 temp
+			text.pop() // 是CQ码，清空 "[CQ"
 		case COMMA:
 			switch len(type_.data) {
 			case 0: // 没有 type ，所以 "," 前的是 type
@@ -183,15 +208,8 @@ func toArray(message string) []map[string]interface{} {
 				val.push(string(text.pop()))
 			}
 			build.buildMaps(type_, key, val)
+			isCqCode = false
 		default:
-			if i == top {
-				// 结束前有文本
-				text.push(data[i])
-				type_.push("text")
-				key.push("text")
-				val.push(string(text.pop()))
-				build.buildMaps(type_, key, val)
-			}
 			text.push(data[i])
 		}
 	}
