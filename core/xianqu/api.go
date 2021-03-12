@@ -64,7 +64,7 @@ func ApiSendMsg(ctx *Context) {
 		case "text":
 			out += data.Str("text")
 		case "at":
-			out += fmt.Sprintf("[@%s]", data.Str("qq"))
+			out += fmt.Sprintf("[@%s] ", data.Str("qq"))
 		case "face":
 			out += fmt.Sprintf("[Face%s.gif]", data.Str("id"))
 		case "emoji":
