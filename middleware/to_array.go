@@ -189,9 +189,12 @@ func toArray(message string) []map[string]interface{} {
 		case LEFT_COLON:
 			//
 		case SEMI_COLON:
-			text.pop() // 是CQ码，清空 "[CQ"
+			text.push(data[i])
+			if type_.size() == 0 {
+				text.pop() // 是CQ码，清空 "[CQ"
+			}
 		case COMMA:
-			switch len(type_.data) {
+			switch type_.size() {
 			case 0: // 没有 type ，所以 "," 前的是 type
 				type_.push(string(text.pop()))
 			default: // 有 type ，所以 "," 前的是 val
@@ -199,9 +202,13 @@ func toArray(message string) []map[string]interface{} {
 			}
 		case EQUAL:
 			// "=" 前面的是 key
-			key.push(string(text.pop()))
+			if key.size() == 0 {
+				key.push(string(text.pop()))
+				continue
+			}
+			text.push(data[i])
 		case RIGHT_COLON:
-			switch len(type_.data) {
+			switch type_.size() {
 			case 0: // 没有 type ，所以 "]" 前的是 type
 				type_.push(string(text.pop()))
 			default: // 有 type ，所以 "]" 前的是 val
