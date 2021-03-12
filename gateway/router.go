@@ -1,15 +1,18 @@
 package gateway
 
 import (
-	"strings"
-
 	core "onebot/core/xianqu"
 )
 
+// broadcast 将context上报到各个连接中
+func broadcast(ctx *core.Context) {
+	table := GetServersTable()
+	table.Send(ctx.Bot, ctx)
+}
+
 // callapi 将context分发到core的各个API处
 func callapi(ctx *core.Context) {
-	INFO("[响应] %v", ctx)
-	switch strings.ReplaceAll(ctx.Request["action"].(string), "_async", "") {
+	switch core.Parse(ctx.Request).Str("action") {
 	case "send_private_msg":
 		core.ApiSendPrivateMsg(ctx)
 	case "send_group_msg":
@@ -86,5 +89,7 @@ func callapi(ctx *core.Context) {
 		core.ApiSetRestart(ctx)
 	case "clean_cache":
 		core.ApiCleanCache(ctx)
+	default:
+		core.ApiNotFound(ctx)
 	}
 }

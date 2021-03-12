@@ -219,3 +219,24 @@ func (c *CacheGroupsData) GetCacheGroupMember(bot, groupID, userID int64, cache 
 	}
 	return member
 }
+
+func (m *GroupMember) GetNick() string {
+	if m == nil {
+		return "unknown"
+	}
+	return m.Nickname
+}
+
+func (m *GroupMember) GetAge() int64 {
+	if m == nil {
+		return 0
+	}
+	return m.Age
+}
+
+func (m *GroupMember) GetSex() string {
+	if m == nil {
+		return "unknown"
+	}
+	return m.Sex
+}

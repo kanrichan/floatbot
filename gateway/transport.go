@@ -1,8 +1,6 @@
 package gateway
 
 import (
-	"encoding/json"
-
 	core "onebot/core/xianqu"
 	middle "onebot/middleware"
 	ser "onebot/server"
@@ -34,117 +32,102 @@ func init() {
 
 // HttpHandler Http的Handler
 func HttpHandler(bot int64, path string, data []byte) []byte {
-	temp := map[string]interface{}{}
-	json.Unmarshal(data, &temp)
-	ctx := &core.Context{
-		Bot: bot,
-		Request: map[string]interface{}{
-			"action": path,
-			"params": temp,
-		},
-	}
-	middle.RequestToArray(ctx)
-	callapi(ctx)
-	rsp, _ := json.Marshal(ctx.Response)
-	return rsp
+	ctx := middle.PackHTTPRequest(bot, path, data)
+	handler(ctx)
+	return middle.UnPackResponse(ctx)
 }
 
 // HttpPostHandler 快速回复的Handler
 func HttpPostHandler(bot int64, send, data []byte) {
-	rsp := map[string]interface{}{}
-	json.Unmarshal(send, &rsp)
-	temp := map[string]interface{}{}
-	json.Unmarshal(data, &temp)
-	ctx := &core.Context{
-		Bot:      bot,
-		Response: rsp,
-		Request:  temp,
-	}
-	// 将快速回复转化成正常的onebot标准报文
-	middle.RequestFastReplyFormat(ctx)
-	middle.RequestToArray(ctx)
-	callapi(ctx)
+	ctx := middle.PackPOSTRequest(bot, send, data)
+	handler(ctx)
 }
 
 // WebSocketClientHandler 反向ws的Handler
 func WebSocketClientHandler(bot int64, data []byte) []byte {
-	request := map[string]interface{}{}
-	json.Unmarshal(data, &request)
-	ctx := &core.Context{
-		Bot:     bot,
-		Request: request,
-	}
-	middle.RequestToArray(ctx)
-	callapi(ctx)
-	rsp, _ := json.Marshal(ctx.Response)
-	return rsp
+	ctx := middle.PackWSRequest(bot, data)
+	handler(ctx)
+	return middle.UnPackResponse(ctx)
 }
 
 // WebSocketServerHandler 正向ws的Handler
 func WebSocketServerHandler(bot int64, data []byte) []byte {
-	request := map[string]interface{}{}
-	json.Unmarshal(data, &request)
-	ctx := &core.Context{
-		Bot:     bot,
-		Request: request,
-	}
+	ctx := middle.PackWSRequest(bot, data)
+	handler(ctx)
+	return middle.UnPackResponse(ctx)
+}
+
+// handler 处理 ctx
+func handler(ctx *core.Context) {
+	middle.RemoveAsync(ctx)
 	middle.RequestToArray(ctx)
+	printCall(ctx)
 	callapi(ctx)
-	rsp, _ := json.Marshal(ctx.Response)
-	return rsp
+	printBack(ctx)
 }
 
 // OnMessagePrivate 收到私聊信息事件被触发
 func OnMessagePrivate(ctx *core.Context) {
-	OnEvent(ctx)
+	printSend(ctx)
+	broadcast(ctx)
 }
 
 // OnMessageGroup 收到群聊信息事件被触发
 func OnMessageGroup(ctx *core.Context) {
-	OnEvent(ctx)
+	printSend(ctx)
+	broadcast(ctx)
 }
 
 // OnNoticeFileUpload 收到群文件上传事件被触发
 func OnNoticeFileUpload(ctx *core.Context) {
-	OnEvent(ctx)
+	printSend(ctx)
+	broadcast(ctx)
 }
 
 // OnNoticeAdminChange 收到上下管理事件被触发
 func OnNoticeAdminChange(ctx *core.Context) {
-	OnEvent(ctx)
+	printSend(ctx)
+	broadcast(ctx)
 }
 
 // OnNoticeGroupDecrease 收到群成员减少事件被触发
 func OnNoticeGroupDecrease(ctx *core.Context) {
-	OnEvent(ctx)
+	printSend(ctx)
+	broadcast(ctx)
 }
 
 // OnNoticeGroupIncrease 收到群成员增加事件被触发
 func OnNoticeGroupIncrease(ctx *core.Context) {
-	OnEvent(ctx)
+	printSend(ctx)
+	broadcast(ctx)
 }
 
 // OnNoticeGroupBan 收到群禁言事件被触发
 func OnNoticeGroupBan(ctx *core.Context) {
-	OnEvent(ctx)
+	printSend(ctx)
+	broadcast(ctx)
 }
 
 // OnNoticeFriendAdd 收到好友增加事件被触发
 func OnNoticeFriendAdd(ctx *core.Context) {
-	OnEvent(ctx)
+	printSend(ctx)
+	broadcast(ctx)
 }
 
 // OnNoticeMessageRecall 收到好友减少事件被触发
 func OnNoticeMessageRecall(ctx *core.Context) {
-	OnEvent(ctx)
+	printSend(ctx)
+	broadcast(ctx)
 }
 
 // OnRequestFriendAdd 收到好友添加请求事件被触发
 func OnRequestFriendAdd(ctx *core.Context) {
-	OnEvent(ctx)
+	printSend(ctx)
+	broadcast(ctx)
 }
 
 // OnRequestGroupAdd 收到群聊加入申请事件被触发
 func OnRequestGroupAdd(ctx *core.Context) {
-	OnEvent(ctx)
+	printSend(ctx)
+	broadcast(ctx)
 }

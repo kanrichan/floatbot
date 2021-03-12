@@ -114,9 +114,6 @@ func (y *WSSYaml) GetWSSServer(id int64) (s *ser.WSS, format string) {
 func (y *HTTPYaml) GetHTTPServer(id int64) (s *ser.HTTP, format string) {
 	s = &ser.HTTP{}
 	s.ID = id
-	if y.Port == 0 {
-		y.Port = 80
-	}
 	if y.Host != "" {
 		s.Addr = fmt.Sprintf("%s:%d", y.Host, y.Port)
 	}

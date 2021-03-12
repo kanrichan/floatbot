@@ -12,56 +12,56 @@ var (
 	CoreDebug = func(s string, v ...interface{}) { fmt.Printf(s, v...) }
 )
 
-func (s *WSC) INFO(text interface{}) {
-	CoreInfo("[INFO][WSC] INFO: %v ID: %d URL: %s ", text, s.ID, s.Addr)
-}
-
-func (s *WSC) DEBUG(text interface{}) {
-	CoreDebug("[DEBUG][WSC] ID: %d URL: %s DEBUG: %v", s.ID, s.Addr, text)
-}
-
-func (s *WSC) ERROR(text interface{}) {
-	CoreInfo("[ERROR][WSC] ERROR: %v ID: %d URL: %s ", text, s.ID, s.Addr)
-}
-
-func (s *WSC) PANIC(err interface{}, traceback []byte) {
-	CoreInfo("[PANIC][WSC] ID: %d URL: %s \n[ERROR]\n%v\n[TRACEBACK]\n%s", s.ID, s.Addr, err, string(traceback))
-}
-
-func (s *WSS) INFO(text interface{}) {
-	CoreInfo("[INFO][WSS] INFO: %v ID: %d URL: %s ", text, s.ID, s.Addr)
-}
-
-func (s *WSS) DEBUG(text interface{}) {
-	CoreDebug("[DEBUG][WSS] ID: %d URL: %s DEBUG: %v", s.ID, s.Addr, text)
-}
-
-func (s *WSS) ERROR(text interface{}) {
-	CoreInfo("[ERROR][WSS] ERROR: %v ID: %d URL: %s ", text, s.ID, s.Addr)
-}
-
-func (s *WSS) PANIC(err interface{}, traceback []byte) {
-	CoreInfo("[PANIC][WSS] ID: %d URL: %s \n[ERROR]\n%v\n[TRACEBACK]\n%s", s.ID, s.Addr, err, string(traceback))
-}
-
-func (s *HTTP) INFO(text interface{}) {
-	CoreInfo("[INFO][HTTP] INFO: %v ID: %d URL: %s ", text, s.ID, s.Addr)
-}
-
-func (s *HTTP) DEBUG(text interface{}) {
-	CoreDebug("[DEBUG][HTTP] ID: %d URL: %s DEBUG: %v", s.ID, s.Addr, text)
-}
-
-func (s *HTTP) ERROR(text interface{}) {
-	CoreInfo("[ERROR][HTTP] ERROR: %v ID: %d URL: %s ", text, s.ID, s.Addr)
-}
-
-func (s *HTTP) PANIC(err interface{}, traceback []byte) {
-	CoreInfo("[PANIC][HTTP] ID: %d URL: %s \n[ERROR]\n%v\n[TRACEBACK]\n%s", s.ID, s.Addr, err, string(traceback))
-}
-
 type Server interface {
 	Run()
 	Close()
 	Send(data []byte)
+}
+
+func (s *WSC) INFO(text interface{}) {
+	CoreInfo("[I][WSC][%d][%s] 信息: %v", s.ID, s.Addr, text)
+}
+
+func (s *WSC) DEBUG(text interface{}) {
+	CoreDebug("[D][WSC][%d][%s] 信息: %v", s.ID, s.Addr, text)
+}
+
+func (s *WSC) ERROR(text interface{}) {
+	CoreInfo("[E][WSC][%d][%s] 错误: %v", s.ID, s.Addr, text)
+}
+
+func (s *WSC) PANIC(err interface{}, traceback []byte) {
+	CoreInfo("[P][WSC][%d][%s] \n[错误]\n%v\n[TRACEBACK]\n%s", s.ID, s.Addr, err, traceback)
+}
+
+func (s *WSS) INFO(text interface{}) {
+	CoreInfo("[I][WSS][%d][%s] 信息: %v", s.ID, s.Addr, text)
+}
+
+func (s *WSS) DEBUG(text interface{}) {
+	CoreDebug("[D][WSS][%d][%s] 信息: %v", s.ID, s.Addr, text)
+}
+
+func (s *WSS) ERROR(text interface{}) {
+	CoreInfo("[E][WSS][%d][%s] 错误: %v ", s.ID, s.Addr, text)
+}
+
+func (s *WSS) PANIC(err interface{}, traceback []byte) {
+	CoreInfo("[P][WSS][%d][%s] \n[错误]\n%v\n[TRACEBACK]\n%s", s.ID, s.Addr, err, traceback)
+}
+
+func (s *HTTP) INFO(text interface{}) {
+	CoreInfo("[I][HTTP][%d][%s] 信息: %v", s.ID, s.Addr, text)
+}
+
+func (s *HTTP) DEBUG(text interface{}) {
+	CoreDebug("[D][HTTP][%d][%s] 信息: %v", s.ID, s.Addr, text)
+}
+
+func (s *HTTP) ERROR(text interface{}) {
+	CoreInfo("[E][HTTP][%d][%s] 错误: %v", s.ID, s.Addr, text)
+}
+
+func (s *HTTP) PANIC(err interface{}, traceback []byte) {
+	CoreInfo("[P][HTTP][%d][%s] \n[错误]\n%v\n[TRACEBACK]\n%s", s.ID, s.Addr, err, traceback)
 }

@@ -65,24 +65,25 @@ func OnEnable(_ *core.Context) {
 	// 检查配置文件并热重启
 	checker := NewConfChecker(core.OneBotPath + "config.yml")
 	// 阻塞至关闭
-	func() {
-		for {
-			select {
-			case <-StopServer:
-				return
-			case <-time.After(time.Second * 3):
-				for _, bot := range table.Bots {
-					heartbeat := fmt.Sprintf(`{"interval":%d,"meta_event_type":"heartbeat","post_type":"meta_event","self_id":%d,"status":{"good":true,"online":true},"time":%d}`,
-						3000, bot, time.Now().Unix())
-					table.SendByte(bot, []byte(heartbeat))
-				}
-			case <-time.After(time.Millisecond * 761):
-				if checker.Check() && core.ApiMessageBoxButton("检测到配置文件变化，是否热重载？") == 6 {
+BLOCK:
+	for {
+		select {
+		case <-StopServer:
+			break BLOCK
+		case <-time.After(time.Millisecond * 761):
+			if checker.Check() {
+				if core.ApiMessageBoxButton("检测到配置文件变化，是否热重载？") == 6 {
 					go OnRestart(nil)
 				}
 			}
+		case <-time.After(time.Second * 3):
+			for _, bot := range table.Bots {
+				heartbeat := fmt.Sprintf(`{"interval":%d,"meta_event_type":"heartbeat","post_type":"meta_event","self_id":%d,"status":{"good":true,"online":true},"time":%d}`,
+					3000, bot, time.Now().Unix())
+				table.SendByte(bot, []byte(heartbeat))
+			}
 		}
-	}()
+	}
 	table.Close()
 }
 
@@ -101,13 +102,7 @@ func OnRestart(_ *core.Context) {
 	OnEnable(nil)
 }
 
-// OnEvent 将不同bot的context广播到该bot的所有连接
-func OnEvent(ctx *core.Context) {
-	INFO("[上报] %v", ctx)
-	table := GetServersTable()
-	table.Send(ctx.Bot, ctx)
-}
-
+// core触发设置
 func OnSetting(_ *core.Context) {
 	core.ApiCallMessageBox(fmt.Sprintf("等个好心人写UI，修改配置请到 %sconfig.yml\n", core.OneBotPath))
 }
