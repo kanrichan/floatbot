@@ -38,6 +38,7 @@ func PackPOSTRequest(bot int64, send, data []byte) (ctx *core.Context) {
 	)
 	json.Unmarshal(send, &rsp)
 	json.Unmarshal(data, &req)
+	ctx = &core.Context{}
 	ctx.Bot = bot
 	ctx.Response = rsp
 	switch rsp["post_type"].(string) {
