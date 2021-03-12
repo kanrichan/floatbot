@@ -236,6 +236,8 @@ func ApiSendMsg(ctx *Context) {
 				CString(data.Str("data")),
 				0,
 			)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		case "json":
 			C.S3_Api_SendJSON(
 				GoInt2CStr(ctx.Bot),
@@ -245,6 +247,8 @@ func ApiSendMsg(ctx *Context) {
 				GoInt2CStr(params.Int("user_id")),
 				CString(data.Str("data")),
 			)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		case "share":
 			C.S3_Api_SendXML(
 				GoInt2CStr(ctx.Bot),
@@ -267,6 +271,8 @@ func ApiSendMsg(ctx *Context) {
 				)),
 				0,
 			)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		case "music":
 			C.S3_Api_SendXML(
 				GoInt2CStr(ctx.Bot),
@@ -292,6 +298,8 @@ func ApiSendMsg(ctx *Context) {
 				)),
 				0,
 			)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		case "weather":
 			C.S3_Api_SendJSON(
 				GoInt2CStr(ctx.Bot),
@@ -313,6 +321,8 @@ func ApiSendMsg(ctx *Context) {
 					data.Str("type"),
 				)),
 			)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		case "contact":
 			switch data.Str("type") {
 			case "qq":
@@ -348,6 +358,8 @@ func ApiSendMsg(ctx *Context) {
 					)),
 					0,
 				)
+				ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+				return
 			case "group":
 				C.S3_Api_SendXML(
 					GoInt2CStr(ctx.Bot),
@@ -378,6 +390,8 @@ func ApiSendMsg(ctx *Context) {
 					)),
 					0,
 				)
+				ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+				return
 			}
 		case "location":
 			C.S3_Api_SendJSON(
@@ -398,12 +412,16 @@ func ApiSendMsg(ctx *Context) {
 					data.Str("title"),
 				)),
 			)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		// 其他
 		case "shake":
 			C.S3_Api_ShakeWindow(
 				GoInt2CStr(ctx.Bot),
 				GoInt2CStr(params.Int("user_id")),
 			)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		case "poke":
 			C.S3_Api_SendMsgEX_V2(
 				GoInt2CStr(ctx.Bot),
@@ -419,6 +437,8 @@ func ApiSendMsg(ctx *Context) {
 				CBool(false),
 				CString(""),
 			)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		case "anonymous":
 			anonymous = true
 		case "reply":
@@ -435,6 +455,8 @@ func ApiSendMsg(ctx *Context) {
 				CBool(false),
 				CString(""),
 			)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		case "forward":
 			C.S3_Api_SendMsgEX_V2(
 				GoInt2CStr(ctx.Bot),
@@ -449,6 +471,8 @@ func ApiSendMsg(ctx *Context) {
 				CBool(false),
 				CString(""),
 			)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		case "node":
 			C.S3_Api_SendMsgEX_V2(
 				GoInt2CStr(ctx.Bot),
@@ -463,6 +487,8 @@ func ApiSendMsg(ctx *Context) {
 				CBool(false),
 				CString(""),
 			)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		}
 	}
 	if out == "" {
@@ -470,7 +496,7 @@ func ApiSendMsg(ctx *Context) {
 		ctx.MakeOkResponse(map[string]interface{}{"message_id": 0})
 		return
 	}
-	ret := CPtr2GoStr(
+	ret := GoString(
 		C.S3_Api_SendMsgEX_V2(
 			GoInt2CStr(ctx.Bot),
 			C.int(type_),
@@ -485,10 +511,6 @@ func ApiSendMsg(ctx *Context) {
 	// 处理返回的 message_id
 	var temp map[string]interface{}
 	json.Unmarshal([]byte(ret), &temp)
-	if !Parse(temp).Bool("sendok") {
-		ctx.MakeFailResponse("可能受到风控")
-		return
-	}
 	num := Parse(temp).Int("msgno")
 	if num == 0 {
 		ctx.MakeFailResponse("可能受到风控")
@@ -517,31 +539,27 @@ func ApiSendGroupMsg(ctx *Context) {
 // DeleteMsg 撤回消息
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#delete_msg-%E6%92%A4%E5%9B%9E%E6%B6%88%E6%81%AF
 func ApiDeleteMsg(ctx *Context) {
-	var (
-		id            = Parse(ctx.Request).Get("params").Int("message_id")
-		num           = MessageIDCache.Search(id).(int64)
-		type_   int64 = 1
-		groupID int64 = 0
-		userID  int64 = 0
-	)
+	id := Parse(ctx.Request).Get("params").Int("message_id")
+	// 获取 先驱的 message num
+	num := MessageIDCache.Search(id)
+	if num == nil {
+		ctx.MakeFailResponse("invalid message id")
+		return
+	}
+	// 获取 OneBot 的 message 报文
 	res := MessageCache.Search(id)
-	if res != nil {
-		ctx.Response = MessageCache.Search(id).(map[string]interface{})
+	if res == nil {
+		ctx.MakeFailResponse("invalid message id")
+		return
 	}
-	groupID = Parse(ctx.Response).Int("group_id")
-	if groupID != 0 {
-		type_ = 2
-	} else {
-		type_ = 1
-		userID = Parse(ctx.Response).Int("user_id")
-	}
+	ctx.Response = res.(map[string]interface{})
 	C.S3_Api_WithdrawMsgEX(
 		GoInt2CStr(ctx.Bot),
-		C.int(type_), // 暂时写死群聊
-		GoInt2CStr(groupID),
-		GoInt2CStr(userID), // 暂时写死群聊
-		GoInt2CStr(num),
-		GoInt2CStr(id),
+		C.int(ctx.GetResponseType()),
+		GoInt2CStr(Parse(ctx.Response).Int("group_id")),
+		GoInt2CStr(ctx.GetUserID()),
+		GoInt2CStr(num.(int64)),
+		GoInt2CStr(Parse(ctx.Response).Int("id")),
 		GoInt2CStr(Parse(ctx.Response).Int("time")),
 	)
 	ctx.MakeOkResponse(nil)
@@ -550,13 +568,20 @@ func ApiDeleteMsg(ctx *Context) {
 // GetMsg 获取消息
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_msg-%E8%8E%B7%E5%8F%96%E6%B6%88%E6%81%AF
 func ApiGetMsg(ctx *Context) {
-	ctx.MakeOkResponse(MessageCache.Search(Parse(ctx.Request).Get("params").Int("message_id")).(map[string]interface{}))
+	id := Parse(ctx.Request).Get("params").Int("message_id")
+	// 获取 OneBot 的 message 报文
+	res := MessageCache.Search(id)
+	if res == nil {
+		ctx.MakeFailResponse("invalid message id")
+		return
+	}
+	ctx.MakeOkResponse(res.(map[string]interface{}))
 }
 
 // GetForwardMsg 获取合并转发消息
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_forward_msg-%E8%8E%B7%E5%8F%96%E5%90%88%E5%B9%B6%E8%BD%AC%E5%8F%91%E6%B6%88%E6%81%AF
 func ApiGetForwardMsg(ctx *Context) {
-	ctx.MakeFailResponse("先驱不支持")
+	ctx.MakeFailResponse("xq not support")
 }
 
 // SendLike 发送好友赞
@@ -584,7 +609,7 @@ func ApiSetGroupKick(ctx *Context) {
 // SetGroupBan 群组单人禁言
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_ban-%E7%BE%A4%E7%BB%84%E5%8D%95%E4%BA%BA%E7%A6%81%E8%A8%80
 func ApiSetGroupBan(ctx *Context) {
-	C.S3_Api_ShutUP(
+	C.S3_Api_ShutUp(
 		GoInt2CStr(ctx.Bot),
 		GoInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
 		GoInt2CStr(Parse(ctx.Request).Get("params").Int("user_id")),
@@ -602,18 +627,10 @@ func ApiSetGroupAnonymousBan(ctx *Context) {
 // SetGroupWholeBan 群组全员禁言
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_whole_ban-%E7%BE%A4%E7%BB%84%E5%85%A8%E5%91%98%E7%A6%81%E8%A8%80
 func ApiSetGroupWholeBan(ctx *Context) {
-	var (
-		temp         = Parse(ctx.Request).Get("params").Bool("enable")
-		enable int64 = 0 // 解除禁言
-	)
-	if temp {
-		enable = 1 // 设置禁言
-	}
-	C.S3_Api_ShutUP(
+	C.S3_Api_ShutUpAll(
 		GoInt2CStr(ctx.Bot),
 		GoInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
-		GoInt2CStr(0),
-		C.int(enable),
+		CBool(Parse(ctx.Request).Get("params").Bool("enable")),
 	)
 	ctx.MakeOkResponse(nil)
 }
@@ -621,46 +638,34 @@ func ApiSetGroupWholeBan(ctx *Context) {
 // SetGroupAdmin 群组设置管理员
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_admin-%E7%BE%A4%E7%BB%84%E8%AE%BE%E7%BD%AE%E7%AE%A1%E7%90%86%E5%91%98
 func ApiSetGroupAdmin(ctx *Context) {
-	var (
-		groupID = Parse(ctx.Request).Get("params").Str("group_id")
-		userID  = Parse(ctx.Request).Get("params").Str("user_id")
-		enable  = Parse(ctx.Request).Get("params").Int("enable")
-	)
-	temp1 := CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))
-	temp2 := CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))
-	temp3 := []byte{}
-	for i := range temp1 {
-		if temp1[i] != temp2[i] || temp1[i] == 92 {
-			break
-		}
-		temp3 = append(temp3, temp1[i])
-	}
-	cookie := string(temp3) + CPtr2GoStr(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))
-	skey := string(temp3)[strings.Index(string(temp3), "skey=")+5:]
-	bnk := 5381
-	for i := range skey {
-		bnk += (bnk << 5) + int(skey[i])
-	}
-	bnk = bnk & 2147483647
+	// 获取网页 cookie 和计算 bnk
+	cookie1 := GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))
+	cookie2 := GoString(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))
+	cookie := cookie1 + cookie2
+	bnk := GetBnk(cookie1)
+	// 提交 post 请求
 	client := &http.Client{}
 	dataUrl := url.Values{}
-	dataUrl.Add("gc", groupID)
-	dataUrl.Add("op", Int2Str(enable))
-	dataUrl.Add("ul", userID)
+	dataUrl.Add("gc", Parse(ctx.Request).Get("params").Str("group_id"))
+	dataUrl.Add("op", Int2Str(Parse(ctx.Request).Get("params").Int("enable")))
+	dataUrl.Add("ul", Parse(ctx.Request).Get("params").Str("user_id"))
 	dataUrl.Add("bkn", strconv.Itoa(bnk))
 	reqest, _ := http.NewRequest("POST", "https://qun.qq.com/cgi-bin/qun_mgr/set_group_admin", strings.NewReader(dataUrl.Encode()))
 	reqest.Header.Set("Cookie", cookie)
 	resp, err := client.Do(reqest)
 	if err != nil {
-		panic(err)
+		ApiOutPutLog(err)
+		return
 	}
 	data, _ := ioutil.ReadAll(resp.Body)
+	// 判断是否返回成功
 	ul := gjson.ParseBytes(data).Get("ul").Str
 	em := gjson.ParseBytes(data).Get("em").Str
-	if ul == userID {
-		ctx.MakeOkResponse(nil)
+	if ul != Parse(ctx.Request).Get("params").Str("user_id") {
+		ctx.MakeFailResponse(em)
+		return
 	}
-	ctx.MakeFailResponse(em)
+	ctx.MakeOkResponse(nil)
 }
 
 // SetGroupAnonymous 群组匿名
@@ -711,17 +716,10 @@ func ApiSetGroupSpecialTitle(ctx *Context) {
 // SetFriendAddRequest 处理加好友请求
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_friend_add_request-%E5%A4%84%E7%90%86%E5%8A%A0%E5%A5%BD%E5%8F%8B%E8%AF%B7%E6%B1%82
 func ApiSetFriendAddRequest(ctx *Context) {
-	var (
-		temp          = Parse(ctx.Request).Get("params").Bool("approve")
-		approve int64 = 20
-	)
-	if temp {
-		approve = 10
-	}
 	C.S3_Api_HandleFriendEvent(
 		GoInt2CStr(ctx.Bot),
 		GoInt2CStr(Parse(ctx.Request).Get("params").Int("flag")),
-		C.int(approve),
+		CBool(Parse(ctx.Request).Get("params").Bool("approve")),
 		CString(Parse(ctx.Request).Get("params").Str("remark")),
 	)
 	ctx.MakeOkResponse(nil)
@@ -730,41 +728,31 @@ func ApiSetFriendAddRequest(ctx *Context) {
 // SetGroupAddRequest 处理加群请求／邀请
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_add_request-%E5%A4%84%E7%90%86%E5%8A%A0%E7%BE%A4%E8%AF%B7%E6%B1%82%E9%82%80%E8%AF%B7
 func ApiSetGroupAddRequest(ctx *Context) {
-	var (
-		flag    = strings.Split(Parse(ctx.Request).Get("params").Str("flag"), "|")
-		reason  = Parse(ctx.Request).Get("params").Str("reason")
-		approve = 20
-		userID  = "0"
-	)
-	if Parse(ctx.Request).Get("params").Bool("approve") {
-		approve = 10
-	}
-	if flag[0] == "214" {
-		userID = flag[3]
+	flag := strings.Split(Parse(ctx.Request).Get("params").Str("flag"), "|")
+	if len(flag) != 4 {
+		ctx.MakeFailResponse("invalid flag")
+		return
 	}
 	C.S3_Api_HandleGroupEvent(
 		GoInt2CStr(ctx.Bot),
 		C.int(Str2Int(flag[0])),
-		CString(userID),
-		CString(flag[1]),
 		CString(flag[2]),
-		C.int(approve),
-		CString(reason),
+		CString(flag[1]),
+		CString(flag[3]),
+		CBool(Parse(ctx.Request).Get("params").Bool("approve")),
+		CString(Parse(ctx.Request).Get("params").Str("reason")),
 	)
 }
 
 // GetLoginInfo 获取登录号信息
 // https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_login_info-%E8%8E%B7%E5%8F%96%E7%99%BB%E5%BD%95%E5%8F%B7%E4%BF%A1%E6%81%AF
 func ApiGetLoginInfo(ctx *Context) {
-	nickname := strings.Split(
-		CPtr2GoStr(
-			C.S3_Api_GetNick(
-				GoInt2CStr(ctx.Bot),
-				GoInt2CStr(ctx.Bot),
-			),
+	nickname := GoString(
+		C.S3_Api_GetNick(
+			GoInt2CStr(ctx.Bot),
+			GoInt2CStr(ctx.Bot),
 		),
-		"\n",
-	)[0]
+	)
 	ctx.MakeOkResponse(
 		map[string]interface{}{
 			"user_id":  ctx.Bot,
@@ -802,7 +790,7 @@ func ApiGetGroupInfo(ctx *Context) {
 func ApiGetGroupList(ctx *Context) {
 	var temp []GroupInfo
 	list := strings.Split(
-		CPtr2GoStr(
+		GoString(
 			C.S3_Api_GetGroupList_B(
 				GoInt2CStr(ctx.Bot),
 			),
@@ -853,13 +841,13 @@ func ApiGetGroupHonorInfo(ctx *Context) {
 func ApiGetCookies(ctx *Context) {
 	switch Parse(ctx.Request).Get("params").Str("domain") {
 	case "qun.qq.com":
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + CPtr2GoStr(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + GoString(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))})
 		return
 	case "qzone.qq.com":
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + CPtr2GoStr(C.S3_Api_GetZonePsKey(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + GoString(C.S3_Api_GetZonePsKey(GoInt2CStr(ctx.Bot)))})
 		return
 	default:
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))})
 		return
 	}
 }
@@ -875,13 +863,13 @@ func ApiGetCsrfToken(ctx *Context) {
 func ApiGetCredentials(ctx *Context) {
 	switch Parse(ctx.Request).Get("params").Str("domain") {
 	case "qun.qq.com":
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + CPtr2GoStr(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + GoString(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))})
 		return
 	case "qzone.qq.com":
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + CPtr2GoStr(C.S3_Api_GetZonePsKey(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + GoString(C.S3_Api_GetZonePsKey(GoInt2CStr(ctx.Bot)))})
 		return
 	default:
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": CPtr2GoStr(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))})
 		return
 	}
 }
@@ -965,6 +953,11 @@ func ApiSendJson(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
 
+// ApiNotFound 没有这样的API
+func ApiNotFound(ctx *Context) {
+	ctx.MakeFailResponse("API NOT FOUND")
+}
+
 func ApiOutPutLog(text interface{}) {
 	C.S3_Api_OutPutLog(
 		CString(fmt.Sprintln(text)),
@@ -976,7 +969,7 @@ func ApiOutPutLog1(text interface{}) {
 }
 
 func XQApiGroupName(bot, groupID int64) string {
-	return CPtr2GoStr(
+	return GoString(
 		C.S3_Api_GetGroupName(
 			GoInt2CStr(bot),
 			GoInt2CStr(groupID),
@@ -985,7 +978,7 @@ func XQApiGroupName(bot, groupID int64) string {
 }
 
 func XQApiGroupMemberListB(bot, groupID int64) string {
-	return CPtr2GoStr(
+	return GoString(
 		C.S3_Api_GetGroupMemberList_B(
 			GoInt2CStr(bot),
 			GoInt2CStr(groupID),
@@ -994,7 +987,7 @@ func XQApiGroupMemberListB(bot, groupID int64) string {
 }
 
 func XQApiGroupMemberListC(bot, groupID int64) string {
-	return CPtr2GoStr(
+	return GoString(
 		C.S3_Api_GetGroupMemberList_C(
 			GoInt2CStr(bot),
 			GoInt2CStr(groupID),
@@ -1004,7 +997,7 @@ func XQApiGroupMemberListC(bot, groupID int64) string {
 
 func XQApiGetNick(bot, userID int64) string {
 	return strings.Split(
-		CPtr2GoStr(
+		GoString(
 			C.S3_Api_GetNick(
 				GoInt2CStr(bot),
 				GoInt2CStr(userID),

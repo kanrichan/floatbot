@@ -1,6 +1,7 @@
 // from https://github.com/Tnze/CoolQ-Golang-SDK/blob/master/cqp/apis_native.go
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <windows.h>
 #include <tchar.h>
 
@@ -212,6 +213,53 @@ extern void __stdcall XQ_AuthId(int ID, int IMAddr){
     return;
 }
 
+char *str_same(char *a, char* b) {
+    if (!a || !b) return NULL;
+	int len = strlen(a);
+    int i = 0;
+    for (; i < len; ++i) if ((*(a+i) - *(b+i))) break;
+	char *c = (char*)malloc(sizeof(char)*i);
+	memcpy(c, a, i);
+    c[i]='\0';
+    return c;
+}
+
+char *fix_str(char *string) {
+    if (!string) return NULL;
+    return string+4;
+}
+
+int index_of(char *string, const char *dest) {
+    if (!string || !dest ) return -1;
+    int i = 0;
+    int j = 0;
+    while (string[i] != '\0') {
+        if (string[i] != dest[0]) {
+            i ++;
+            continue;
+        }
+        j = 0;
+        while (string[i+j] != '\0' && dest[j] != '\0') {
+            if (string[i+j] != dest[j]) {
+                break;
+            }
+            j ++;
+        }
+        if (dest[j] == '\0') return i+strlen(dest);
+        i ++;
+    }
+    return -1;
+}
+
+char *cut_str(char *string,int index) {
+    if (!string) return NULL;
+    if (index>strlen(string)) return string;
+	char *ret = (char*)malloc(sizeof(char)*index);
+	memcpy(ret, string, index);
+    ret[index]='\0';
+    return ret;
+}
+
 // 在使用本类方法前必须调用本函数(返回框架版本号)
 int S3_Api_ApiInit(){
     int ret = S3_Api_ApiInit_Ptr(authid);
@@ -231,13 +279,13 @@ void S3_Api_SetAuthId(int id, int addr){
 char *S3_Api_GetFriendList(char *selfID){
     char *ret = S3_Api_GetFriendList_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取机器人在线账号列表
 char *S3_Api_GetOnLineList(){
     char *ret = S3_Api_GetOnLineList_Ptr(authid);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取机器人账号是否在线
@@ -255,7 +303,7 @@ char *S3_Api_GetGroupMemberList(char *selfID, char *groupID){
     char *ret = S3_Api_GetGroupMemberList_Ptr(authid, selfID, groupID);
     free(selfID);
     free(groupID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取群成员名片
@@ -267,7 +315,7 @@ char *S3_Api_GetGroupCard(char *selfID, char *groupID, char *userID){
     free(selfID);
     free(groupID);
     free(userID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 发送消息
@@ -295,7 +343,7 @@ char *S3_Api_UpLoadPic(char *selfID, int postType, char *userID, char *file){
     char *ret = S3_Api_UpLoadPic_Ptr(authid, selfID, postType, userID, file);
     free(selfID);
     free(userID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取群管理员列表
@@ -305,7 +353,7 @@ char *S3_Api_GetGroupAdmin(char *selfID, char *groupID){
     char *ret = S3_Api_GetGroupAdmin_Ptr(authid, selfID, groupID);
     free(selfID);
     free(groupID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 群禁言
@@ -313,12 +361,23 @@ char *S3_Api_GetGroupAdmin(char *selfID, char *groupID){
 // groupID  群号  文本型  欲操作的群号
 // userID  对象QQ  文本型  欲禁言的对象，如留空且机器人QQ为管理员，将设置该群为全群禁言
 // time  时间  整数型  0为解除禁言 （禁言单位为秒），如为全群禁言，参数为非0，解除全群禁言为0
-void S3_Api_ShutUP(char *selfID, char *groupID, char *userID, int time){
+void S3_Api_ShutUp(char *selfID, char *groupID, char *userID, int time){
     S3_Api_ShutUP_Ptr(authid, selfID, groupID, userID, time);
     free(selfID);
     free(groupID);
     free(userID);
 
+}
+
+// 全群禁言
+// selfID  响应QQ  文本型  机器人QQ
+// groupID  群号  文本型  欲操作的群号
+// enable  是否全群禁言  逻辑型  
+void S3_Api_ShutUpAll(char *selfID, char *groupID, int enable){
+    if (enable) S3_Api_ShutUP_Ptr(authid, selfID, groupID, "", 1);
+    else S3_Api_ShutUP_Ptr(authid, selfID, groupID, "", 0);
+    free(selfID);
+    free(groupID);
 }
 
 // 修改群成员昵称
@@ -355,7 +414,7 @@ char *S3_Api_GetNotice(char *selfID, char *groupID){
     char *ret = S3_Api_GetNotice_Ptr(authid, selfID, groupID);
     free(selfID);
     free(groupID);
-    return ret;
+    return fix_str(ret);
 }
 
 //  取群成员禁言状态 -1失败 0未被禁言 1被单独禁言 2开启了全群禁言
@@ -396,7 +455,7 @@ void S3_Api_SetRInf(char *selfID, int type, char *text){
 char *S3_Api_GetGroupPsKey(char *selfID){
     char *ret = S3_Api_GetGroupPsKey_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取得QQ空间页面操作用参数P_skey
@@ -404,13 +463,16 @@ char *S3_Api_GetGroupPsKey(char *selfID){
 char *S3_Api_GetZonePsKey(char *selfID){
     char *ret = S3_Api_GetZonePsKey_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取得机器人网页操作用的Cookies
 // selfID  响应QQ  文本型  机器人QQ
 char *S3_Api_GetCookies(char *selfID){
-    char *ret = S3_Api_GetCookies_Ptr(authid, selfID);
+    char *a = S3_Api_GetCookies_Ptr(authid, selfID);
+    char *fix = fix_str(a);
+    int index = index_of(fix,"skey=");
+    char *ret = cut_str(fix, index+10);
     free(selfID);
     return ret;
 }
@@ -440,7 +502,7 @@ char *S3_Api_WithdrawMsg(char *selfID, char *groupID, char *messageNum, char *me
     free(groupID);
     free(messageNum);
     free(messageID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 输出一行日志
@@ -457,7 +519,7 @@ void S3_Api_OutPutLog(char *message){
 char *S3_Api_OcrPic(char *selfID, char *file){
     char *ret = S3_Api_OcrPic_Ptr(authid, selfID, file);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 主动加群
@@ -479,7 +541,7 @@ char *S3_Api_UpVote(char *selfID, char *userID){
     char *ret = S3_Api_UpVote_Ptr(authid, selfID, userID);
     free(selfID);
     free(userID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 通过列表或群临时通道点赞
@@ -489,7 +551,7 @@ char *S3_Api_UpVote_temp(char *selfID, char *userID){
     char *ret = S3_Api_UpVote_temp_Ptr(authid, selfID, userID);
     free(selfID);
     free(userID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 获取赞数量
@@ -511,14 +573,14 @@ int S3_Api_IsEnable(){
 // 置好友添加请求
 // selfID  响应QQ  文本型  机器人QQ
 // userID  对象QQ  文本型  申请入群 被邀请人 请求添加好友人的QQ （当请求类型为214时这里为邀请人QQ）
-// approve  处理方式  整数型  10同意 20拒绝 30忽略 40同意单项好友的请求
+// approve  处理方式  整数型  1同意 0拒绝
 // remark  附加信息  文本型  拒绝入群，拒绝添加好友 附加信息
 void S3_Api_HandleFriendEvent(char *selfID, char *userID, int approve, char *remark){
-    S3_Api_HandleFriendEvent_Ptr(authid, selfID, userID, approve, remark);
+    if (approve) S3_Api_HandleFriendEvent_Ptr(authid, selfID, userID, 10, remark);
+    else S3_Api_HandleFriendEvent_Ptr(authid, selfID, userID, 20, remark);
     free(selfID);
     free(userID);
     free(remark);
-
 }
 
 // 置群请求
@@ -530,19 +592,19 @@ void S3_Api_HandleFriendEvent(char *selfID, char *userID, int approve, char *rem
 // approve  处理方式  整数型  10同意 20拒绝 30忽略
 // remark  附加信息  文本型  拒绝入群，拒绝添加好友 附加信息
 void S3_Api_HandleGroupEvent(char *selfID, int sub_type, char *userID, char *groupID, char *flag, int approve, char *remark){
-    S3_Api_HandleGroupEvent_Ptr(authid, selfID, sub_type, userID, groupID, flag, approve, remark);
+    if (approve) S3_Api_HandleGroupEvent_Ptr(authid, selfID, sub_type, userID, groupID, flag, 10, remark);
+    else S3_Api_HandleGroupEvent_Ptr(authid, selfID, sub_type, userID, groupID, flag, 20, remark);
     free(selfID);
     free(userID);
     free(groupID);
     free(flag);
     free(remark);
-
 }
 
 // 取所有QQ列表
 char *S3_Api_GetQQList(){
     char *ret = S3_Api_GetQQList_Ptr(authid);
-    return ret;
+    return fix_str(ret);
 }
 
 // 向框架添加一个QQ
@@ -553,7 +615,7 @@ char *S3_Api_AddQQ(char *account, char *password, int enable){
     char *ret = S3_Api_AddQQ_Ptr(authid, account, password, enable);
     free(account);
     free(password);
-    return ret;
+    return fix_str(ret);
 }
 
 // 登录指定QQ
@@ -577,7 +639,7 @@ void S3_Api_OffLineQQ(char *selfID){
 char *S3_Api_DelQQ(char *selfID){
     char *ret = S3_Api_DelQQ_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 删除指定好友
@@ -594,7 +656,9 @@ int S3_Api_DelFriend(char *selfID, char *userID){
 // selfID  响应QQ  文本型  机器人QQ
 // userID  对象QQ  文本型  欲取得的QQ的号码
 char *S3_Api_GetNick(char *selfID, char *userID){
-    char *ret = S3_Api_GetNick_Ptr(authid, selfID, userID);
+    char *a = S3_Api_GetNick_Ptr(authid, selfID, userID);
+    char *b = S3_Api_GetNick_Ptr(authid, selfID, userID);
+    char *ret = str_same(fix_str(a), fix_str(b));
     free(selfID);
     free(userID);
     return ret;
@@ -607,7 +671,7 @@ char *S3_Api_GetFriendsRemark(char *selfID, char *userID){
     char *ret = S3_Api_GetFriendsRemark_Ptr(authid, selfID, userID);
     free(selfID);
     free(userID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取短Clientkey
@@ -615,7 +679,7 @@ char *S3_Api_GetFriendsRemark(char *selfID, char *userID){
 char *S3_Api_GetClientkey(char *selfID){
     char *ret = S3_Api_GetClientkey_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取bkn
@@ -623,7 +687,7 @@ char *S3_Api_GetClientkey(char *selfID){
 char *S3_Api_GetBkn(char *selfID){
     char *ret = S3_Api_GetBkn_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 修改好友备注名称
@@ -669,7 +733,7 @@ int S3_Api_InviteGroupMember(char *selfID, char *targetID, char *groupID, char *
 char *S3_Api_CreateDisGroup(char *selfID){
     char *ret = S3_Api_CreateDisGroup_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 创建群 群官网Http模式
@@ -679,7 +743,7 @@ char *S3_Api_CreateGroup(char *selfID, char *nickname){
     char *ret = S3_Api_CreateGroup_Ptr(authid, selfID, nickname);
     free(selfID);
     free(nickname);
-    return ret;
+    return fix_str(ret);
 }
 
 // 退出群
@@ -697,7 +761,7 @@ void S3_Api_QuitGroup(char *selfID, char *groupID){
 char *S3_Api_GetGroupList(char *selfID){
     char *ret = S3_Api_GetGroupList_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 封包模式获取群号列表(最多可以取得999)
@@ -705,7 +769,7 @@ char *S3_Api_GetGroupList(char *selfID){
 char *S3_Api_GetGroupList_B(char *selfID){
     char *ret = S3_Api_GetGroupList_B_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 封包模式取好友列表(与封包模式取群列表同源)
@@ -713,14 +777,14 @@ char *S3_Api_GetGroupList_B(char *selfID){
 char *S3_Api_GetFriendList_B(char *selfID){
     char *ret = S3_Api_GetFriendList_B_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取登录二维码base64
 // key  key  字节集  无
 char *S3_Api_GetQrcode(char *key){
     char *ret = S3_Api_GetQrcode_Ptr(authid, key);
-    return ret;
+    return fix_str(ret);
 }
 
 // 检查登录二维码状态
@@ -737,7 +801,7 @@ char *S3_Api_GetGroupName(char *selfID, char *groupID){
     char *ret = S3_Api_GetGroupName_Ptr(authid, selfID, groupID);
     free(selfID);
     free(groupID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取群人数上线与当前人数 换行符分隔
@@ -747,7 +811,7 @@ char *S3_Api_GetGroupMemberNum(char *selfID, char *groupID){
     char *ret = S3_Api_GetGroupMemberNum_Ptr(authid, selfID, groupID);
     free(selfID);
     free(groupID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取群等级
@@ -778,7 +842,7 @@ char *S3_Api_GetGroupMemberList_B(char *selfID, char *groupID){
     char *ret = S3_Api_GetGroupMemberList_B_Ptr(authid, selfID, groupID);
     free(selfID);
     free(groupID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 封包模式取群成员列表返回重组后的json文本
@@ -788,7 +852,7 @@ char *S3_Api_GetGroupMemberList_C(char *selfID, char *groupID){
     char *ret = S3_Api_GetGroupMemberList_C_Ptr(authid, selfID, groupID);
     free(selfID);
     free(groupID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 检查指定QQ是否在线
@@ -806,7 +870,7 @@ int S3_Api_IsOnline(char *selfID, char *userID){
 char *S3_Api_GetRInf(char *selfID){
     char *ret = S3_Api_GetRInf_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 多功能删除好友 可删除陌生人或者删除为单项好友
@@ -926,7 +990,7 @@ char *S3_Api_UpLoadVoice(char *selfID, int postType, char *groupID, char *file){
     char *ret = S3_Api_UpLoadVoice_Ptr(authid, selfID, postType, groupID, file);
     free(selfID);
     free(groupID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 发送普通消息支持群匿名方式
@@ -953,7 +1017,7 @@ char *S3_Api_GetVoiLink(char *selfID, char *recordUUID){
     char *ret = S3_Api_GetVoiLink_Ptr(authid, selfID, recordUUID);
     free(selfID);
     free(recordUUID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 查询指定群是否允许匿名消息
@@ -982,7 +1046,7 @@ int S3_Api_SetAnon(char *selfID, char *groupID, int enable){
 char *S3_Api_GetLongClientkey(char *selfID){
     char *ret = S3_Api_GetLongClientkey_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取得腾讯微博页面操作用参数P_skey
@@ -990,7 +1054,7 @@ char *S3_Api_GetLongClientkey(char *selfID){
 char *S3_Api_GetBlogPsKey(char *selfID){
     char *ret = S3_Api_GetBlogPsKey_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取得腾讯课堂页面操作用参数P_skey
@@ -998,7 +1062,7 @@ char *S3_Api_GetBlogPsKey(char *selfID){
 char *S3_Api_GetClassRoomPsKey(char *selfID){
     char *ret = S3_Api_GetClassRoomPsKey_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取得QQ举报页面操作用参数P_skey
@@ -1006,7 +1070,7 @@ char *S3_Api_GetClassRoomPsKey(char *selfID){
 char *S3_Api_GetRepPsKey(char *selfID){
     char *ret = S3_Api_GetRepPsKey_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 取得财付通页面操作用参数P_skey
@@ -1014,7 +1078,7 @@ char *S3_Api_GetRepPsKey(char *selfID){
 char *S3_Api_GetTenPayPsKey(char *selfID){
     char *ret = S3_Api_GetTenPayPsKey_Ptr(authid, selfID);
     free(selfID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 修改机器人自身头像
@@ -1036,7 +1100,7 @@ char *S3_Api_VoiToText(char *selfID, char *userID, int subType, char *recordUUID
     free(selfID);
     free(userID);
     free(recordUUID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 群签到
@@ -1063,13 +1127,13 @@ char *S3_Api_GetPicLink(char *selfID, int imageType, char *userID, char *imageUU
     free(selfID);
     free(userID);
     free(imageUUID);
-    return ret;
+    return fix_str(ret);
 }
 
 // 获取框架版本号
 char *S3_Api_GetVer(){
     char *ret = S3_Api_GetVer_Ptr(authid);
-    return ret;
+    return fix_str(ret);
 }
 
 // 获取指定QQ个人资料的年龄
@@ -1118,7 +1182,7 @@ char *S3_Api_SendMsgEX_V2(char *selfID, int messageType, char *groupID, char *us
     free(userID);
     free(message);
     free(jsonData);
-    return ret;
+    return fix_str(ret);
 }
 
 // 撤回群消息或者私聊消息
@@ -1137,7 +1201,7 @@ char *S3_Api_WithdrawMsgEX(char *selfID, int sub_type, char *groupID, char *user
     free(messageNum);
     free(messageID);
     free(time);
-    return ret;
+    return fix_str(ret);
 }
 
 // 重新从Plugin目录下载入本插件(一般用做自动更新)
@@ -1149,7 +1213,7 @@ int S3_Api_Reload(){
 // 返回框架加载的所有插件列表(包含本插件)的json文本
 char *S3_Api_GetPluginList(){
     char *ret = S3_Api_GetPluginList_Ptr(authid);
-    return ret;
+    return fix_str(ret);
 }
 
 // 查询指定对象是否允许发送在线状态临时会话 获取失败返回0 允许返回1 禁止返回2

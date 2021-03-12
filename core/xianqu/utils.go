@@ -1,13 +1,6 @@
 package xianqu
 
-/*
-char * eStrPtr2CStrPtr(char * str) {
-	if (!str) {
-		return NULL;
-	}
-	return str + 4;
-}
-*/
+//#include <string.h>
 import "C"
 
 import (
@@ -35,18 +28,11 @@ func CString(str string) *C.char {
 
 // GoString 将 C char指针 转为 GO 字符串
 func GoString(str *C.char) string {
+	if str == nil {
+		return ""
+	}
 	utf8str, _ := sc.GB18030.NewDecoder().String(C.GoString(str))
 	return utf8str
-}
-
-// CPtr2GoStr 解决易语言返回的字符串胖指针的问题
-func CPtr2GoStr(str *C.char) string {
-	ptr := C.eStrPtr2CStrPtr(str)
-	if ptr != nil {
-		utf8str, _ := sc.GB18030.NewDecoder().String(C.GoString(ptr))
-		return utf8str
-	}
-	return ""
 }
 
 // CBool 将 GO 布尔型 转为 C 整数
@@ -218,4 +204,13 @@ func FileMD5(path string) string {
 	m := md5.New()
 	m.Write(b)
 	return strings.ToUpper(hex.EncodeToString(m.Sum(nil)))
+}
+
+func GetBnk(cookie string) (bnk int) {
+	skey := cookie[strings.Index(cookie, "skey=")+5:]
+	bnk = 5381
+	for i := range skey {
+		bnk += (bnk << 5) + int(skey[i])
+	}
+	return bnk & 2147483647
 }

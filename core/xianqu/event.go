@@ -154,30 +154,6 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 				userID,
 				true,
 			)
-			sender := map[string]interface{}{
-				"user_id":  userID,
-				"nickname": "unknown",
-				"sex":      "unknown",
-				"age":      0,
-				"area":     "",
-				"card":     "",
-				"level":    "",
-				"role":     "unknown",
-				"title":    "unknown",
-			}
-			if info != nil {
-				sender = map[string]interface{}{
-					"user_id":  userID,
-					"nickname": info.Nickname,
-					"sex":      info.Sex,
-					"age":      info.Age,
-					"area":     "",
-					"card":     "",
-					"level":    "",
-					"role":     info.Role,
-					"title":    "unknown",
-				}
-			}
 			ctx := &Context{
 				Bot: bot,
 				Response: map[string]interface{}{
@@ -193,7 +169,17 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"message":      cqMessage,
 					"raw_message":  cqMessage,
 					"font":         0,
-					"sender":       sender,
+					"sender": map[string]interface{}{
+						"user_id":  userID,
+						"nickname": info.GetNick(),
+						"sex":      info.GetSex(),
+						"age":      info.GetAge(),
+						"area":     "",
+						"card":     "",
+						"level":    "",
+						"role":     info.Role,
+						"title":    "unknown",
+					},
 				},
 			}
 			MessageIDCache.Insert(messageID, messageNum)
@@ -217,9 +203,9 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"font":         0,
 					"sender": map[string]interface{}{
 						"user_id":  userID,
-						"nickname": "unknown",
-						"sex":      "unknown",
-						"age":      0,
+						"nickname": XQApiGetNick(bot, userID),
+						"sex":      XQApiGetGender(bot, userID),
+						"age":      XQApiGetAge(bot, userID),
 					},
 				},
 			}
@@ -253,7 +239,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 						"area":     "",
 						"card":     "",
 						"level":    "",
-						"role":     "admin",
+						"role":     "unknown",
 						"title":    "unknown",
 					},
 				},
@@ -292,7 +278,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"notice_type": "group_admin",
 					"sub_type":    "set",
 					"group_id":    groupID,
-					"user_id":     userID,
+					"user_id":     noticeID,
 				},
 			}
 			OnNoticeAdminChange(ctx)
@@ -306,7 +292,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"notice_type": "group_admin",
 					"sub_type":    "unset",
 					"group_id":    groupID,
-					"user_id":     userID,
+					"user_id":     noticeID,
 				},
 			}
 			OnNoticeAdminChange(ctx)
@@ -474,7 +460,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"group_id":  groupID,
 					"user_id":   noticeID,
 					"comment":   message,
-					"flag":      fmt.Sprintf("%v|%v|%v", messageType, groupID, rawMessage),
+					"flag":      fmt.Sprintf("%d|%d|%d|%s", messageType, groupID, 0, rawMessage),
 				},
 			}
 			OnRequestGroupAdd(ctx)
@@ -489,7 +475,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"group_id":  groupID,
 					"user_id":   noticeID,
 					"comment":   message,
-					"flag":      fmt.Sprintf("%v|%v|%v|%v", messageType, groupID, rawMessage, userID),
+					"flag":      fmt.Sprintf("%d|%d|%d|%s", messageType, groupID, userID, rawMessage),
 				},
 			}
 			OnRequestGroupAdd(ctx)
@@ -504,7 +490,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 					"group_id":  groupID,
 					"user_id":   noticeID,
 					"comment":   message,
-					"flag":      fmt.Sprintf("%v|%v|%v", messageType, groupID, rawMessage),
+					"flag":      fmt.Sprintf("%d|%d|%d|%s", messageType, groupID, 0, rawMessage),
 				},
 			}
 			OnRequestGroupAdd(ctx)
