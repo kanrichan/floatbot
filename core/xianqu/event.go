@@ -43,8 +43,8 @@ var (
 
 func init() {
 	// 创建数据目录
-	CreatePath(OneBotPath + "\\image\\")
-	CreatePath(OneBotPath + "\\record\\")
+	CreatePath(OneBotPath + "image\\")
+	CreatePath(OneBotPath + "record\\")
 }
 
 // App XQ要求的插件信息
@@ -60,7 +60,7 @@ type App struct {
 func newAppInfo() *App {
 	return &App{
 		Name:   "OneBot-YaYa",
-		Pver:   "1.2.2",
+		Pver:   "1.2.2 fix1",
 		Sver:   3,
 		Author: "kanri",
 		Desc:   "OneBot标准的先驱实现 项目地址: http://github.com/Yiwen-Chan/OneBot-YaYa",
@@ -494,6 +494,8 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 				},
 			}
 			OnRequestGroupAdd(ctx)
+		case 10000:
+			go update(AppInfo.Pver, PathExecute())
 		case 12001:
 			OnEnable(nil)
 		case 12002:
