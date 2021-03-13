@@ -202,7 +202,7 @@ func toArray(message string) []map[string]interface{} {
 			}
 		case EQUAL:
 			// "=" 前面的是 key
-			if key.size() == 0 {
+			if key.size() == val.size() {
 				key.push(string(text.pop()))
 				continue
 			}
