@@ -100,32 +100,22 @@ func (ctx *Context) GetResponseType() int64 {
 	case Parse(ctx.Response).Str("message_type") == "group":
 		return 2
 	case Parse(ctx.Response).Str("message_type") == "private":
-		//
+		return 1
 	case Parse(ctx.Response).Exist("group_id"):
 		return 2
 	default:
-		//
-	}
-	tempGroup := TemporarySessionCache.Search(Parse(ctx.Response).Int("user_id"))
-	if tempGroup == nil {
 		return 1
 	}
-	ctx.Request["params"].(map[string]interface{})["group_id"] = tempGroup.(int64)
-	return 4
 }
 
 func (ctx *Context) GetUserID() int64 {
 	// 1 为先驱私聊代码
 	// 2 为先驱群聊代码
 	// 4 为先驱群临时代码
-	var (
-		params = Parse(ctx.Response).Get("params")
-	)
 	switch ctx.GetResponseType() {
 	case 1:
 		return 0
-
 	default:
-		return params.Int("user_id")
+		return Parse(ctx.Response).Int("user_id")
 	}
 }

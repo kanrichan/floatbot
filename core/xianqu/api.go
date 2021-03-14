@@ -245,7 +245,7 @@ func ApiSendMsg(ctx *Context) {
 				C.int(type_),
 				GoInt2CStr(params.Int("group_id")),
 				GoInt2CStr(params.Int("user_id")),
-				CString(data.Str("data")),
+				CString(escape(data.Str("data"))),
 			)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
@@ -559,7 +559,7 @@ func ApiDeleteMsg(ctx *Context) {
 		GoInt2CStr(Parse(ctx.Response).Int("group_id")),
 		GoInt2CStr(ctx.GetUserID()),
 		GoInt2CStr(num.(int64)),
-		GoInt2CStr(Parse(ctx.Response).Int("id")),
+		GoInt2CStr(Parse(ctx.Response).Int("message_id")),
 		GoInt2CStr(Parse(ctx.Response).Int("time")),
 	)
 	ctx.MakeOkResponse(nil)

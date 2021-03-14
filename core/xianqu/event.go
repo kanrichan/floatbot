@@ -177,7 +177,7 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 						"area":     "",
 						"card":     "",
 						"level":    "",
-						"role":     info.Role,
+						"role":     info.GetRole(),
 						"title":    "unknown",
 					},
 				},

@@ -206,6 +206,7 @@ func FileMD5(path string) string {
 	return strings.ToUpper(hex.EncodeToString(m.Sum(nil)))
 }
 
+// GetBnk 返回 tx cookie 的 bnk
 func GetBnk(cookie string) (bnk int) {
 	skey := cookie[strings.Index(cookie, "skey=")+5:]
 	bnk = 5381
@@ -213,4 +214,13 @@ func GetBnk(cookie string) (bnk int) {
 		bnk += (bnk << 5) + int(skey[i])
 	}
 	return bnk & 2147483647
+}
+
+// escape 临时应对 nonebot CQ码转数组未反转义的问题
+func escape(text string) string {
+	text = strings.ReplaceAll(text, "&amp;", "&")
+	text = strings.ReplaceAll(text, "&#44;", ",")
+	text = strings.ReplaceAll(text, "&#91;", "[")
+	text = strings.ReplaceAll(text, "&#93;", "]")
+	return text
 }

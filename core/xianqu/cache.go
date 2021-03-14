@@ -240,3 +240,10 @@ func (m *GroupMember) GetSex() string {
 	}
 	return m.Sex
 }
+
+func (m *GroupMember) GetRole() string {
+	if m == nil {
+		return "member"
+	}
+	return m.Role
+}
