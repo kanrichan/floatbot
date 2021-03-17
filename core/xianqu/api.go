@@ -4,14 +4,12 @@ package xianqu
 import "C"
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -20,6 +18,16 @@ import (
 	"github.com/Yiwen-Chan/go-silk/silk"
 	"github.com/tidwall/gjson"
 )
+
+type Message struct {
+	Bot       int64
+	Send      string
+	Type_     int64
+	GroupID   int64
+	UserID    int64
+	Bubble    int64
+	Anonymous bool
+}
 
 func (ctx *Context) MakeOkResponse(data interface{}) {
 	ctx.Response = map[string]interface{}{
@@ -44,484 +52,101 @@ func (ctx *Context) MakeFailResponse(err string) {
 func ApiSendMsg(ctx *Context) {
 	var (
 		params = Parse(ctx.Request).Get("params")
-		// 先计算好发送信息类型以便更新group_id
-		type_ = ctx.XQMessageType()
-
-		out       string = ""
-		bubble    int64  = 0
-		anonymous bool   = false
+		sender = newMessage(ctx)
 	)
 	if !params.Exist("message") {
 		return
 	}
 	messages := params.Array("message")
 	for i := range messages {
-		message := messages[i]
-		data := message.Get("data")
-		switch message.Str("type") {
+		data := messages[i].Get("data")
+		switch messages[i].Str("type") {
 		default:
 			//
 		case "text":
-			out += data.Str("text")
+			sender.text(data)
 		case "at":
-			out += fmt.Sprintf("[@%s] ", data.Str("qq"))
+			sender.at(data)
 		case "face":
-			out += fmt.Sprintf("[Face%s.gif]", data.Str("id"))
+			sender.face(data)
 		case "emoji":
-			out += fmt.Sprintf("[emoji=%s]", data.Str("id"))
+			sender.emoji(data)
 		case "rps":
-			out += []string{"[魔法猜拳] 石头", "[魔法猜拳] 剪刀", "[魔法猜拳] 布"}[rand.Intn(3)]
+			sender.rps(data)
 		case "dice":
-			out += []string{"[魔法骰子] 1", "[魔法骰子] 2", "[魔法骰子] 3", "[魔法骰子] 4", "[魔法骰子] 5", "[魔法骰子] 6"}[rand.Intn(6)]
+			sender.dice(data)
 		case "bubble":
-			bubble = data.Int("id")
+			sender.bubble(data)
 		// 媒体
 		case "image":
-			// 是否使用缓存
-			cache := true
-			if data.Exist("cache") {
-				cache = data.Bool("cache")
-			}
-			// OneBot标准的字段
-			file := data.Str("file")
-			url := data.Str("url")
-			if url != "" {
-				file = url
-			}
-			var (
-				path string
-				res  string
-			)
-			// 判断file字段为哪种类型
-			switch {
-			// 链接方式
-			case strings.Contains(file, "http://") || strings.Contains(file, "https://"):
-				// 解决tx图片链接不落地
-				temp := PicPoolCache.Search(TextMD5(file))
-				if temp != nil && cache {
-					res = temp.(string)
-					break // 存在tx图片链接并且使用缓存
-				}
-				path = OneBotPath + "image\\" + TextMD5(file) + ".jpg"
-				if PathExists(path) && cache {
-					break // 存在链接图片
-				}
-				// 下载图片
-				client := &http.Client{}
-				reqest, _ := http.NewRequest("GET", file, nil)
-				reqest.Header.Set("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
-				reqest.Header.Set("Net-Type", "Wifi")
-				resp, err := client.Do(reqest)
-				if err != nil {
-					panic(err)
-				}
-				data, _ := ioutil.ReadAll(resp.Body)
-				f, _ := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-				f.Write(data)
-				f.Close()
-				resp.Body.Close()
-			// base64方式
-			case strings.Contains(file, "base64://"):
-				path = OneBotPath + "image\\" + TextMD5(file[9:]) + ".jpg"
-				data, err := base64.StdEncoding.DecodeString(file[9:])
-				if err != nil {
-					continue
-				}
-				f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-				if err != nil {
-					continue
-				}
-				f.Write(data)
-				f.Close()
-			// 本地文件方式
-			case strings.Contains(file, "file:///"):
-				path = file[8:]
-			// 默认方式
-			default:
-				path = file
-			}
-			if res == "" {
-				// 用文件md5判断缓冲池是否存在该图片
-				temp := PicPoolCache.Search(FileMD5(path))
-				if temp != nil && cache {
-					res = temp.(string)
-				} else {
-					res = path
-				}
-			}
-			switch data.Str("type") {
-			default:
-				out += fmt.Sprintf("[pic=%s]", res)
-			case "show":
-				out += fmt.Sprintf("[ShowPic=%s,type=%d]", res, data.Int("id")+40000)
-			}
+			sender.image(data)
 		case "record":
-			// 是否使用缓存
-			cache := true
-			if data.Exist("cache") {
-				cache = data.Bool("cache")
-			}
-			// OneBot标准的字段
-			file := data.Str("file")
-			// 判断file字段为哪种类型
-			switch {
-			// 链接方式
-			case strings.Contains(file, "http://") || strings.Contains(file, "https://"):
-				file = OneBotPath + "image\\" + TextMD5(file) + ".mp3"
-				if PathExists(file) && cache {
-					break // 存在链接音频
-				}
-				// 下载音频
-				client := &http.Client{}
-				reqest, _ := http.NewRequest("GET", file, nil)
-				reqest.Header.Set("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
-				reqest.Header.Set("Net-Type", "Wifi")
-				link, _ := url.Parse(file)
-				reqest.Header.Set("Host", link.Hostname())
-				resp, err := client.Do(reqest)
-				if err != nil {
-					panic(err)
-				}
-				data, _ := ioutil.ReadAll(resp.Body)
-				f, _ := os.OpenFile(file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-				f.Write(data)
-				f.Close()
-				resp.Body.Close()
-			// base64方式
-			case strings.Contains(file, "base64://"):
-				file = OneBotPath + "image\\" + TextMD5(file[9:]) + ".jpg"
-				data, err := base64.StdEncoding.DecodeString(file[9:])
-				if err != nil {
-					continue
-				}
-				f, err := os.OpenFile(file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-				if err != nil {
-					continue
-				}
-				f.Write(data)
-				f.Close()
-			// 本地文件方式
-			case strings.Contains(file, "file:///"):
-				file = file[8:]
-			// 默认方式
-			default:
-			}
-			// 获取本地文件的文件名
-			name := strings.ReplaceAll(filepath.Base(file), path.Ext(file), "")
-			silkEncoder := &silk.Encoder{}
-			err := silkEncoder.Init("OneBot/record", "OneBot/codec")
-			if err != nil {
-				continue
-			}
-			data, err := ioutil.ReadFile(file + ".mp3")
-			if err != nil {
-				continue
-			}
-			_, err = silkEncoder.EncodeToSilk(data, name, true)
-			if err != nil {
-				continue
-			}
-			res := OneBotPath + "record/" + name + ".silk"
-			out += fmt.Sprintf("[Voi=%s]", res)
+			sender.record(data)
 		case "video":
 			// TODO
 		// 富文本
 		case "xml":
-			C.S3_Api_SendXML(
-				GoInt2CStr(ctx.Bot),
-				C.int(1),
-				C.int(type_),
-				GoInt2CStr(params.Int("group_id")),
-				GoInt2CStr(params.Int("user_id")),
-				CString(data.Str("data")),
-				0,
-			)
+			sender.xml(data)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
 		case "json":
-			C.S3_Api_SendJSON(
-				GoInt2CStr(ctx.Bot),
-				C.int(1),
-				C.int(type_),
-				GoInt2CStr(params.Int("group_id")),
-				GoInt2CStr(params.Int("user_id")),
-				CString(escape(data.Str("data"))),
-			)
+			sender.json(data)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
 		case "share":
-			C.S3_Api_SendXML(
-				GoInt2CStr(ctx.Bot),
-				C.int(1),
-				C.int(type_),
-				GoInt2CStr(params.Int("group_id")),
-				GoInt2CStr(params.Int("user_id")),
-				CString(fmt.Sprintf(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
-						<msg serviceID="33" templateID="123" action="web" brief="%s" 
-						sourceMsgId="0" url="%s" 
-						flag="8" adverSign="0" multiMsgFlag="0"><item layout="2" 
-						advertiser_id="0" aid="0"><picture cover="%s" w="0" h="0" />
-						<title>%s</title><summary>%s</summary>
-						</item><source name="" icon="" action="" appid="-1" /></msg>`,
-					data.Str("brief"),
-					data.Str("url"),
-					data.Str("image"),
-					data.Str("title"),
-					data.Str("content"),
-				)),
-				0,
-			)
+			sender.share(data)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
 		case "music":
-			C.S3_Api_SendXML(
-				GoInt2CStr(ctx.Bot),
-				C.int(1),
-				C.int(type_),
-				GoInt2CStr(params.Int("group_id")),
-				GoInt2CStr(params.Int("user_id")),
-				CString(fmt.Sprintf(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
-					<msg serviceID="2" templateID="1" action="web" brief="[分享] %s" 
-					sourceMsgId="0" url="%s" flag="0" adverSign="0" multiMsgFlag="0">
-					<item layout="2"><audio cover="%s" src="%s"/><title>%s</title>
-					<summary>%s</summary></item><source name="音乐" 
-					icon="https://i.gtimg.cn/open/app_icon/01/07/98/56/1101079856_100_m.png" 
-					url="http://web.p.qq.com/qqmpmobile/aio/app.html?id=1101079856" 
-					action="app" a_actionData="com.tencent.qqmusic" 
-					i_actionData="tencent1101079856://" appid="1101079856" /></msg>`,
-					XmlEscape(data.Str("title")),
-					data.Str("url"),
-					data.Str("image"),
-					data.Str("audio"),
-					XmlEscape(data.Str("title")),
-					XmlEscape(data.Str("content")),
-				)),
-				0,
-			)
+			sender.music(data)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
 		case "weather":
-			C.S3_Api_SendJSON(
-				GoInt2CStr(ctx.Bot),
-				C.int(1),
-				C.int(type_),
-				GoInt2CStr(params.Int("group_id")),
-				GoInt2CStr(params.Int("user_id")),
-				CString(fmt.Sprintf(`{"app":"com.tencent.weather","desc":"天气",
-					"view":"RichInfoView","ver":"0.0.0.1","prompt":"[应用]天气",
-					"appID":"","sourceName":"","actionData":"","actionData_A":"",
-					"sourceUrl":"","meta":{"richinfo":{"adcode":"","air":"%s",
-					"city":"%s","date":"%s","max":"%s","min":"%s",
-					"ts":"15158613","type":"%s","wind":""}},"text":"","sourceAd":"","extra":""}`,
-					data.Str("air"),
-					data.Str("city"),
-					data.Str("date"),
-					data.Str("max"),
-					data.Str("min"),
-					data.Str("type"),
-				)),
-			)
+			sender.weather(data)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
 		case "contact":
-			switch data.Str("type") {
-			case "qq":
-				C.S3_Api_SendXML(
-					GoInt2CStr(ctx.Bot),
-					C.int(1),
-					C.int(type_),
-					GoInt2CStr(params.Int("group_id")),
-					GoInt2CStr(params.Int("user_id")),
-					CString(fmt.Sprintf(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
-					<msg serviceID="14" templateID="1" action="plugin" 
-					actionData="AppCmd://OpenContactInfo/?uin=%s" 
-					a_actionData="mqqapi://card/show_pslcard?src_type=internal&amp;
-					source=sharecard&amp;version=1&amp;uin=%s" 
-					i_actionData="mqqapi://card/show_pslcard?src_type=internal&amp;
-					source=sharecard&amp;version=1&amp;uin=%s" 
-					brief="推荐了%s" sourceMsgId="0" url="" flag="1" 
-					adverSign="0" multiMsgFlag="0"><item layout="0" 
-					mode="1" advertiser_id="0" aid="0">
-					<summary>推荐联系人</summary><hr hidden="false" style="0" />
-					</item><item layout="2" mode="1" advertiser_id="0" aid="0">
-					<picture cover="mqqapi://card/show_pslcard?src_type=internal&amp;
-					source=sharecard&amp;version=1&amp;uin=%s" w="0" h="0" />
-					<title>%s</title><summary>帐号:%s</summary>
-					</item><source name="" icon="" action="" appid="-1" /></msg>`,
-						data.Str("id"),
-						data.Str("id"),
-						data.Str("id"),
-						data.Str("name"),
-						data.Str("id"),
-						data.Str("name"),
-						data.Str("id"),
-					)),
-					0,
-				)
-				ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
-				return
-			case "group":
-				C.S3_Api_SendXML(
-					GoInt2CStr(ctx.Bot),
-					C.int(1),
-					C.int(type_),
-					GoInt2CStr(params.Int("group_id")),
-					GoInt2CStr(params.Int("user_id")),
-					CString(fmt.Sprintf(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
-						<msg serviceID="15" templateID="1" action="web" 
-						actionData="group:%s" a_actionData="group:%s" 
-						i_actionData="group:%s" brief="推荐群聊：%s" 
-						sourceMsgId="0" url="%s" flag="0" adverSign="0" multiMsgFlag="0">
-						<item layout="0" mode="1" advertiser_id="0" aid="0">
-						<summary>推荐群聊</summary><hr hidden="false" style="0" />
-						</item><item layout="2" mode="1" advertiser_id="0" aid="0">
-						<picture cover="https://p.qlogo.cn/gh/%s/%s/100" w="0" h="0" needRoundView="0" />
-						<title>%s</title><summary>创建人：%s</summary></item>
-						<source name="" icon="" action="" appid="-1" /></msg>`,
-						data.Str("id"),
-						data.Str("id"),
-						data.Str("id"),
-						data.Str("name"),
-						data.Str("url"),
-						data.Str("id"),
-						data.Str("id"),
-						data.Str("name"),
-						data.Str("owner"),
-					)),
-					0,
-				)
-				ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
-				return
-			}
-		case "location":
-			C.S3_Api_SendJSON(
-				GoInt2CStr(ctx.Bot),
-				C.int(1),
-				C.int(type_),
-				GoInt2CStr(params.Int("group_id")),
-				GoInt2CStr(params.Int("user_id")),
-				CString(fmt.Sprintf(`{"app":"com.tencent.map","desc":"","view":"Share",
-					"ver":"0.0.0.1","prompt":"[应用]地图","appID":"","sourceName":"",
-					"actionData":"","actionData_A":"","sourceUrl":"","meta":{"Share":{"locSub":"%s",
-					"lng":%s,"lat":%s,"zoom":15,"locName":"%s"}},
-					"config":{"forward":true,"autosize":1},"text":"","extraApps":[],
-					"sourceAd":"","extra":""}`,
-					data.Str("content"),
-					data.Str("lon"),
-					data.Str("lat"),
-					data.Str("title"),
-				)),
-			)
+			sender.contact(data)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
-		// 其他
+		case "location":
+			sender.location(data)
+			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
+			return
 		case "shake":
-			C.S3_Api_ShakeWindow(
-				GoInt2CStr(ctx.Bot),
-				GoInt2CStr(params.Int("user_id")),
-			)
+			sender.shake(data)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
 		case "poke":
-			C.S3_Api_SendMsgEX_V2(
-				GoInt2CStr(ctx.Bot),
-				C.int(type_),
-				GoInt2CStr(params.Int("group_id")),
-				GoInt2CStr(params.Int("user_id")),
-				CString(fmt.Sprintf(
-					"[系统提示] %v 戳了一下 %v",
-					ctx.Bot,
-					params.Int("user_id"),
-				)),
-				C.int(0),
-				CBool(false),
-				CString(""),
-			)
+			sender.poke(data)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
 		case "anonymous":
-			anonymous = true
+			sender.anonymous(data)
 		case "reply":
-			C.S3_Api_SendMsgEX_V2(
-				GoInt2CStr(ctx.Bot),
-				C.int(type_),
-				GoInt2CStr(params.Int("group_id")),
-				GoInt2CStr(params.Int("user_id")),
-				CString(fmt.Sprintf(
-					"[系统消息] %v 尝试回复一条消息并失败了",
-					ctx.Bot,
-				)),
-				C.int(0),
-				CBool(false),
-				CString(""),
-			)
+			sender.reply(data)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
 		case "forward":
-			C.S3_Api_SendMsgEX_V2(
-				GoInt2CStr(ctx.Bot),
-				C.int(type_),
-				GoInt2CStr(params.Int("group_id")),
-				GoInt2CStr(params.Int("user_id")),
-				CString(fmt.Sprintf(
-					"[系统消息] %v 尝试合并转发一条消息并失败了",
-					ctx.Bot,
-				)),
-				C.int(0),
-				CBool(false),
-				CString(""),
-			)
+			sender.forward(data)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
 		case "node":
-			C.S3_Api_SendMsgEX_V2(
-				GoInt2CStr(ctx.Bot),
-				C.int(type_),
-				GoInt2CStr(params.Int("group_id")),
-				GoInt2CStr(params.Int("user_id")),
-				CString(fmt.Sprintf(
-					"[系统消息] %v 尝试合并转发节点并失败了",
-					ctx.Bot,
-				)),
-				C.int(0),
-				CBool(false),
-				CString(""),
-			)
+			sender.node(data)
 			ctx.MakeOkResponse(map[string]interface{}{"message_id": 1})
 			return
 		}
 	}
-	if out == "" {
-		// Xml json 信息无法返回有效的id
-		ctx.MakeOkResponse(map[string]interface{}{"message_id": 0})
+	if sender.Send == "" {
+		ctx.MakeFailResponse("invalid message")
 		return
 	}
-	ret := GoString(
-		C.S3_Api_SendMsgEX_V2(
-			GoInt2CStr(ctx.Bot),
-			C.int(type_),
-			GoInt2CStr(params.Int("group_id")),
-			GoInt2CStr(params.Int("user_id")),
-			CString(EscapeEmoji(out)),
-			C.int(bubble),
-			CBool(anonymous),
-			CString(""),
-		),
-	)
-	// 处理返回的 message_id
-	var temp map[string]interface{}
-	json.Unmarshal([]byte(ret), &temp)
-	num := Parse(temp).Int("msgno")
-	if num == 0 {
-		ctx.MakeFailResponse("可能受到风控")
-		return
+	// 发送信息
+	id := sender.send()
+	if id == 0 {
+		ctx.MakeFailResponse("send failed")
 	}
-	id := MessageIDCache.Hcraes(num)
-	if id == nil {
-		ctx.MakeFailResponse("可能受到风控")
-		return
-	}
-	ctx.MakeOkResponse(map[string]interface{}{"message_id": id.(int64)})
+	ctx.MakeOkResponse(map[string]interface{}{"message_id": id})
 }
 
 // SendPrivateMsg 发送私聊消息
@@ -956,6 +581,470 @@ func ApiSendJson(ctx *Context) {
 // ApiNotFound 没有这样的API
 func ApiNotFound(ctx *Context) {
 	ctx.MakeFailResponse("API NOT FOUND")
+}
+
+func newMessage(ctx *Context) *Message {
+	return &Message{
+		Bot:       ctx.Bot,
+		Send:      "",
+		Type_:     ctx.XQMessageType(),
+		GroupID:   Parse(ctx.Request).Get("params").Int("group_id"),
+		UserID:    Parse(ctx.Request).Get("params").Int("user_id"),
+		Bubble:    0,
+		Anonymous: false,
+	}
+}
+
+func (m *Message) send() int64 {
+	ret := GoString(
+		C.S3_Api_SendMsgEX_V2(
+			GoInt2CStr(m.Bot),
+			C.int(m.Type_),
+			GoInt2CStr(m.GroupID),
+			GoInt2CStr(m.UserID),
+			CString(EscapeEmoji(m.Send)),
+			C.int(m.Bubble),
+			CBool(m.Anonymous),
+			CString(""),
+		),
+	)
+	// 处理返回的 message_id
+	var temp map[string]interface{}
+	json.Unmarshal([]byte(ret), &temp)
+	num := Parse(temp).Int("msgno")
+	if num == 0 {
+		return 0
+	}
+	id := MessageIDCache.Hcraes(num)
+	if id == nil {
+		return 0
+	}
+	return id.(int64)
+}
+
+func (m *Message) json(data value) {
+	C.S3_Api_SendJSON(
+		GoInt2CStr(m.Bot),
+		C.int(1),
+		C.int(m.Type_),
+		GoInt2CStr(m.GroupID),
+		GoInt2CStr(m.UserID),
+		CString(escape(data.Str("data"))), // nonebot 的数组没有转义，这里暂时这么解决
+	)
+}
+
+func (m *Message) xml(data value) {
+	C.S3_Api_SendXML(
+		GoInt2CStr(m.Bot),
+		C.int(1),
+		C.int(m.Type_),
+		GoInt2CStr(m.GroupID),
+		GoInt2CStr(m.UserID),
+		CString(escape(data.Str("data"))), // nonebot 的数组没有转义，这里暂时这么解决
+		0,
+	)
+}
+
+func (m *Message) text(data value) {
+	m.Send += data.Str("text")
+}
+
+func (m *Message) at(data value) {
+	m.Send += fmt.Sprintf("[@%s] ", data.Str("qq"))
+}
+
+func (m *Message) face(data value) {
+	m.Send += fmt.Sprintf("[Face%s.gif]", data.Str("id"))
+}
+
+func (m *Message) emoji(data value) {
+	m.Send += fmt.Sprintf("[emoji=%s]", data.Str("id"))
+}
+
+func (m *Message) rps(data value) {
+	m.Send += []string{"[魔法猜拳] 石头", "[魔法猜拳] 剪刀", "[魔法猜拳] 布"}[rand.Intn(3)]
+}
+
+func (m *Message) dice(data value) {
+	m.Send += []string{"[魔法骰子] 1", "[魔法骰子] 2", "[魔法骰子] 3", "[魔法骰子] 4", "[魔法骰子] 5", "[魔法骰子] 6"}[rand.Intn(6)]
+}
+
+func (m *Message) bubble(data value) {
+	m.Bubble += data.Int("id")
+}
+
+type image struct {
+	type_  string
+	res    string
+	showID int64
+}
+
+func newImage(data value) *image {
+	return &image{
+		type_:  data.Str("type"),
+		res:    "",
+		showID: 0,
+	}
+}
+
+func (i *image) insert(m *Message) {
+	switch i.type_ {
+	default:
+		m.Send += fmt.Sprintf("[pic=%s]", i.res)
+	case "show":
+		m.Send += fmt.Sprintf("[ShowPic=%s,type=%d]", i.res, i.showID+40000)
+	}
+}
+
+func (m *Message) image(data value) {
+	var (
+		file  = data.Str("file")
+		cache = true
+		image = newImage(data)
+	)
+	if data.Exist("cache") {
+		cache = data.Bool("cache")
+	}
+	if data.Str("url") != "" {
+		// 解决tx图片链接不落地
+		temp := PicPoolCache.Search(TextMD5(data.Str("url")))
+		if temp != nil && cache {
+			image.res = temp.(string)
+			image.insert(m)
+			return
+		}
+	}
+	// 判断file字段为哪种类型
+	switch {
+	// 链接方式
+	case strings.Contains(file, "http://") || strings.Contains(file, "https://"):
+		path := OneBotPath + "image\\" + TextMD5(file) + ".jpg"
+		if !PathExists(path) || !cache {
+			// 下载图片
+			if err := Download(file, path); err != nil {
+				panic(err)
+			}
+		}
+		image.res = path
+	// base64方式
+	case strings.Contains(file, "base64://"):
+		path := OneBotPath + "image\\" + TextMD5(file[9:]) + ".jpg"
+		if err := DecodeBase64(file[9:], path); err != nil {
+			panic(err)
+		}
+		image.res = path
+	// 本地文件方式
+	case strings.Contains(file, "file:///"):
+		image.res = file[8:]
+	// 默认方式
+	default:
+		image.res = file
+	}
+	// 用文件md5判断缓冲池是否存在该图片
+	temp := PicPoolCache.Search(FileMD5(image.res))
+	if temp != nil && cache {
+		image.res = temp.(string)
+	}
+	image.insert(m)
+}
+
+type record struct {
+	res string
+}
+
+func newRecord(data value) *record {
+	return &record{
+		res: "",
+	}
+}
+
+func (i *record) insert(m *Message) {
+	m.Send += fmt.Sprintf("[Voi=%s]", i.res)
+}
+
+func (m *Message) record(data value) {
+	var (
+		file   = data.Str("file")
+		cache  = true
+		record = newRecord(data)
+	)
+	if data.Exist("cache") {
+		cache = data.Bool("cache")
+	}
+	// 判断file字段为哪种类型
+	switch {
+	// 链接方式
+	case strings.Contains(file, "http://") || strings.Contains(file, "https://"):
+		path := OneBotPath + "record\\" + TextMD5(file)
+		if !PathExists(path) || !cache {
+			// 下载音频
+			if err := Download(file, path); err != nil {
+				panic(err)
+			}
+		}
+		record.res = path
+	// base64方式
+	case strings.Contains(file, "base64://"):
+		path := OneBotPath + "record\\" + TextMD5(file[9:])
+		if err := DecodeBase64(file[9:], path); err != nil {
+			panic(err)
+		}
+		record.res = path
+	// 本地文件方式
+	case strings.Contains(file, "file:///"):
+		record.res = file[8:]
+	// 默认方式
+	default:
+		record.res = file
+	}
+	name := strings.ReplaceAll(filepath.Base(record.res), path.Ext(record.res), "")
+	silkEncoder := &silk.Encoder{}
+	if err := silkEncoder.Init("OneBot/record", "OneBot/codec"); err != nil {
+		panic(err)
+	}
+	b, err := ioutil.ReadFile(record.res + ".mp3")
+	if err != nil {
+		panic(err)
+	}
+	_, err = silkEncoder.EncodeToSilk(b, name, true)
+	if err != nil {
+		panic(err)
+	}
+	record.res = OneBotPath + "record/" + name + ".silk"
+	record.insert(m)
+}
+
+func (m *Message) share(data value) {
+	temp := fmt.Sprintf(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<msg serviceID="33" templateID="123" action="web" brief="%s" 
+sourceMsgId="0" url="%s" 
+flag="8" adverSign="0" multiMsgFlag="0"><item layout="2" 
+advertiser_id="0" aid="0"><picture cover="%s" w="0" h="0" />
+<title>%s</title><summary>%s</summary>
+</item><source name="" icon="" action="" appid="-1" /></msg>`,
+		data.Str("brief"),
+		data.Str("url"),
+		data.Str("image"),
+		data.Str("title"),
+		data.Str("content"),
+	)
+	C.S3_Api_SendXML(
+		GoInt2CStr(m.Bot),
+		C.int(1),
+		C.int(m.Type_),
+		GoInt2CStr(m.GroupID),
+		GoInt2CStr(m.UserID),
+		CString(strings.ReplaceAll(temp, "\n", "")),
+		0,
+	)
+}
+
+func (m *Message) music(data value) {
+	temp := fmt.Sprintf(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<msg serviceID="2" templateID="1" action="web" brief="[分享] %s" 
+sourceMsgId="0" url="%s" flag="0" adverSign="0" multiMsgFlag="0">
+<item layout="2"><audio cover="%s" src="%s"/><title>%s</title>
+<summary>%s</summary></item><source name="音乐" 
+icon="https://i.gtimg.cn/open/app_icon/01/07/98/56/1101079856_100_m.png" 
+url="http://web.p.qq.com/qqmpmobile/aio/app.html?id=1101079856" 
+action="app" a_actionData="com.tencent.qqmusic" 
+i_actionData="tencent1101079856://" appid="1101079856" /></msg>`,
+		XmlEscape(data.Str("title")),
+		data.Str("url"),
+		data.Str("image"),
+		data.Str("audio"),
+		XmlEscape(data.Str("title")),
+		XmlEscape(data.Str("content")),
+	)
+	C.S3_Api_SendXML(
+		GoInt2CStr(m.Bot),
+		C.int(1),
+		C.int(m.Type_),
+		GoInt2CStr(m.GroupID),
+		GoInt2CStr(m.UserID),
+		CString(strings.ReplaceAll(temp, "\n", "")),
+		0,
+	)
+}
+
+func (m *Message) weather(data value) {
+	temp := fmt.Sprintf(`{"app":"com.tencent.weather","desc":"天气",
+"view":"RichInfoView","ver":"0.0.0.1","prompt":"[应用]天气",
+"appID":"","sourceName":"","actionData":"","actionData_A":"",
+"sourceUrl":"","meta":{"richinfo":{"adcode":"","air":"%s",
+"city":"%s","date":"%s","max":"%s","min":"%s",
+"ts":"15158613","type":"%s","wind":""}},"text":"","sourceAd":"","extra":""}`,
+		data.Str("air"),
+		data.Str("city"),
+		data.Str("date"),
+		data.Str("max"),
+		data.Str("min"),
+		data.Str("type"),
+	)
+	C.S3_Api_SendJSON(
+		GoInt2CStr(m.Bot),
+		C.int(1),
+		C.int(m.Type_),
+		GoInt2CStr(m.GroupID),
+		GoInt2CStr(m.UserID),
+		CString(strings.ReplaceAll(temp, "\n", "")),
+	)
+}
+
+func (m *Message) location(data value) {
+	temp := fmt.Sprintf(`{"app":"com.tencent.map","desc":"","view":"Share",
+"ver":"0.0.0.1","prompt":"[应用]地图","appID":"","sourceName":"",
+"actionData":"","actionData_A":"","sourceUrl":"","meta":{"Share":{"locSub":"%s",
+"lng":%s,"lat":%s,"zoom":15,"locName":"%s"}},
+"config":{"forward":true,"autosize":1},"text":"","extraApps":[],
+"sourceAd":"","extra":""}`,
+		data.Str("content"),
+		data.Str("lon"),
+		data.Str("lat"),
+		data.Str("title"),
+	)
+	C.S3_Api_SendJSON(
+		GoInt2CStr(m.Bot),
+		C.int(1),
+		C.int(m.Type_),
+		GoInt2CStr(m.GroupID),
+		GoInt2CStr(m.UserID),
+		CString(strings.ReplaceAll(temp, "\n", "")),
+	)
+}
+func (m *Message) shake(data value) {
+	C.S3_Api_ShakeWindow(
+		GoInt2CStr(m.Bot),
+		GoInt2CStr(m.UserID),
+	)
+}
+func (m *Message) poke(data value) {
+	C.S3_Api_SendMsgEX_V2(
+		GoInt2CStr(m.Bot),
+		C.int(m.Type_),
+		GoInt2CStr(m.GroupID),
+		GoInt2CStr(m.UserID),
+		CString(fmt.Sprintf(
+			"[系统提示] %v 戳了一下 %v",
+			m.Bot,
+			m.UserID,
+		)),
+		C.int(0),
+		CBool(false),
+		CString(""),
+	)
+}
+
+func (m *Message) anonymous(data value) {
+	m.Anonymous = true
+}
+
+func (m *Message) reply(data value) {
+	C.S3_Api_SendMsgEX_V2(
+		GoInt2CStr(m.Bot),
+		C.int(m.Type_),
+		GoInt2CStr(m.GroupID),
+		GoInt2CStr(m.UserID),
+		CString(fmt.Sprintf(
+			"[系统消息] %v 尝试回复一条消息并失败了",
+			m.Bot,
+		)),
+		C.int(0),
+		CBool(false),
+		CString(""),
+	)
+}
+
+func (m *Message) forward(data value) {
+	C.S3_Api_SendMsgEX_V2(
+		GoInt2CStr(m.Bot),
+		C.int(m.Type_),
+		GoInt2CStr(m.GroupID),
+		GoInt2CStr(m.UserID),
+		CString(fmt.Sprintf(
+			"[系统消息] %v 尝试合并转发一条消息并失败了",
+			m.Bot,
+		)),
+		C.int(0),
+		CBool(false),
+		CString(""),
+	)
+}
+func (m *Message) node(data value) {
+	C.S3_Api_SendMsgEX_V2(
+		GoInt2CStr(m.Bot),
+		C.int(m.Type_),
+		GoInt2CStr(m.GroupID),
+		GoInt2CStr(m.UserID),
+		CString(fmt.Sprintf(
+			"[系统消息] %v 尝试合并转发节点并失败了",
+			m.Bot,
+		)),
+		C.int(0),
+		CBool(false),
+		CString(""),
+	)
+}
+func (m *Message) contact(data value) {
+	temp := ""
+	switch data.Str("type") {
+	case "qq":
+		temp = fmt.Sprintf(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<msg serviceID="14" templateID="1" action="plugin" 
+actionData="AppCmd://OpenContactInfo/?uin=%s" 
+a_actionData="mqqapi://card/show_pslcard?src_type=internal&amp;
+source=sharecard&amp;version=1&amp;uin=%s" 
+i_actionData="mqqapi://card/show_pslcard?src_type=internal&amp;
+source=sharecard&amp;version=1&amp;uin=%s" 
+brief="推荐了%s" sourceMsgId="0" url="" flag="1" 
+adverSign="0" multiMsgFlag="0"><item layout="0" 
+mode="1" advertiser_id="0" aid="0">
+<summary>推荐联系人</summary><hr hidden="false" style="0" />
+</item><item layout="2" mode="1" advertiser_id="0" aid="0">
+<picture cover="mqqapi://card/show_pslcard?src_type=internal&amp;
+source=sharecard&amp;version=1&amp;uin=%s" w="0" h="0" />
+<title>%s</title><summary>帐号:%s</summary>
+</item><source name="" icon="" action="" appid="-1" /></msg>`,
+			data.Str("id"),
+			data.Str("id"),
+			data.Str("id"),
+			data.Str("name"),
+			data.Str("id"),
+			data.Str("name"),
+			data.Str("id"),
+		)
+	case "group":
+		temp = fmt.Sprintf(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<msg serviceID="15" templateID="1" action="web" 
+actionData="group:%s" a_actionData="group:%s" 
+i_actionData="group:%s" brief="推荐群聊：%s" 
+sourceMsgId="0" url="%s" flag="0" adverSign="0" multiMsgFlag="0">
+<item layout="0" mode="1" advertiser_id="0" aid="0">
+<summary>推荐群聊</summary><hr hidden="false" style="0" />
+</item><item layout="2" mode="1" advertiser_id="0" aid="0">
+<picture cover="https://p.qlogo.cn/gh/%s/%s/100" w="0" h="0" needRoundView="0" />
+<title>%s</title><summary>创建人：%s</summary></item>
+<source name="" icon="" action="" appid="-1" /></msg>`,
+			data.Str("id"),
+			data.Str("id"),
+			data.Str("id"),
+			data.Str("name"),
+			data.Str("url"),
+			data.Str("id"),
+			data.Str("id"),
+			data.Str("name"),
+			data.Str("owner"),
+		)
+	}
+	C.S3_Api_SendXML(
+		GoInt2CStr(m.Bot),
+		C.int(1),
+		C.int(m.Type_),
+		GoInt2CStr(m.GroupID),
+		GoInt2CStr(m.UserID),
+		CString(strings.ReplaceAll(temp, "\n", "")),
+		0,
+	)
 }
 
 func ApiOutPutLog(text interface{}) {

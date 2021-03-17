@@ -160,7 +160,7 @@ bots:
 - [自定义音乐分享](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md#自定义音乐分享)
 
   ```
-  [CQ:music,type=custom,url=http://baidu.com,audio=http://baidu.com/1.mp3,title=音乐标题]
+  [CQ:music,type=custom,title=secret base ~君がくれたもの~ (10 years after Ver.),content=茅野愛衣,url=http://y.music.163.com/m/song?id=33911781,image=http://p2.music.126.net/daZcHVIJicL3wXJWMIjAng==/7926379325753633.jpg,audio=http://music.163.com/song/media/outer/url?id=33911781.mp3]
   ```
 
   注：暂时只支持`type=custom`
