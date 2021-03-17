@@ -453,14 +453,15 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 			ctx := &Context{
 				Bot: bot,
 				Response: map[string]interface{}{
-					"time":      time,
-					"self_id":   bot,
-					"post_type": "request",
-					"sub_type":  "add",
-					"group_id":  groupID,
-					"user_id":   noticeID,
-					"comment":   message,
-					"flag":      fmt.Sprintf("%d|%d|%d|%s", messageType, groupID, 0, rawMessage),
+					"time":         time,
+					"self_id":      bot,
+					"post_type":    "request",
+					"request_type": "group",
+					"sub_type":     "add",
+					"group_id":     groupID,
+					"user_id":      noticeID,
+					"comment":      message,
+					"flag":         fmt.Sprintf("%d|%d|%d|%s", messageType, groupID, 0, rawMessage),
 				},
 			}
 			OnRequestGroupAdd(ctx)
@@ -468,14 +469,15 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 			ctx := &Context{
 				Bot: bot,
 				Response: map[string]interface{}{
-					"time":      time,
-					"self_id":   bot,
-					"post_type": "request",
-					"sub_type":  "invite",
-					"group_id":  groupID,
-					"user_id":   noticeID,
-					"comment":   message,
-					"flag":      fmt.Sprintf("%d|%d|%d|%s", messageType, groupID, userID, rawMessage),
+					"time":         time,
+					"self_id":      bot,
+					"post_type":    "request",
+					"request_type": "group",
+					"sub_type":     "invite",
+					"group_id":     groupID,
+					"user_id":      noticeID,
+					"comment":      message,
+					"flag":         fmt.Sprintf("%d|%d|%d|%s", messageType, groupID, userID, rawMessage),
 				},
 			}
 			OnRequestGroupAdd(ctx)
@@ -483,14 +485,15 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 			ctx := &Context{
 				Bot: bot,
 				Response: map[string]interface{}{
-					"time":      time,
-					"self_id":   bot,
-					"post_type": "request",
-					"sub_type":  "add",
-					"group_id":  groupID,
-					"user_id":   noticeID,
-					"comment":   message,
-					"flag":      fmt.Sprintf("%d|%d|%d|%s", messageType, groupID, 0, rawMessage),
+					"time":         time,
+					"self_id":      bot,
+					"post_type":    "request",
+					"request_type": "group",
+					"sub_type":     "add",
+					"group_id":     groupID,
+					"user_id":      noticeID,
+					"comment":      message,
+					"flag":         fmt.Sprintf("%d|%d|%d|%s", messageType, groupID, 0, rawMessage),
 				},
 			}
 			OnRequestGroupAdd(ctx)
