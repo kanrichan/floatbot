@@ -1151,6 +1151,7 @@ int S3_Api_GetAge(char *selfID, char *userID){
 // userID  对象QQ  文本型  无
 int S3_Api_GetGender(char *selfID, char *userID){
     int ret = S3_Api_GetGender_Ptr(authid, selfID, userID);
+    if (ret == -1) ret = 0;
     free(selfID);
     free(userID);
     return ret;
