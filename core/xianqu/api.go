@@ -802,7 +802,7 @@ func (m *Message) record(data value) {
 	if err := silkEncoder.Init("OneBot/record", "OneBot/codec"); err != nil {
 		panic(err)
 	}
-	b, err := ioutil.ReadFile(record.res + ".mp3")
+	b, err := ioutil.ReadFile(record.res)
 	if err != nil {
 		panic(err)
 	}
