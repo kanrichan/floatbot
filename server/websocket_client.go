@@ -86,9 +86,6 @@ func (s *WSC) listen() {
 			go s.call(data)
 		}
 	}
-	if s.conn == nil {
-		return
-	}
 	s.mutex.Lock()
 	s.conn.Close()
 	s.conn = nil
@@ -117,15 +114,10 @@ func (s *WSC) Send(data []byte) {
 		s.mutex.Lock()
 		err := s.conn.WriteMessage(websocket.TextMessage, data)
 		s.mutex.Unlock()
-		if err == nil {
-			return
+		if err != nil {
+			s.ERROR(err)
 		}
 	}
-	s.mutex.Lock()
-	s.conn.Close()
-	s.conn = nil
-	s.status = false
-	s.mutex.Unlock()
 }
 
 // 关闭反向WS的连接

@@ -78,10 +78,10 @@ func (t *ServersTable) Send(id int64, ctx *core.Context) {
 	dataArray, _ := json.Marshal(ctx.Response)
 	for i := range t.Servers[id] {
 		if t.Format[id][i] == "array" {
-			t.Servers[id][i].Send(dataArray)
-			continue
+			go t.Servers[id][i].Send(dataArray)
+			return
 		}
-		t.Servers[id][i].Send(dataString)
+		go t.Servers[id][i].Send(dataString)
 	}
 }
 

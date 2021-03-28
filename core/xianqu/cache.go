@@ -149,8 +149,8 @@ func (c *CacheGroupsData) GetCacheGroup(bot, groupID int64, cache bool) (group *
 			group.GroupMembers = append(group.GroupMembers, member)
 		}
 		c.M.Lock()
-		defer c.M.Unlock()
 		c.Group = append(c.Group, group)
+		c.M.Unlock()
 		return group
 	}
 	listC := XQApiGroupMemberListC(bot, groupID)
@@ -184,8 +184,8 @@ func (c *CacheGroupsData) GetCacheGroup(bot, groupID int64, cache bool) (group *
 			group.GroupMembers = append(group.GroupMembers, member)
 		}
 		c.M.Lock()
-		defer c.M.Unlock()
 		c.Group = append(c.Group, group)
+		c.M.Unlock()
 		return group
 	}
 	return nil
@@ -206,16 +206,21 @@ func (c *CacheGroupsData) GetCacheGroupMember(bot, groupID, userID int64, cache 
 	if member == nil {
 		return nil
 	}
-	c.M.Lock()
-	defer c.M.Unlock()
+
 	if member.Nickname == "" {
+		c.M.Lock()
 		member.Nickname = XQApiGetNick(bot, userID)
+		c.M.Unlock()
 	}
 	if member.Age == 0 {
+		c.M.Lock()
 		member.Age = XQApiGetAge(bot, userID)
+		c.M.Unlock()
 	}
 	if member.Sex == "" {
+		c.M.Lock()
 		member.Sex = XQApiGetGender(bot, userID)
+		c.M.Unlock()
 	}
 	return member
 }
