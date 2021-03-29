@@ -110,10 +110,10 @@ func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNot
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				ApiOutPutLog(fmt.Sprintf("[PANIC] 发生了不可预知的错误，请在GitHub提交issue：%v", err))
 				buf := make([]byte, 1<<16)
 				runtime.Stack(buf, true)
-				ApiOutPutLog(fmt.Sprintf("[TRACEBACK]:\n%v", string(buf)))
+				ApiOutPutLog("发生不可预知错误，请[右键↓错误信息↓]并[点击查看完整消息]，截图提交到 GitHub issue 或者到 QQ群 1048452984")
+				ApiOutPutLog(fmt.Sprintf("[PANIC] [错误]：%v \n[TRACEBACK]:\n%v", err, string(buf)))
 			}
 		}()
 		switch messageType {
