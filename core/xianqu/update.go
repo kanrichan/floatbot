@@ -87,7 +87,7 @@ func getLastRelease() (last, link, body string, err error) {
 }
 
 func downLastRelease(link, path string) (err error) {
-	link = strings.ReplaceAll(link, "github.com", "hub.fastgit.org")
+	link = strings.ReplaceAll(link, "github.com", "gh.xcw.best")
 	client := &http.Client{}
 	reqest, _ := http.NewRequest("GET", link, nil)
 	reqest.Header.Set("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
