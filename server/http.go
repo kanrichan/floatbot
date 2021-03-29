@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 	"strconv"
 )
 
@@ -75,6 +76,13 @@ func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Send 向 POST_URL 发送上报数据
 func (s *HTTP) Send(data []byte) {
+	defer func() {
+		if err := recover(); err != nil {
+			buf := make([]byte, 1<<16)
+			runtime.Stack(buf, true)
+			s.PANIC(err, buf)
+		}
+	}()
 	if s.URL == "" {
 		return
 	}
@@ -106,6 +114,13 @@ func (s *HTTP) Send(data []byte) {
 
 // Close 关闭HTTP监听
 func (s *HTTP) Close() {
+	defer func() {
+		if err := recover(); err != nil {
+			buf := make([]byte, 1<<16)
+			runtime.Stack(buf, true)
+			s.PANIC(err, buf)
+		}
+	}()
 	if s.server != nil {
 		s.server.Close()
 	}

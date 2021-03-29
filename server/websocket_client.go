@@ -68,6 +68,7 @@ func (s *WSC) Run() {
 			s.status = true
 			s.INFO("反向WS连接服务器成功")
 			s.listen() // 阻塞至监听错误，错误后继续重连
+			s.INFO("反向WS掉线")
 		}
 	}
 }
@@ -107,6 +108,13 @@ func (s *WSC) call(data []byte) {
 
 // Send 向服务端发送字节数组
 func (s *WSC) Send(data []byte) {
+	defer func() {
+		if err := recover(); err != nil {
+			buf := make([]byte, 1<<16)
+			runtime.Stack(buf, true)
+			s.PANIC(err, buf)
+		}
+	}()
 	if !s.status {
 		return
 	}
@@ -122,6 +130,13 @@ func (s *WSC) Send(data []byte) {
 
 // 关闭反向WS的连接
 func (s *WSC) Close() {
+	defer func() {
+		if err := recover(); err != nil {
+			buf := make([]byte, 1<<16)
+			runtime.Stack(buf, true)
+			s.PANIC(err, buf)
+		}
+	}()
 	if !s.status || s.conn == nil {
 		s.stopconnect <- true
 		return

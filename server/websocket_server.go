@@ -103,6 +103,13 @@ func (s *WSS) call(conn *WSSConn, data []byte) {
 
 // Send 向所有客户端发送字节数组
 func (s *WSS) Send(data []byte) {
+	defer func() {
+		if err := recover(); err != nil {
+			buf := make([]byte, 1<<16)
+			runtime.Stack(buf, true)
+			s.PANIC(err, buf)
+		}
+	}()
 	var close []int
 	for i, conn := range s.conn {
 		if conn.conn != nil && s.server != nil {
@@ -131,6 +138,13 @@ func (s *WSS) Send(data []byte) {
 
 // Close 关闭正向WS的连接
 func (s *WSS) Close() {
+	defer func() {
+		if err := recover(); err != nil {
+			buf := make([]byte, 1<<16)
+			runtime.Stack(buf, true)
+			s.PANIC(err, buf)
+		}
+	}()
 	// 关闭所有的客户端连接
 	for _, conn := range s.conn {
 		if conn.conn == nil {
