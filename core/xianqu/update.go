@@ -5,9 +5,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/tidwall/gjson"
+	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
 func update(version, path string) {
@@ -25,6 +29,9 @@ func update(version, path string) {
 			fmt.Sprintf("发现新版本 %s\n更新内容: \n%s\n\n是否下载安装更新？", last, body),
 		)
 		if ret == 6 {
+			ApiOutPutLog("[I][更新] 正在选择最快的镜像源......")
+			fast := fastSite("gh.xcw.best", "hub.fastgit.org", "github.michikawachin.art", "github.com")
+			link = strings.ReplaceAll(link, "github.com", fast)
 			ApiOutPutLog(fmt.Sprintf("[I][更新] 开始下载: %s", link))
 			err := downLastRelease(link, path)
 			if err != nil {
@@ -87,7 +94,6 @@ func getLastRelease() (last, link, body string, err error) {
 }
 
 func downLastRelease(link, path string) (err error) {
-	link = strings.ReplaceAll(link, "github.com", "gh.xcw.best")
 	client := &http.Client{}
 	reqest, _ := http.NewRequest("GET", link, nil)
 	reqest.Header.Set("User-Agent", "QQ/8.2.0.1296 CFNetwork/1126")
@@ -113,4 +119,37 @@ func downLastRelease(link, path string) (err error) {
 
 func install(path string) (err error) {
 	return os.Rename(path+"OneBot\\OneBot-YaYa.XQ.dll", path+"Plugin\\OneBot-YaYa.XQ.dll")
+}
+
+func ping(dst string) (ret string, err error) {
+	cmd := exec.Command("ping", "-n", "1", dst)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+	temp, err := simplifiedchinese.GB18030.NewDecoder().Bytes(out)
+	if err != nil {
+		return "", err
+	}
+	return string(temp), nil
+}
+
+func fastSite(sites ...string) string {
+	var back chan string
+	for i := range sites {
+		site := sites[i]
+		go func() {
+			_, err := ping(site)
+			if err == nil {
+				back <- site
+			}
+		}()
+	}
+	select {
+	case site := <-back:
+		return site
+	case <-time.After(time.Second * 10):
+		return sites[0]
+	}
 }
