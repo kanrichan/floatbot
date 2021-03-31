@@ -1,14 +1,31 @@
-![OneBot-YaYa](https://socialify.git.ci/Yiwen-Chan/OneBot-YaYa/image?description=1&descriptionEditable=OneBot%20(CQHTTP)%20%E5%85%88%E9%A9%B1%E5%B9%B3%E5%8F%B0%E7%9A%84%E5%AE%9E%E7%8E%B0&font=Raleway&forks=1&issues=1&logo=https%3A%2F%2Fgithub.com%2Fhowmanybots%2Fonebot%2Fraw%2Fmaster%2Fassets%2Flogo-256.png&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Light)
+<div align="center">
+  <img src=".github/yaya.jpg" width = "150" height = "150" alt="OneBot-YaYa"><br>
+  <h2>OneBot-YaYa</h2>
+  OneBot-YaYa是 高效稳定简单 的 QQ机器人HTTP API OneBot标准 的实现<br><br>
 
-# OneBot-YaYa
 
-OneBot-YaYa是基于CGO开发的QQ机器人HTTP API，[OneBot标准](https://github.com/howmanybots/onebot)的先驱QQ机器人平台实现，高效稳定简单
+[![ATRI](https://img.shields.io/badge/ATRI--green.svg?style=social&logo=appveyor)](https://github.com/Kyomotoi/ATRI)
+[![Yobot](https://img.shields.io/badge/Yobot--green.svg?style=social&logo=appveyor)](https://github.com/pcrbot/yobot)
+[![Hoshino](https://img.shields.io/badge/Hoshino--green.svg?style=social&logo=appveyor)](https://github.com/Ice-Cirno/HoshinoBot)
+[![OtterBot](https://img.shields.io/badge/OtterBot--green.svg?style=social&logo=appveyor)](https://github.com/Bluefissure/OtterBot)
 
-![Badge](https://img.shields.io/badge/OneBot-v11-black)
+[![NoneBot](https://img.shields.io/badge/Python-nonebot-green.svg?style=social&logo=python)](https://github.com/nonebot/nonebot2)
+[![ZeroBot](https://img.shields.io/badge/Go-zerobot-green.svg?style=social&logo=go)](https://github.com/wdvxdr1123/ZeroBot)
+[![Koishi](https://img.shields.io/badge/Node.js-koishi-green.svg?style=social&logo=node.js)](https://github.com/koishijs/koishi)
+[![ZhaMao](https://img.shields.io/badge/PHP-zhamao-green.svg?style=social&logo=php)](https://github.com/zhamao-robot/zhamao-framework)
+[![Sora](https://img.shields.io/badge/C%23-sora-green.svg?style=social&logo=c-sharp)](https://github.com/Yukrai103/Sora)
+[![Spring-CQ](https://img.shields.io/badge/Java-spring&nbsp;cq-green.svg?style=social&logo=java)](https://github.com/lz1998/Spring-CQ)
+
+![Badge](https://img.shields.io/badge/onebot-v11-black)
 [![License](https://img.shields.io/github/license/Yiwen-Chan/OneBot-YaYa.svg)](https://raw.githubusercontent.com/Yiwen-Chan/OneBot-YaYa/master/LICENSE)
-[![bug反馈群](https://img.shields.io/badge/bug反馈群-1048452984-red)](https://jq.qq.com/?_wv=1027&k=QMb7x1mM)
 [![Release](https://img.shields.io/github/v/release/Yiwen-Chan/OneBot-YaYa?include_prereleases)](https://github.com/Yiwen-Chan/OneBot-YaYa/releases)
 [![Downloads](https://img.shields.io/github/downloads/Yiwen-Chan/OneBot-YaYa/total)](https://github.com/Yiwen-Chan/OneBot-YaYa/releases)
+[![qq group](https://img.shields.io/badge/qq&nbsp;group-1048452984-red)](https://jq.qq.com/?_wv=1027&k=QMb7x1mM)
+
+</div>
+
+
+
 
 ### 开始使用
 
