@@ -7,7 +7,6 @@
 [![ATRI](https://img.shields.io/badge/ATRI-kyomotoi-green.svg?style=social&logo=appveyor)](https://github.com/Kyomotoi/ATRI)
 [![Yobot](https://img.shields.io/badge/Yobot-yuudi-green.svg?style=social&logo=appveyor)](https://github.com/pcrbot/yobot)
 [![Hoshino](https://img.shields.io/badge/Hoshino-ice&nbsp;cirno-green.svg?style=social&logo=appveyor)](https://github.com/Ice-Cirno/HoshinoBot)
-[![ElfRSS](https://img.shields.io/badge/Elf&nbsp;RSS-quan666-green.svg?style=social&logo=appveyor)](https://github.com/Quan666/ELF_RSS)
 [![OtterBot](https://img.shields.io/badge/OtterBot-blue&nbsp;fissure-green.svg?style=social&logo=appveyor)](https://github.com/Bluefissure/OtterBot)
 
 [![NoneBot](https://img.shields.io/badge/Python-nonebot-green.svg?style=social&logo=python)](https://github.com/nonebot/nonebot2)
