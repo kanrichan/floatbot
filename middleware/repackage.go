@@ -3,6 +3,7 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	core "onebot/core/xianqu"
 )
@@ -11,13 +12,20 @@ import (
 func PackWSRequest(bot int64, data []byte) (ctx *core.Context) {
 	request := map[string]interface{}{}
 	json.Unmarshal(data, &request)
-	return &core.Context{
-		Bot:     bot,
-		Request: request,
+	if !strings.Contains(request["action"].(string), ".handle_quick_operation") {
+		return &core.Context{
+			Bot:     bot,
+			Request: request,
+		}
 	}
+	send, _ := json.Marshal(request["params"].(map[string]interface{})["context"])
+	recv, _ := json.Marshal(request["params"].(map[string]interface{})["operation"])
+	ctx = PackPOSTRequest(bot, send, recv)
+	ctx.Request["echo"] = request["echo"]
+	return ctx
 }
 
-// PackWSRequest 封装 HTTP 数据 返回 ctx
+// PackHTTPRequest 封装 HTTP 数据 返回 ctx
 func PackHTTPRequest(bot int64, action string, data []byte) (ctx *core.Context) {
 	params := map[string]interface{}{}
 	json.Unmarshal(data, &params)
