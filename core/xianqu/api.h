@@ -108,7 +108,7 @@ XQAPI(char *, S3_Api_GetPluginList);
 XQAPI(int, S3_Api_GetWpa, char *);
 XQAPI(int, S3_Api_Uninstall);
 
-extern void __stdcall XQ_AuthId(int ID, int IMAddr){
+extern void __stdcall __declspec (dllexport) XQ_AuthId(int ID, int IMAddr){
     authid = (unsigned char *)malloc(sizeof(unsigned char)*16);
     *((int*)authid) = 1;
     *((int*)(authid + 4)) = 8;

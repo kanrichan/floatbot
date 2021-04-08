@@ -5,12 +5,13 @@ extern int GoEvent(char *self_id, int message_type, int sub_type, char *group_id
 extern int GoSetUp();
 extern int GoDestroyPlugin();
 
-extern char* __stdcall XQ_Create(char *version);
-extern int __stdcall XQ_Event(char *self_id, int message_type, int sub_type, char *group_id, char *user_id, char *notice_id, char *message, char *message_num, char *message_id, char *raw_message, char *time, int ret);
-extern int __stdcall XQ_SetUp();
-extern int __stdcall XQ_DestroyPlugin();
+extern char* __stdcall __declspec (dllexport) XQ_Create(char *version);
+extern int __stdcall __declspec (dllexport) XQ_Event(char *self_id, int message_type, int sub_type, char *group_id, char *user_id, char *notice_id, char *message, char *message_num, char *message_id, char *raw_message, char *time, int ret);
+extern int __stdcall __declspec (dllexport) XQ_SetUp();
+extern int __stdcall __declspec (dllexport) XQ_DestroyPlugin();
 
-char* __stdcall XQ_Create(char *version)
+//export XQ_Create
+char* __stdcall __declspec (dllexport) XQ_Create(char *version)
 {
 	return GoCreate(version);
 }
@@ -27,17 +28,21 @@ char* __stdcall XQ_Create(char *version)
 // raw_message	原始信息, UDP收到的原始信息，特殊情况下会返回JSON结构（入群事件时，这里为该事件seq）
 // time			消息时间戳, 接受到消息的时间戳
 // ret			回传文本指针, 此参数用于插件加载拒绝理由
-int __stdcall XQ_Event(char *self_id, int message_type, int sub_type, char *group_id, char *user_id, char *notice_id, char *message, char *message_num, char *message_id, char *raw_message, char *time, int ret)
+
+//export XQ_Event
+int __stdcall __declspec (dllexport) XQ_Event(char *self_id, int message_type, int sub_type, char *group_id, char *user_id, char *notice_id, char *message, char *message_num, char *message_id, char *raw_message, char *time, int ret)
 {
 	return GoEvent(self_id,message_type,sub_type, group_id,user_id,notice_id,message,message_num,message_id,raw_message,time,ret);
 }
 
-int __stdcall XQ_SetUp()
+//export XQ_SetUp
+int __stdcall __declspec (dllexport) XQ_SetUp()
 {
 	return GoSetUp();
 }
 
-int __stdcall XQ_DestroyPlugin()
+//export XQ_DestroyPlugin
+int __stdcall __declspec (dllexport) XQ_DestroyPlugin()
 {
 	return GoDestroyPlugin();
 }
