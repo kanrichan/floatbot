@@ -30,7 +30,7 @@ func update(version, path string) {
 		)
 		if ret == 6 {
 			ApiOutPutLog("[I][更新] 正在选择最快的镜像源......")
-			fast := fastSite("gh.xcw.best", "hub.fastgit.org", "github.michikawachin.art", "github.com")
+			fast := fastSite("gh.xcw.best", "hub.fastgit.org", "github.michikawachin.art")
 			link = strings.ReplaceAll(link, "github.com", fast)
 			ApiOutPutLog(fmt.Sprintf("[I][更新] 开始下载: %s", link))
 			err := downLastRelease(link, path)
@@ -122,7 +122,7 @@ func install(path string) (err error) {
 }
 
 func ping(dst string) (ret string, err error) {
-	cmd := exec.Command("ping", "-n", "1", dst)
+	cmd := exec.Command("ping", "-n", "3", dst)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -150,6 +150,6 @@ func fastSite(sites ...string) string {
 	case site := <-back:
 		return site
 	case <-time.After(time.Second * 10):
-		return sites[0]
+		return "github.com"
 	}
 }
