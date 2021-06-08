@@ -952,10 +952,10 @@ void S3_Api_Mark(char *text){
 // jsonData  Json结构  文本型  Json结构内容
 void S3_Api_SendJSON(char *selfID, int anonymous, int messageType, char *groupID, char *userID, char *jsonData){
     S3_Api_SendJSON_Ptr(authid, selfID, anonymous, messageType, groupID, userID, jsonData);
-    free(selfID);
-    free(groupID);
-    free(userID);
-    free(jsonData);
+    // free(selfID);
+    // free(groupID);
+    // free(userID);
+    // free(jsonData);
 
 }
 
@@ -969,10 +969,10 @@ void S3_Api_SendJSON(char *selfID, int anonymous, int messageType, char *groupID
 // nothing  NULL  整数型  无
 void S3_Api_SendXML(char *selfID, int anonymous, int messageType, char *groupID, char *userID, char *xmlData, int nothing){
     S3_Api_SendXML_Ptr(authid, selfID, anonymous, messageType, groupID, userID, xmlData, nothing);
-    free(selfID);
-    free(groupID);
-    free(userID);
-    free(xmlData);
+    // free(selfID);
+    // free(groupID);
+    // free(userID);
+    // free(xmlData);
 
 }
 
@@ -1173,11 +1173,11 @@ int S3_Api_ShakeWindow(char *selfID, char *userID){
 // jsonData  附加JSON参数  文本型  以后信息发送参数增加都是依靠这个json文本
 char *S3_Api_SendMsgEX_V2(char *selfID, int messageType, char *groupID, char *userID, char *message, int bubble, int anonymous, char *jsonData){
     char *ret = S3_Api_SendMsgEX_V2_Ptr(authid, selfID, messageType, groupID, userID, message, bubble, anonymous, jsonData);
-    free(selfID);
-    free(groupID);
-    free(userID);
-    free(message);
-    free(jsonData);
+    // free(selfID);
+    // free(groupID);
+    // free(userID);
+    // free(message);
+    // free(jsonData);
     return fix_str(ret);
 }
 
