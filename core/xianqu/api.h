@@ -327,11 +327,6 @@ char *S3_Api_GetGroupCard(char *selfID, char *groupID, char *userID){
 // bubble  气泡ID  整数型  已支持请自己测试
 void S3_Api_SendMsg(char *selfID, int messageType, char *groupID, char *userID, char *message, int bubble){
     S3_Api_SendMsg_Ptr(authid, selfID, messageType, groupID, userID, message, bubble);
-    free(selfID);
-    free(groupID);
-    free(userID);
-    free(message);
-
 }
 
 // 上传图片
