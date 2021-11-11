@@ -1,6 +1,6 @@
 module onebot
 
-go 1.15
+go 1.16
 
 require (
 	github.com/Yiwen-Chan/go-silk v0.0.5

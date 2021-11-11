@@ -48,7 +48,7 @@ func (ctx *Context) MakeFailResponse(err string) {
 }
 
 // ApiSendMsg 发送私聊消息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#send_private_msg-%E5%8F%91%E9%80%81%E7%A7%81%E8%81%8A%E6%B6%88%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#send_private_msg-%E5%8F%91%E9%80%81%E7%A7%81%E8%81%8A%E6%B6%88%E6%81%AF
 func ApiSendMsg(ctx *Context) {
 	var (
 		params = Parse(ctx.Request).Get("params")
@@ -150,19 +150,19 @@ func ApiSendMsg(ctx *Context) {
 }
 
 // SendPrivateMsg 发送私聊消息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#send_private_msg-%E5%8F%91%E9%80%81%E7%A7%81%E8%81%8A%E6%B6%88%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#send_private_msg-%E5%8F%91%E9%80%81%E7%A7%81%E8%81%8A%E6%B6%88%E6%81%AF
 func ApiSendPrivateMsg(ctx *Context) {
 	ApiSendMsg(ctx)
 }
 
 // SendGroupMsg 发送群消息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#send_group_msg-%E5%8F%91%E9%80%81%E7%BE%A4%E6%B6%88%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#send_group_msg-%E5%8F%91%E9%80%81%E7%BE%A4%E6%B6%88%E6%81%AF
 func ApiSendGroupMsg(ctx *Context) {
 	ApiSendMsg(ctx)
 }
 
 // DeleteMsg 撤回消息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#delete_msg-%E6%92%A4%E5%9B%9E%E6%B6%88%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#delete_msg-%E6%92%A4%E5%9B%9E%E6%B6%88%E6%81%AF
 func ApiDeleteMsg(ctx *Context) {
 	id := Parse(ctx.Request).Get("params").Int("message_id")
 	// 获取 先驱的 message num
@@ -191,7 +191,7 @@ func ApiDeleteMsg(ctx *Context) {
 }
 
 // GetMsg 获取消息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_msg-%E8%8E%B7%E5%8F%96%E6%B6%88%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_msg-%E8%8E%B7%E5%8F%96%E6%B6%88%E6%81%AF
 func ApiGetMsg(ctx *Context) {
 	id := Parse(ctx.Request).Get("params").Int("message_id")
 	// 获取 OneBot 的 message 报文
@@ -204,13 +204,13 @@ func ApiGetMsg(ctx *Context) {
 }
 
 // GetForwardMsg 获取合并转发消息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_forward_msg-%E8%8E%B7%E5%8F%96%E5%90%88%E5%B9%B6%E8%BD%AC%E5%8F%91%E6%B6%88%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_forward_msg-%E8%8E%B7%E5%8F%96%E5%90%88%E5%B9%B6%E8%BD%AC%E5%8F%91%E6%B6%88%E6%81%AF
 func ApiGetForwardMsg(ctx *Context) {
 	ctx.MakeFailResponse("xq not support")
 }
 
 // SendLike 发送好友赞
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#send_like-%E5%8F%91%E9%80%81%E5%A5%BD%E5%8F%8B%E8%B5%9E
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#send_like-%E5%8F%91%E9%80%81%E5%A5%BD%E5%8F%8B%E8%B5%9E
 func ApiSendLike(ctx *Context) {
 	C.S3_Api_UpVote(
 		GoInt2CStr(ctx.Bot),
@@ -220,7 +220,7 @@ func ApiSendLike(ctx *Context) {
 }
 
 // SetGroupKick 群组踢人
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_kick-%E7%BE%A4%E7%BB%84%E8%B8%A2%E4%BA%BA
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_kick-%E7%BE%A4%E7%BB%84%E8%B8%A2%E4%BA%BA
 func ApiSetGroupKick(ctx *Context) {
 	C.S3_Api_KickGroupMBR(
 		GoInt2CStr(ctx.Bot),
@@ -232,7 +232,7 @@ func ApiSetGroupKick(ctx *Context) {
 }
 
 // SetGroupBan 群组单人禁言
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_ban-%E7%BE%A4%E7%BB%84%E5%8D%95%E4%BA%BA%E7%A6%81%E8%A8%80
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_ban-%E7%BE%A4%E7%BB%84%E5%8D%95%E4%BA%BA%E7%A6%81%E8%A8%80
 func ApiSetGroupBan(ctx *Context) {
 	C.S3_Api_ShutUp(
 		GoInt2CStr(ctx.Bot),
@@ -244,13 +244,13 @@ func ApiSetGroupBan(ctx *Context) {
 }
 
 // SetGroupAnonymousBan 群组匿名用户禁言
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_anonymous_ban-%E7%BE%A4%E7%BB%84%E5%8C%BF%E5%90%8D%E7%94%A8%E6%88%B7%E7%A6%81%E8%A8%80
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_anonymous_ban-%E7%BE%A4%E7%BB%84%E5%8C%BF%E5%90%8D%E7%94%A8%E6%88%B7%E7%A6%81%E8%A8%80
 func ApiSetGroupAnonymousBan(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
 
 // SetGroupWholeBan 群组全员禁言
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_whole_ban-%E7%BE%A4%E7%BB%84%E5%85%A8%E5%91%98%E7%A6%81%E8%A8%80
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_whole_ban-%E7%BE%A4%E7%BB%84%E5%85%A8%E5%91%98%E7%A6%81%E8%A8%80
 func ApiSetGroupWholeBan(ctx *Context) {
 	C.S3_Api_ShutUpAll(
 		GoInt2CStr(ctx.Bot),
@@ -261,7 +261,7 @@ func ApiSetGroupWholeBan(ctx *Context) {
 }
 
 // SetGroupAdmin 群组设置管理员
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_admin-%E7%BE%A4%E7%BB%84%E8%AE%BE%E7%BD%AE%E7%AE%A1%E7%90%86%E5%91%98
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_admin-%E7%BE%A4%E7%BB%84%E8%AE%BE%E7%BD%AE%E7%AE%A1%E7%90%86%E5%91%98
 func ApiSetGroupAdmin(ctx *Context) {
 	// 获取网页 cookie 和计算 bnk
 	cookie1 := GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))
@@ -294,7 +294,7 @@ func ApiSetGroupAdmin(ctx *Context) {
 }
 
 // SetGroupAnonymous 群组匿名
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_anonymous-%E7%BE%A4%E7%BB%84%E5%8C%BF%E5%90%8D
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_anonymous-%E7%BE%A4%E7%BB%84%E5%8C%BF%E5%90%8D
 func ApiSetGroupAnonymous(ctx *Context) {
 	C.S3_Api_SetAnon(
 		GoInt2CStr(ctx.Bot),
@@ -305,7 +305,7 @@ func ApiSetGroupAnonymous(ctx *Context) {
 }
 
 // SetGroupCard 设置群名片（群备注）
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_card-%E8%AE%BE%E7%BD%AE%E7%BE%A4%E5%90%8D%E7%89%87%E7%BE%A4%E5%A4%87%E6%B3%A8
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_card-%E8%AE%BE%E7%BD%AE%E7%BE%A4%E5%90%8D%E7%89%87%E7%BE%A4%E5%A4%87%E6%B3%A8
 func ApiSetGroupCard(ctx *Context) {
 	C.S3_Api_SetGroupCard(
 		GoInt2CStr(ctx.Bot),
@@ -317,13 +317,13 @@ func ApiSetGroupCard(ctx *Context) {
 }
 
 // SetGroupName 设置群名
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_name-%E8%AE%BE%E7%BD%AE%E7%BE%A4%E5%90%8D
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_name-%E8%AE%BE%E7%BD%AE%E7%BE%A4%E5%90%8D
 func ApiSetGroupName(ctx *Context) {
 	ctx.MakeFailResponse("先驱不支持")
 }
 
 // SetGroupLeave 退出群组
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_leave-%E9%80%80%E5%87%BA%E7%BE%A4%E7%BB%84
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_leave-%E9%80%80%E5%87%BA%E7%BE%A4%E7%BB%84
 func ApiSetGroupLeave(ctx *Context) {
 	C.S3_Api_QuitGroup(
 		GoInt2CStr(ctx.Bot),
@@ -333,13 +333,13 @@ func ApiSetGroupLeave(ctx *Context) {
 }
 
 // SetGroupSpecialTitle 设置群组专属头衔
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_special_title-%E8%AE%BE%E7%BD%AE%E7%BE%A4%E7%BB%84%E4%B8%93%E5%B1%9E%E5%A4%B4%E8%A1%94
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_special_title-%E8%AE%BE%E7%BD%AE%E7%BE%A4%E7%BB%84%E4%B8%93%E5%B1%9E%E5%A4%B4%E8%A1%94
 func ApiSetGroupSpecialTitle(ctx *Context) {
 	ctx.MakeFailResponse("先驱不支持")
 }
 
 // SetFriendAddRequest 处理加好友请求
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_friend_add_request-%E5%A4%84%E7%90%86%E5%8A%A0%E5%A5%BD%E5%8F%8B%E8%AF%B7%E6%B1%82
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_friend_add_request-%E5%A4%84%E7%90%86%E5%8A%A0%E5%A5%BD%E5%8F%8B%E8%AF%B7%E6%B1%82
 func ApiSetFriendAddRequest(ctx *Context) {
 	C.S3_Api_HandleFriendEvent(
 		GoInt2CStr(ctx.Bot),
@@ -351,7 +351,7 @@ func ApiSetFriendAddRequest(ctx *Context) {
 }
 
 // SetGroupAddRequest 处理加群请求／邀请
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_group_add_request-%E5%A4%84%E7%90%86%E5%8A%A0%E7%BE%A4%E8%AF%B7%E6%B1%82%E9%82%80%E8%AF%B7
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_add_request-%E5%A4%84%E7%90%86%E5%8A%A0%E7%BE%A4%E8%AF%B7%E6%B1%82%E9%82%80%E8%AF%B7
 func ApiSetGroupAddRequest(ctx *Context) {
 	flag := strings.Split(Parse(ctx.Request).Get("params").Str("flag"), "|")
 	if len(flag) != 4 {
@@ -370,7 +370,7 @@ func ApiSetGroupAddRequest(ctx *Context) {
 }
 
 // GetLoginInfo 获取登录号信息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_login_info-%E8%8E%B7%E5%8F%96%E7%99%BB%E5%BD%95%E5%8F%B7%E4%BF%A1%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_login_info-%E8%8E%B7%E5%8F%96%E7%99%BB%E5%BD%95%E5%8F%B7%E4%BF%A1%E6%81%AF
 func ApiGetLoginInfo(ctx *Context) {
 	nickname := GoString(
 		C.S3_Api_GetNick(
@@ -387,19 +387,19 @@ func ApiGetLoginInfo(ctx *Context) {
 }
 
 // GetStrangerInfo 获取陌生人信息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_stranger_info-%E8%8E%B7%E5%8F%96%E9%99%8C%E7%94%9F%E4%BA%BA%E4%BF%A1%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_stranger_info-%E8%8E%B7%E5%8F%96%E9%99%8C%E7%94%9F%E4%BA%BA%E4%BF%A1%E6%81%AF
 func ApiGetStrangerInfo(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
 
 // GetFriendList 获取好友列表
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_friend_list-%E8%8E%B7%E5%8F%96%E5%A5%BD%E5%8F%8B%E5%88%97%E8%A1%A8
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_friend_list-%E8%8E%B7%E5%8F%96%E5%A5%BD%E5%8F%8B%E5%88%97%E8%A1%A8
 func ApiGetFriendList(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
 
 // GetGroupInfo 获取群信息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_info-%E8%8E%B7%E5%8F%96%E7%BE%A4%E4%BF%A1%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_group_info-%E8%8E%B7%E5%8F%96%E7%BE%A4%E4%BF%A1%E6%81%AF
 func ApiGetGroupInfo(ctx *Context) {
 	ctx.MakeOkResponse(
 		GroupDataCache.GetCacheGroup(
@@ -411,7 +411,7 @@ func ApiGetGroupInfo(ctx *Context) {
 }
 
 // GetGroupList 获取群列表
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_list-%E8%8E%B7%E5%8F%96%E7%BE%A4%E5%88%97%E8%A1%A8
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_group_list-%E8%8E%B7%E5%8F%96%E7%BE%A4%E5%88%97%E8%A1%A8
 func ApiGetGroupList(ctx *Context) {
 	var temp []GroupInfo
 	list := strings.Split(
@@ -431,7 +431,7 @@ func ApiGetGroupList(ctx *Context) {
 }
 
 // GetGroupMemberInfo 获取群成员信息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_member_info-%E8%8E%B7%E5%8F%96%E7%BE%A4%E6%88%90%E5%91%98%E4%BF%A1%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_group_member_info-%E8%8E%B7%E5%8F%96%E7%BE%A4%E6%88%90%E5%91%98%E4%BF%A1%E6%81%AF
 func ApiGetGroupMemberInfo(ctx *Context) {
 	ctx.MakeOkResponse(
 		GroupDataCache.GetCacheGroupMember(
@@ -444,7 +444,7 @@ func ApiGetGroupMemberInfo(ctx *Context) {
 }
 
 // GetGroupMemberList 获取群成员列表
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_member_list-%E8%8E%B7%E5%8F%96%E7%BE%A4%E6%88%90%E5%91%98%E5%88%97%E8%A1%A8
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_group_member_list-%E8%8E%B7%E5%8F%96%E7%BE%A4%E6%88%90%E5%91%98%E5%88%97%E8%A1%A8
 func ApiGetGroupMemberList(ctx *Context) {
 	ctx.MakeOkResponse(
 		GroupDataCache.GetCacheGroup(
@@ -456,13 +456,13 @@ func ApiGetGroupMemberList(ctx *Context) {
 }
 
 // GetGroupHonorInfo 获取群荣誉信息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_group_honor_info-%E8%8E%B7%E5%8F%96%E7%BE%A4%E8%8D%A3%E8%AA%89%E4%BF%A1%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_group_honor_info-%E8%8E%B7%E5%8F%96%E7%BE%A4%E8%8D%A3%E8%AA%89%E4%BF%A1%E6%81%AF
 func ApiGetGroupHonorInfo(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
 
 // GetCookies 获取 Cookies
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_cookies-%E8%8E%B7%E5%8F%96-cookies
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_cookies-%E8%8E%B7%E5%8F%96-cookies
 func ApiGetCookies(ctx *Context) {
 	switch Parse(ctx.Request).Get("params").Str("domain") {
 	case "qun.qq.com":
@@ -478,13 +478,13 @@ func ApiGetCookies(ctx *Context) {
 }
 
 // GetCsrfToken 获取 CSRF Token
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_csrf_token-%E8%8E%B7%E5%8F%96-csrf-token
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_csrf_token-%E8%8E%B7%E5%8F%96-csrf-token
 func ApiGetCsrfToken(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
 
 // GetCredentials 获取 QQ 相关接口凭证
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_credentials-%E8%8E%B7%E5%8F%96-qq-%E7%9B%B8%E5%85%B3%E6%8E%A5%E5%8F%A3%E5%87%AD%E8%AF%81
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_credentials-%E8%8E%B7%E5%8F%96-qq-%E7%9B%B8%E5%85%B3%E6%8E%A5%E5%8F%A3%E5%87%AD%E8%AF%81
 func ApiGetCredentials(ctx *Context) {
 	switch Parse(ctx.Request).Get("params").Str("domain") {
 	case "qun.qq.com":
@@ -500,19 +500,19 @@ func ApiGetCredentials(ctx *Context) {
 }
 
 // GetRecord 获取语音
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_record-%E8%8E%B7%E5%8F%96%E8%AF%AD%E9%9F%B3
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_record-%E8%8E%B7%E5%8F%96%E8%AF%AD%E9%9F%B3
 func ApiGetRecord(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
 
 // GetImage 获取图片
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_image-%E8%8E%B7%E5%8F%96%E5%9B%BE%E7%89%87
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_image-%E8%8E%B7%E5%8F%96%E5%9B%BE%E7%89%87
 func ApiGetImage(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
 
 // CanSendImage 检查是否可以发送图片
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#can_send_image-%E6%A3%80%E6%9F%A5%E6%98%AF%E5%90%A6%E5%8F%AF%E4%BB%A5%E5%8F%91%E9%80%81%E5%9B%BE%E7%89%87
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#can_send_image-%E6%A3%80%E6%9F%A5%E6%98%AF%E5%90%A6%E5%8F%AF%E4%BB%A5%E5%8F%91%E9%80%81%E5%9B%BE%E7%89%87
 func ApiCanSendImage(ctx *Context) {
 	ctx.MakeOkResponse(
 		map[string]interface{}{
@@ -522,7 +522,7 @@ func ApiCanSendImage(ctx *Context) {
 }
 
 // CanSendRecord 检查是否可以发送语音
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#can_send_record-%E6%A3%80%E6%9F%A5%E6%98%AF%E5%90%A6%E5%8F%AF%E4%BB%A5%E5%8F%91%E9%80%81%E8%AF%AD%E9%9F%B3
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#can_send_record-%E6%A3%80%E6%9F%A5%E6%98%AF%E5%90%A6%E5%8F%AF%E4%BB%A5%E5%8F%91%E9%80%81%E8%AF%AD%E9%9F%B3
 func ApiCanSendRecord(ctx *Context) {
 	ctx.MakeOkResponse(
 		map[string]interface{}{
@@ -532,7 +532,7 @@ func ApiCanSendRecord(ctx *Context) {
 }
 
 // GetStatus 获取运行状态
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_status-%E8%8E%B7%E5%8F%96%E8%BF%90%E8%A1%8C%E7%8A%B6%E6%80%81
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_status-%E8%8E%B7%E5%8F%96%E8%BF%90%E8%A1%8C%E7%8A%B6%E6%80%81
 func ApiGetStatus(ctx *Context) {
 	ctx.MakeOkResponse(
 		map[string]interface{}{
@@ -543,7 +543,7 @@ func ApiGetStatus(ctx *Context) {
 }
 
 // GetVersionInfo 获取版本信息
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#get_version_info-%E8%8E%B7%E5%8F%96%E7%89%88%E6%9C%AC%E4%BF%A1%E6%81%AF
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_version_info-%E8%8E%B7%E5%8F%96%E7%89%88%E6%9C%AC%E4%BF%A1%E6%81%AF
 func ApiGetVersionInfo(ctx *Context) {
 	ctx.MakeOkResponse(
 		map[string]interface{}{
@@ -555,13 +555,13 @@ func ApiGetVersionInfo(ctx *Context) {
 }
 
 // SetRestart 重启 OneBot 实现
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#set_restart-%E9%87%8D%E5%90%AF-onebot-%E5%AE%9E%E7%8E%B0
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_restart-%E9%87%8D%E5%90%AF-onebot-%E5%AE%9E%E7%8E%B0
 func ApiSetRestart(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
 
 // CleanCache 清理缓存
-// https://github.com/howmanybots/onebot/blob/master/v11/specs/api/public.md#clean_cache-%E6%B8%85%E7%90%86%E7%BC%93%E5%AD%98
+// https://github.com/botuniverse/onebot-11/tree/master/api/public.md#clean_cache-%E6%B8%85%E7%90%86%E7%BC%93%E5%AD%98
 func ApiCleanCache(ctx *Context) {
 	ctx.MakeFailResponse("暂时不支持")
 }
@@ -735,7 +735,7 @@ func (m *Message) image(data value) {
 		image.res = path
 	// 本地文件方式
 	case strings.Contains(file, "file:///"):
-		image.res = file[8:]
+		image.res = strings.ReplaceAll(file[8:], "/", "\\")
 	// 默认方式
 	default:
 		image.res = file
@@ -792,7 +792,7 @@ func (m *Message) record(data value) {
 		record.res = path
 	// 本地文件方式
 	case strings.Contains(file, "file:///"):
-		record.res = file[8:]
+		record.res = strings.ReplaceAll(file[8:], "/", "\\")
 	// 默认方式
 	default:
 		record.res = file
