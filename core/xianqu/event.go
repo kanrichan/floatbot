@@ -89,8 +89,8 @@ func GoDestroyPlugin() C.int {
 	return 0
 }
 
-//export XQ_Event
-func XQ_Event(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNoticeID, cMessage, cMessageNum, cMessageID, cRawMessage, cTime *C.char, cRet C.int) C.int {
+//export GoEvent
+func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNoticeID, cMessage, cMessageNum, cMessageID, cRawMessage, cTime *C.char, cRet C.int) C.int {
 	var (
 		bot         = cStr2GoInt(cBot)
 		messageType = int64(cMessageType)
