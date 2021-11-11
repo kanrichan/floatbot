@@ -1,6 +1,5 @@
 package xianqu
 
-//#include <string.h>
 import "C"
 
 import (

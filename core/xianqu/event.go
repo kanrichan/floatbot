@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
-	"unsafe"
 
 	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 )
@@ -75,7 +74,7 @@ type Context struct {
 //export XQ_Create
 func XQ_Create(version *C.char) *C.char {
 	data, _ := json.Marshal(AppInfo)
-	return unsafe.Pointer(cString(helper.BytesToString(data)))
+	return cString(helper.BytesToString(data))
 }
 
 //export XQ_SetUp
