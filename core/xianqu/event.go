@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
-	"unsafe"
 
 	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 )
@@ -52,8 +51,8 @@ var (
 
 func init() {
 	// 创建数据目录
-	createPath(OneBotPath + "image\\")
-	createPath(OneBotPath + "record\\")
+	xreatePath(OneBotPath + "image\\")
+	xreatePath(OneBotPath + "record\\")
 }
 
 // App XQ要求的插件信息
@@ -73,7 +72,7 @@ type Context struct {
 }
 
 //export XQ_Create
-func XQ_Create(version unsafe.Pointer) unsafe.Pointer {
+func XQ_Create(version *C.char) *C.char {
 	data, _ := json.Marshal(AppInfo)
 	return cString(helper.BytesToString(data))
 }
@@ -91,7 +90,7 @@ func XQ_DestroyPlugin() C.int {
 }
 
 //export XQ_Event
-func XQ_Event(cBot unsafe.Pointer, cMessageType, cSubType C.int, cGroupID, cUserID, cNoticeID, cMessage, cMessageNum, cMessageID, cRawMessage, cTime unsafe.Pointer, cRet C.int) C.int {
+func XQ_Event(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNoticeID, cMessage, cMessageNum, cMessageID, cRawMessage, cTime *C.char, cRet C.int) C.int {
 	var (
 		bot         = cStr2GoInt(cBot)
 		messageType = int64(cMessageType)

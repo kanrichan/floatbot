@@ -77,7 +77,7 @@ func goInt2CStr(val int64) *C.char {
 }
 
 // CStr2GoInt 将 C char指针 转为 GO int64
-func cStr2GoInt(str unsafe.Pointer) int64 {
+func cStr2GoInt(str *C.char) int64 {
 	return str2Int(goString(str))
 }
 
