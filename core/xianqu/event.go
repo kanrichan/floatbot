@@ -73,7 +73,7 @@ type Context struct {
 }
 
 //export XQ_Create
-func XQ_Create(version *C.char) unsafe.Pointer {
+func XQ_Create(version unsafe.Pointer) unsafe.Pointer {
 	data, _ := json.Marshal(AppInfo)
 	return unsafe.Pointer(cString(helper.BytesToString(data)))
 }
