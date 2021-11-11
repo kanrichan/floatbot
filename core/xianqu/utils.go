@@ -17,6 +17,7 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 	sc "golang.org/x/text/encoding/simplifiedchinese"
 )
 
@@ -90,7 +91,7 @@ func int2Bytes(val int64) []byte {
 
 // EscapeEmoji 将 emoji 转化为 先驱[emoji=FFFFFFFF]
 func escapeEmoji(text string) string {
-	data := []byte(text)
+	data := helper.StringToBytes(text)
 	ret := []byte{}
 	skip := 0
 	for i := range data {
@@ -100,18 +101,18 @@ func escapeEmoji(text string) string {
 		}
 		if data[i] == byte(240) && data[i+1] == byte(159) {
 			code := hex.EncodeToString(data[i : i+4])
-			ret = append(ret, []byte(fmt.Sprintf("[emoji=%s]", code))...)
+			ret = append(ret, helper.StringToBytes(fmt.Sprintf("[emoji=%s]", code))...)
 			skip = 4
 		} else {
 			ret = append(ret, data[i])
 		}
 	}
-	return string(ret)
+	return helper.BytesToString(ret)
 }
 
 // UnescapeEmoji 将 先驱[emoji=FFFFFFFF] 转化为 emoji
 func unescapeEmoji(text string) string {
-	data := []byte(text)
+	data := helper.StringToBytes(text)
 	ret := []byte{}
 	skip := 0
 	for i := range data {
@@ -119,7 +120,7 @@ func unescapeEmoji(text string) string {
 			skip -= 1
 			continue
 		}
-		if i+7 < len(data) && bytes.Equal(data[i:i+7], []byte("[emoji=")) {
+		if i+7 < len(data) && bytes.Equal(data[i:i+7], helper.StringToBytes("[emoji=")) {
 			end := bytes.IndexByte(data[i:], byte(93))
 			if end == -1 {
 				return text
@@ -131,13 +132,13 @@ func unescapeEmoji(text string) string {
 			ret = append(ret, data[i])
 		}
 	}
-	return string(ret)
+	return helper.BytesToString(ret)
 }
 
 // XmlEscape XML 编码
 func xmlEscape(c string) string {
 	buf := new(bytes.Buffer)
-	_ = xml.EscapeText(buf, []byte(c))
+	_ = xml.EscapeText(buf, helper.StringToBytes(c))
 	return buf.String()
 }
 
@@ -177,7 +178,7 @@ func fileSize(file string) int64 {
 // TextMD5 返回字符串的MD5值
 func textMD5(input string) string {
 	m := md5.New()
-	m.Write([]byte(input))
+	m.Write(helper.StringToBytes(input))
 	return hex.EncodeToString(m.Sum(nil))
 }
 

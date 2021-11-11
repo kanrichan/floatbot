@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/tidwall/gjson"
+	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
@@ -72,7 +73,7 @@ func isNeedUpdate(ver, last, path string) bool {
 func skipUpdate(ver, path string) {
 	file := path + "OneBot\\SkipUpdate.txt"
 	f, _ := os.OpenFile(file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-	f.Write([]byte(ver))
+	f.Write(helper.StringToBytes(ver))
 	f.Close()
 }
 
@@ -132,7 +133,7 @@ func ping(dst string) (ret string, err error) {
 	if err != nil {
 		return "", err
 	}
-	return string(temp), nil
+	return helper.BytesToString(temp), nil
 }
 
 func fastSite(sites ...string) string {

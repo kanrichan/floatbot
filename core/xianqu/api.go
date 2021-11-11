@@ -17,6 +17,7 @@ import (
 
 	"github.com/Yiwen-Chan/go-silk/silk"
 	"github.com/tidwall/gjson"
+	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 )
 
 type Message struct {
@@ -610,7 +611,7 @@ func (m *Message) send() int64 {
 	)
 	// 处理返回的 message_id
 	var temp map[string]interface{}
-	json.Unmarshal([]byte(ret), &temp)
+	json.Unmarshal(helper.StringToBytes(ret), &temp)
 	num := Parse(temp).Int("msgno")
 	if num == 0 {
 		return 0

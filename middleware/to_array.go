@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	core "onebot/core/xianqu"
+
+	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 )
 
 const (
@@ -145,7 +147,7 @@ func (b *maps) buildMaps(type_ *heap, key *heap, val *heap) {
 
 // toArray 快速解析 message 字符串 --> 数组
 func toArray(message string) []map[string]interface{} {
-	data := []byte(message)
+	data := helper.StringToBytes(message)
 	var (
 		top      = len(data) - 1
 		build    = newMaps() // 输出的数组格式的message
@@ -168,7 +170,7 @@ func toArray(message string) []map[string]interface{} {
 			if text.size() != 0 {
 				type_.push("text")
 				key.push("text")
-				val.push(string(text.pop()))
+				val.push(helper.BytesToString(text.pop()))
 				build.buildMaps(type_, key, val)
 			}
 			continue
@@ -177,7 +179,7 @@ func toArray(message string) []map[string]interface{} {
 			text.push(data[i])
 			type_.push("text")
 			key.push("text")
-			val.push(string(text.pop()))
+			val.push(helper.BytesToString(text.pop()))
 			build.buildMaps(type_, key, val)
 			continue
 		default:
@@ -196,23 +198,23 @@ func toArray(message string) []map[string]interface{} {
 		case COMMA:
 			switch type_.size() {
 			case 0: // 没有 type ，所以 "," 前的是 type
-				type_.push(string(text.pop()))
+				type_.push(helper.BytesToString(text.pop()))
 			default: // 有 type ，所以 "," 前的是 val
-				val.push(string(text.pop()))
+				val.push(helper.BytesToString(text.pop()))
 			}
 		case EQUAL:
 			// "=" 前面的是 key
 			if key.size() == val.size() {
-				key.push(string(text.pop()))
+				key.push(helper.BytesToString(text.pop()))
 				continue
 			}
 			text.push(data[i])
 		case RIGHT_COLON:
 			switch type_.size() {
 			case 0: // 没有 type ，所以 "]" 前的是 type
-				type_.push(string(text.pop()))
+				type_.push(helper.BytesToString(text.pop()))
 			default: // 有 type ，所以 "]" 前的是 val
-				val.push(string(text.pop()))
+				val.push(helper.BytesToString(text.pop()))
 			}
 			build.buildMaps(type_, key, val)
 			isCqCode = false

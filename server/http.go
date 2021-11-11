@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
+
+	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 )
 
 // HTTP & HTTP POST
@@ -96,7 +98,7 @@ func (s *HTTP) Send(data []byte) {
 	if s.Secret != "" {
 		// TODO OneBot标准 HTTP POST 签名
 		// https://github.com/howmanybots/onebot/blob/master/v11/specs/communication/http-post.md#%E7%AD%BE%E5%90%8D
-		mac := hmac.New(sha1.New, []byte(s.Secret))
+		mac := hmac.New(sha1.New, helper.StringToBytes(s.Secret))
 		mac.Write(data)
 		req.Header.Set("X-Signature", "sha1="+hex.EncodeToString(mac.Sum(nil)))
 	}

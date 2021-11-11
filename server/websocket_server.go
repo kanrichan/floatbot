@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 )
 
 var upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
@@ -56,7 +57,7 @@ func (s *WSS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// https://github.com/howmanybots/onebot/blob/master/v11/specs/event/meta.md#%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F
 	handshake := fmt.Sprintf(`{"meta_event_type":"lifecycle","post_type":"meta_event","self_id":%d,"sub_type":"connect","time":%d}`,
 		s.ID, time.Now().Unix())
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(handshake)); err != nil {
+	if err := conn.WriteMessage(websocket.TextMessage, helper.StringToBytes(handshake)); err != nil {
 		return
 	}
 	s.INFO("正向WS客户端连接成功")

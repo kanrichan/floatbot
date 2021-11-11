@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
+	"unsafe"
 
 	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 )
@@ -72,9 +73,9 @@ type Context struct {
 }
 
 //export XQ_Create
-func XQ_Create(version *C.char) *C.char {
+func XQ_Create(version *C.char) unsafe.Pointer {
 	data, _ := json.Marshal(AppInfo)
-	return cString(helper.BytesToString(data))
+	return unsafe.Pointer(cString(helper.BytesToString(data)))
 }
 
 //export XQ_SetUp
@@ -111,7 +112,7 @@ func XQ_Event(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNo
 				buf := make([]byte, 1<<16)
 				runtime.Stack(buf, true)
 				ApiOutPutLog("发生不可预知错误，请[右键↓错误信息↓]并[点击查看完整消息]，截图提交到 GitHub issue 或者到 QQ群 1048452984")
-				ApiOutPutLog(fmt.Sprintf("[PANIC] [错误]：%v \n[TRACEBACK]:\n%v", err, string(buf)))
+				ApiOutPutLog(fmt.Sprintf("[PANIC] [错误]：%v \n[TRACEBACK]:\n%v", err, helper.BytesToString(buf)))
 			}
 		}()
 		switch messageType {

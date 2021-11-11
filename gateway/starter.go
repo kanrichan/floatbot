@@ -5,6 +5,8 @@ import (
 	"time"
 
 	core "onebot/core/xianqu"
+
+	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 )
 
 var (
@@ -80,7 +82,7 @@ BLOCK:
 			for _, bot := range table.Bots {
 				heartbeat := fmt.Sprintf(`{"interval":%d,"meta_event_type":"heartbeat","post_type":"meta_event","self_id":%d,"status":{"good":true,"online":true},"time":%d}`,
 					3000, bot, time.Now().Unix())
-				table.SendByte(bot, []byte(heartbeat))
+				table.SendByte(bot, helper.StringToBytes(heartbeat))
 			}
 		}
 	}
