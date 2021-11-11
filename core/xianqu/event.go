@@ -23,20 +23,20 @@ var (
 	// 当前OneBot目录
 	OneBotPath = pathExecute() + "OneBot\\"
 
-	OnMessagePrivate      = func(ctx *Context) {}
-	OnMessageGroup        = func(ctx *Context) {}
-	OnNoticeFileUpload    = func(ctx *Context) {}
-	OnNoticeAdminChange   = func(ctx *Context) {}
-	OnNoticeGroupDecrease = func(ctx *Context) {}
-	OnNoticeGroupIncrease = func(ctx *Context) {}
-	OnNoticeGroupBan      = func(ctx *Context) {}
-	OnNoticeFriendAdd     = func(ctx *Context) {}
-	OnNoticeMessageRecall = func(ctx *Context) {}
-	OnRequestFriendAdd    = func(ctx *Context) {}
-	OnRequestGroupAdd     = func(ctx *Context) {}
-	OnEnable              = func(ctx *Context) {}
-	OnDisable             = func(ctx *Context) {}
-	OnSetting             = func(ctx *Context) {}
+	OnMessagePrivate      func(ctx *Context)
+	OnMessageGroup        func(ctx *Context)
+	OnNoticeFileUpload    func(ctx *Context)
+	OnNoticeAdminChange   func(ctx *Context)
+	OnNoticeGroupDecrease func(ctx *Context)
+	OnNoticeGroupIncrease func(ctx *Context)
+	OnNoticeGroupBan      func(ctx *Context)
+	OnNoticeFriendAdd     func(ctx *Context)
+	OnNoticeMessageRecall func(ctx *Context)
+	OnRequestFriendAdd    func(ctx *Context)
+	OnRequestGroupAdd     func(ctx *Context)
+	OnEnable              func(ctx *Context)
+	OnDisable             func(ctx *Context)
+	OnSetting             func(ctx *Context)
 
 	// 信息 id 与 num 对应缓冲池
 	MessageIDCache = &CacheData{Max: 1000, Key: []interface{}{}, Value: []interface{}{}}
@@ -73,7 +73,7 @@ type Context struct {
 }
 
 //export XQ_Create
-func XQ_Create(version unsafe.Pointer) unsafe.Pointer {
+func XQ_Create(version *C.char) *C.char {
 	data, _ := json.Marshal(AppInfo)
 	return unsafe.Pointer(cString(helper.BytesToString(data)))
 }
