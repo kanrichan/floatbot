@@ -32,7 +32,7 @@ func xq2cqCode(message string) string {
 		newpic := fmt.Sprintf("[CQ:image,file=%s.image,url=http://gchat.qpic.cn/gchatpic_new//--%s/0]", md5, md5)
 		message = strings.ReplaceAll(message, oldpic, newpic)
 		// 记录收到过的图片
-		hash := TextMD5(fmt.Sprintf("http://gchat.qpic.cn/gchatpic_new//--%s/0", md5))
+		hash := textMD5(fmt.Sprintf("http://gchat.qpic.cn/gchatpic_new//--%s/0", md5))
 		PicPoolCache.Insert(strings.ToLower(hash), res)
 		PicPoolCache.Insert(md5, res)
 	}
@@ -44,7 +44,7 @@ func xq2cqCode(message string) string {
 		newpic := fmt.Sprintf("[CQ:image,file=%s.image,url=http://gchat.qpic.cn/gchatpic_new//--%s/0]", md5, md5)
 		message = strings.ReplaceAll(message, oldpic, newpic)
 		// 记录收到过的图片
-		hash := TextMD5(fmt.Sprintf("http://gchat.qpic.cn/gchatpic_new//--%s/0", md5))
+		hash := textMD5(fmt.Sprintf("http://gchat.qpic.cn/gchatpic_new//--%s/0", md5))
 		PicPoolCache.Insert(strings.ToLower(hash), res)
 		PicPoolCache.Insert(md5, res)
 	}

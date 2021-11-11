@@ -21,13 +21,13 @@ import (
 )
 
 // CString 将 GO 字符串 转为 C char指针
-func CString(str string) *C.char {
+func cString(str string) *C.char {
 	gbstr, _ := sc.GB18030.NewEncoder().String(str)
 	return C.CString(gbstr)
 }
 
 // GoString 将 C char指针 转为 GO 字符串
-func GoString(str *C.char) string {
+func goString(str *C.char) string {
 	if str == nil {
 		return ""
 	}
@@ -36,7 +36,7 @@ func GoString(str *C.char) string {
 }
 
 // CBool 将 GO 布尔型 转为 C 整数
-func CBool(b bool) C.int {
+func cBool(b bool) C.int {
 	if b {
 		return 1
 	}
@@ -44,7 +44,7 @@ func CBool(b bool) C.int {
 }
 
 // GoBool 将 C 整数 转为 GO 布尔型
-func GoBool(b C.int) bool {
+func goBool(b C.int) bool {
 	if b == 1 {
 		return true
 	}
@@ -52,44 +52,44 @@ func GoBool(b C.int) bool {
 }
 
 // CByte 将 GO 字节数组 转为 C 字符串指针
-func CByte(bt []byte) *C.char {
+func cByte(bt []byte) *C.char {
 	return (*C.char)(unsafe.Pointer(&bt))
 }
 
 // Str2Int 将string转为int64
-func Str2Int(str string) int64 {
+func str2Int(str string) int64 {
 	val, _ := strconv.ParseInt(str, 10, 64)
 	return val
 }
 
 // Int2Str 将int64转为string
-func Int2Str(val int64) string {
+func int2Str(val int64) string {
 	str := strconv.FormatInt(val, 10)
 	return str
 }
 
 // GoInt2CStr 将 GO int64 转为 C char指针
-func GoInt2CStr(val int64) *C.char {
+func goInt2CStr(val int64) *C.char {
 	if val == 0 {
-		return CString("")
+		return cString("")
 	}
-	return CString(Int2Str(val))
+	return cString(int2Str(val))
 }
 
 // CStr2GoInt 将 C char指针 转为 GO int64
-func CStr2GoInt(str *C.char) int64 {
-	return Str2Int(GoString(str))
+func cStr2GoInt(str unsafe.Pointer) int64 {
+	return str2Int(goString(str))
 }
 
 // Int2Bytes 将 int64 转为字节数组
-func Int2Bytes(val int64) []byte {
+func int2Bytes(val int64) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, uint64(val))
 	return b
 }
 
 // EscapeEmoji 将 emoji 转化为 先驱[emoji=FFFFFFFF]
-func EscapeEmoji(text string) string {
+func escapeEmoji(text string) string {
 	data := []byte(text)
 	ret := []byte{}
 	skip := 0
@@ -110,7 +110,7 @@ func EscapeEmoji(text string) string {
 }
 
 // UnescapeEmoji 将 先驱[emoji=FFFFFFFF] 转化为 emoji
-func UnescapeEmoji(text string) string {
+func unescapeEmoji(text string) string {
 	data := []byte(text)
 	ret := []byte{}
 	skip := 0
@@ -135,14 +135,14 @@ func UnescapeEmoji(text string) string {
 }
 
 // XmlEscape XML 编码
-func XmlEscape(c string) string {
+func xmlEscape(c string) string {
 	buf := new(bytes.Buffer)
 	_ = xml.EscapeText(buf, []byte(c))
 	return buf.String()
 }
 
 // PathExecute 返回当前运行目录
-func PathExecute() string {
+func pathExecute() string {
 	dir, err := os.Getwd()
 	if err != nil {
 		panic(err)
@@ -151,8 +151,8 @@ func PathExecute() string {
 }
 
 // CreatePath 生成路径或文件所对应的目录
-func CreatePath(path string) {
-	if !PathExists(filepath.Dir(path)) {
+func createPath(path string) {
+	if !pathExists(filepath.Dir(path)) {
 		err := os.MkdirAll(filepath.Dir(path), 0644)
 		if err != nil {
 			panic(err)
@@ -161,42 +161,28 @@ func CreatePath(path string) {
 }
 
 // PathExists 判断路径或文件是否存在
-func PathExists(path string) bool {
+func pathExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil || os.IsExist(err)
 }
 
 // FileSize 返回文件大小
-func FileSize(file string) int64 {
+func fileSize(file string) int64 {
 	if fi, err := os.Stat(file); err == nil {
 		return fi.Size()
 	}
 	return 0
 }
 
-// ReadAllText 返回文件字符串
-func ReadAllText(path string) string {
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		return ""
-	}
-	return string(b)
-}
-
-// WriteAllText 向文件写入字符串
-func WriteAllText(path, text string) {
-	_ = ioutil.WriteFile(path, []byte(text), 0644)
-}
-
 // TextMD5 返回字符串的MD5值
-func TextMD5(input string) string {
+func textMD5(input string) string {
 	m := md5.New()
 	m.Write([]byte(input))
 	return hex.EncodeToString(m.Sum(nil))
 }
 
 // FileMD5 返回文件的MD5值
-func FileMD5(path string) string {
+func fileMD5(path string) string {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return ""
@@ -207,7 +193,7 @@ func FileMD5(path string) string {
 }
 
 // GetBnk 返回 tx cookie 的 bnk
-func GetBnk(cookie string) (bnk int) {
+func getBnk(cookie string) (bnk int) {
 	skey := cookie[strings.Index(cookie, "skey=")+5:]
 	bnk = 5381
 	for i := range skey {

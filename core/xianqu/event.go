@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
+	"unsafe"
 
 	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 )
@@ -20,7 +21,7 @@ var (
 		Desc:   "OneBot标准的先驱实现 项目地址: http://github.com/Yiwen-Chan/OneBot-YaYa",
 	}
 	// 当前OneBot目录
-	OneBotPath = PathExecute() + "OneBot\\"
+	OneBotPath = pathExecute() + "OneBot\\"
 
 	OnMessagePrivate      = func(ctx *Context) {}
 	OnMessageGroup        = func(ctx *Context) {}
@@ -51,8 +52,8 @@ var (
 
 func init() {
 	// 创建数据目录
-	CreatePath(OneBotPath + "image\\")
-	CreatePath(OneBotPath + "record\\")
+	createPath(OneBotPath + "image\\")
+	createPath(OneBotPath + "record\\")
 }
 
 // App XQ要求的插件信息
@@ -72,9 +73,9 @@ type Context struct {
 }
 
 //export XQ_Create
-func XQ_Create(version *C.char) *C.char {
+func XQ_Create(version unsafe.Pointer) unsafe.Pointer {
 	data, _ := json.Marshal(AppInfo)
-	return CString(helper.BytesToString(data))
+	return cString(helper.BytesToString(data))
 }
 
 //export XQ_SetUp
@@ -90,19 +91,19 @@ func XQ_DestroyPlugin() C.int {
 }
 
 //export XQ_Event
-func XQ_Event(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNoticeID, cMessage, cMessageNum, cMessageID, cRawMessage, cTime *C.char, cRet C.int) C.int {
+func XQ_Event(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNoticeID, cMessage, cMessageNum, cMessageID, cRawMessage, cTime unsafe.Pointer, cRet C.int) C.int {
 	var (
-		bot         = CStr2GoInt(cBot)
+		bot         = cStr2GoInt(cBot)
 		messageType = int64(cMessageType)
 		subType     = int64(cSubType)
-		groupID     = CStr2GoInt(cGroupID)
-		userID      = CStr2GoInt(cUserID)
-		noticeID    = CStr2GoInt(cNoticeID)
-		message     = UnescapeEmoji(GoString(cMessage)) // 解决易语言的emoji到utf-8
-		messageNum  = CStr2GoInt(cMessageNum)
-		messageID   = CStr2GoInt(cMessageID)
-		rawMessage  = GoString(cRawMessage)
-		time        = CStr2GoInt(cTime)
+		groupID     = cStr2GoInt(cGroupID)
+		userID      = cStr2GoInt(cUserID)
+		noticeID    = cStr2GoInt(cNoticeID)
+		message     = unescapeEmoji(goString(cMessage)) // 解决易语言的emoji到utf-8
+		messageNum  = cStr2GoInt(cMessageNum)
+		messageID   = cStr2GoInt(cMessageID)
+		rawMessage  = goString(cRawMessage)
+		time        = cStr2GoInt(cTime)
 		// ret         = CStr2GoInt(cRet)
 	)
 	go func() {
@@ -496,7 +497,7 @@ func XQ_Event(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNo
 			}
 			OnRequestGroupAdd(ctx)
 		case 10000:
-			go update(AppInfo.Pver, PathExecute())
+			go update(AppInfo.Pver, pathExecute())
 		case 12001:
 			OnEnable(nil)
 		case 12002:

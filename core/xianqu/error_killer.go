@@ -17,6 +17,6 @@ import "time"
 func errorkiller() {
 	for {
 		time.Sleep(time.Second * 5)
-		C.kill(CString("先驱框架运行时出现异常！"))
+		C.kill(cString("先驱框架运行时出现异常！"))
 	}
 }

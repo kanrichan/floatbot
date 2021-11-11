@@ -117,11 +117,11 @@ func (c *CacheGroupsData) GetCacheGroup(bot, groupID int64, cache bool) (group *
 			qq := value.Interface().(string)
 			role := "member"
 			for i := range admins {
-				if Str2Int(qq) == admins[i].Int() {
+				if str2Int(qq) == admins[i].Int() {
 					role = "admin"
 				}
 			}
-			if qq == Int2Str(owner) {
+			if qq == int2Str(owner) {
 				role = "owner"
 			}
 			nickname := strings.ReplaceAll(membersGJson.Get(qq).Get("nk").Str, "&nbsp;", " ")
@@ -131,7 +131,7 @@ func (c *CacheGroupsData) GetCacheGroup(bot, groupID int64, cache bool) (group *
 			}
 			member := &GroupMember{
 				GroupID:         groupID,
-				UserID:          Str2Int(qq),
+				UserID:          str2Int(qq),
 				Nickname:        nickname,
 				Card:            card,
 				Sex:             "",
@@ -166,7 +166,7 @@ func (c *CacheGroupsData) GetCacheGroup(bot, groupID int64, cache bool) (group *
 			qq := value.Get("QQ").Str
 			member := &GroupMember{
 				GroupID:         groupID,
-				UserID:          Str2Int(qq),
+				UserID:          str2Int(qq),
 				Nickname:        "unknown",
 				Card:            "unknown",
 				Sex:             "unknown",

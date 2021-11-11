@@ -179,13 +179,13 @@ func ApiDeleteMsg(ctx *Context) {
 	}
 	ctx.Response = res.(map[string]interface{})
 	C.S3_Api_WithdrawMsgEX(
-		GoInt2CStr(ctx.Bot),
+		goInt2CStr(ctx.Bot),
 		C.int(ctx.GetResponseType()),
-		GoInt2CStr(Parse(ctx.Response).Int("group_id")),
-		GoInt2CStr(ctx.GetUserID()),
-		GoInt2CStr(num.(int64)),
-		GoInt2CStr(Parse(ctx.Response).Int("message_id")),
-		GoInt2CStr(Parse(ctx.Response).Int("time")),
+		goInt2CStr(Parse(ctx.Response).Int("group_id")),
+		goInt2CStr(ctx.GetUserID()),
+		goInt2CStr(num.(int64)),
+		goInt2CStr(Parse(ctx.Response).Int("message_id")),
+		goInt2CStr(Parse(ctx.Response).Int("time")),
 	)
 	ctx.MakeOkResponse(nil)
 }
@@ -213,8 +213,8 @@ func ApiGetForwardMsg(ctx *Context) {
 // https://github.com/botuniverse/onebot-11/tree/master/api/public.md#send_like-%E5%8F%91%E9%80%81%E5%A5%BD%E5%8F%8B%E8%B5%9E
 func ApiSendLike(ctx *Context) {
 	C.S3_Api_UpVote(
-		GoInt2CStr(ctx.Bot),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("user_id")),
+		goInt2CStr(ctx.Bot),
+		goInt2CStr(Parse(ctx.Request).Get("params").Int("user_id")),
 	)
 	ctx.MakeOkResponse(nil)
 }
@@ -223,10 +223,10 @@ func ApiSendLike(ctx *Context) {
 // https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_kick-%E7%BE%A4%E7%BB%84%E8%B8%A2%E4%BA%BA
 func ApiSetGroupKick(ctx *Context) {
 	C.S3_Api_KickGroupMBR(
-		GoInt2CStr(ctx.Bot),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("user_id")),
-		CBool(Parse(ctx.Request).Get("params").Bool("reject_add_request")),
+		goInt2CStr(ctx.Bot),
+		goInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
+		goInt2CStr(Parse(ctx.Request).Get("params").Int("user_id")),
+		cBool(Parse(ctx.Request).Get("params").Bool("reject_add_request")),
 	)
 	ctx.MakeOkResponse(nil)
 }
@@ -235,9 +235,9 @@ func ApiSetGroupKick(ctx *Context) {
 // https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_ban-%E7%BE%A4%E7%BB%84%E5%8D%95%E4%BA%BA%E7%A6%81%E8%A8%80
 func ApiSetGroupBan(ctx *Context) {
 	C.S3_Api_ShutUp(
-		GoInt2CStr(ctx.Bot),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("user_id")),
+		goInt2CStr(ctx.Bot),
+		goInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
+		goInt2CStr(Parse(ctx.Request).Get("params").Int("user_id")),
 		C.int(Parse(ctx.Request).Get("params").Int("duration")/60),
 	)
 	ctx.MakeOkResponse(nil)
@@ -253,9 +253,9 @@ func ApiSetGroupAnonymousBan(ctx *Context) {
 // https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_whole_ban-%E7%BE%A4%E7%BB%84%E5%85%A8%E5%91%98%E7%A6%81%E8%A8%80
 func ApiSetGroupWholeBan(ctx *Context) {
 	C.S3_Api_ShutUpAll(
-		GoInt2CStr(ctx.Bot),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
-		CBool(Parse(ctx.Request).Get("params").Bool("enable")),
+		goInt2CStr(ctx.Bot),
+		goInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
+		cBool(Parse(ctx.Request).Get("params").Bool("enable")),
 	)
 	ctx.MakeOkResponse(nil)
 }
@@ -264,15 +264,15 @@ func ApiSetGroupWholeBan(ctx *Context) {
 // https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_admin-%E7%BE%A4%E7%BB%84%E8%AE%BE%E7%BD%AE%E7%AE%A1%E7%90%86%E5%91%98
 func ApiSetGroupAdmin(ctx *Context) {
 	// 获取网页 cookie 和计算 bnk
-	cookie1 := GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))
-	cookie2 := GoString(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))
+	cookie1 := goString(C.S3_Api_GetCookies(goInt2CStr(ctx.Bot)))
+	cookie2 := goString(C.S3_Api_GetGroupPsKey(goInt2CStr(ctx.Bot)))
 	cookie := cookie1 + cookie2
-	bnk := GetBnk(cookie1)
+	bnk := getBnk(cookie1)
 	// 提交 post 请求
 	client := &http.Client{}
 	dataUrl := url.Values{}
 	dataUrl.Add("gc", Parse(ctx.Request).Get("params").Str("group_id"))
-	dataUrl.Add("op", Int2Str(Parse(ctx.Request).Get("params").Int("enable")))
+	dataUrl.Add("op", int2Str(Parse(ctx.Request).Get("params").Int("enable")))
 	dataUrl.Add("ul", Parse(ctx.Request).Get("params").Str("user_id"))
 	dataUrl.Add("bkn", strconv.Itoa(bnk))
 	reqest, _ := http.NewRequest("POST", "https://qun.qq.com/cgi-bin/qun_mgr/set_group_admin", strings.NewReader(dataUrl.Encode()))
@@ -297,9 +297,9 @@ func ApiSetGroupAdmin(ctx *Context) {
 // https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_anonymous-%E7%BE%A4%E7%BB%84%E5%8C%BF%E5%90%8D
 func ApiSetGroupAnonymous(ctx *Context) {
 	C.S3_Api_SetAnon(
-		GoInt2CStr(ctx.Bot),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
-		CBool(Parse(ctx.Request).Get("params").Bool("enable")),
+		goInt2CStr(ctx.Bot),
+		goInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
+		cBool(Parse(ctx.Request).Get("params").Bool("enable")),
 	)
 	ctx.MakeOkResponse(nil)
 }
@@ -308,10 +308,10 @@ func ApiSetGroupAnonymous(ctx *Context) {
 // https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_card-%E8%AE%BE%E7%BD%AE%E7%BE%A4%E5%90%8D%E7%89%87%E7%BE%A4%E5%A4%87%E6%B3%A8
 func ApiSetGroupCard(ctx *Context) {
 	C.S3_Api_SetGroupCard(
-		GoInt2CStr(ctx.Bot),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("user_id")),
-		CString(Parse(ctx.Request).Get("params").Str("card")),
+		goInt2CStr(ctx.Bot),
+		goInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
+		goInt2CStr(Parse(ctx.Request).Get("params").Int("user_id")),
+		cString(Parse(ctx.Request).Get("params").Str("card")),
 	)
 	ctx.MakeOkResponse(nil)
 }
@@ -326,8 +326,8 @@ func ApiSetGroupName(ctx *Context) {
 // https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_group_leave-%E9%80%80%E5%87%BA%E7%BE%A4%E7%BB%84
 func ApiSetGroupLeave(ctx *Context) {
 	C.S3_Api_QuitGroup(
-		GoInt2CStr(ctx.Bot),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
+		goInt2CStr(ctx.Bot),
+		goInt2CStr(Parse(ctx.Request).Get("params").Int("group_id")),
 	)
 	ctx.MakeOkResponse(nil)
 }
@@ -342,10 +342,10 @@ func ApiSetGroupSpecialTitle(ctx *Context) {
 // https://github.com/botuniverse/onebot-11/tree/master/api/public.md#set_friend_add_request-%E5%A4%84%E7%90%86%E5%8A%A0%E5%A5%BD%E5%8F%8B%E8%AF%B7%E6%B1%82
 func ApiSetFriendAddRequest(ctx *Context) {
 	C.S3_Api_HandleFriendEvent(
-		GoInt2CStr(ctx.Bot),
-		GoInt2CStr(Parse(ctx.Request).Get("params").Int("flag")),
-		CBool(Parse(ctx.Request).Get("params").Bool("approve")),
-		CString(Parse(ctx.Request).Get("params").Str("remark")),
+		goInt2CStr(ctx.Bot),
+		goInt2CStr(Parse(ctx.Request).Get("params").Int("flag")),
+		cBool(Parse(ctx.Request).Get("params").Bool("approve")),
+		cString(Parse(ctx.Request).Get("params").Str("remark")),
 	)
 	ctx.MakeOkResponse(nil)
 }
@@ -359,23 +359,23 @@ func ApiSetGroupAddRequest(ctx *Context) {
 		return
 	}
 	C.S3_Api_HandleGroupEvent(
-		GoInt2CStr(ctx.Bot),
-		C.int(Str2Int(flag[0])),
-		CString(flag[2]),
-		CString(flag[1]),
-		CString(flag[3]),
-		CBool(Parse(ctx.Request).Get("params").Bool("approve")),
-		CString(Parse(ctx.Request).Get("params").Str("reason")),
+		goInt2CStr(ctx.Bot),
+		C.int(str2Int(flag[0])),
+		cString(flag[2]),
+		cString(flag[1]),
+		cString(flag[3]),
+		cBool(Parse(ctx.Request).Get("params").Bool("approve")),
+		cString(Parse(ctx.Request).Get("params").Str("reason")),
 	)
 }
 
 // GetLoginInfo 获取登录号信息
 // https://github.com/botuniverse/onebot-11/tree/master/api/public.md#get_login_info-%E8%8E%B7%E5%8F%96%E7%99%BB%E5%BD%95%E5%8F%B7%E4%BF%A1%E6%81%AF
 func ApiGetLoginInfo(ctx *Context) {
-	nickname := GoString(
+	nickname := goString(
 		C.S3_Api_GetNick(
-			GoInt2CStr(ctx.Bot),
-			GoInt2CStr(ctx.Bot),
+			goInt2CStr(ctx.Bot),
+			goInt2CStr(ctx.Bot),
 		),
 	)
 	ctx.MakeOkResponse(
@@ -415,16 +415,16 @@ func ApiGetGroupInfo(ctx *Context) {
 func ApiGetGroupList(ctx *Context) {
 	var temp []GroupInfo
 	list := strings.Split(
-		GoString(
+		goString(
 			C.S3_Api_GetGroupList_B(
-				GoInt2CStr(ctx.Bot),
+				goInt2CStr(ctx.Bot),
 			),
 		),
 		"\r\n",
 	)
 	for _, groupID := range list {
 		temp = append(temp, GroupInfo{
-			GroupID: Str2Int(groupID),
+			GroupID: str2Int(groupID),
 		})
 	}
 	ctx.MakeOkResponse(temp)
@@ -466,13 +466,13 @@ func ApiGetGroupHonorInfo(ctx *Context) {
 func ApiGetCookies(ctx *Context) {
 	switch Parse(ctx.Request).Get("params").Str("domain") {
 	case "qun.qq.com":
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + GoString(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": goString(C.S3_Api_GetCookies(goInt2CStr(ctx.Bot))) + goString(C.S3_Api_GetGroupPsKey(goInt2CStr(ctx.Bot)))})
 		return
 	case "qzone.qq.com":
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + GoString(C.S3_Api_GetZonePsKey(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": goString(C.S3_Api_GetCookies(goInt2CStr(ctx.Bot))) + goString(C.S3_Api_GetZonePsKey(goInt2CStr(ctx.Bot)))})
 		return
 	default:
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": goString(C.S3_Api_GetCookies(goInt2CStr(ctx.Bot)))})
 		return
 	}
 }
@@ -488,13 +488,13 @@ func ApiGetCsrfToken(ctx *Context) {
 func ApiGetCredentials(ctx *Context) {
 	switch Parse(ctx.Request).Get("params").Str("domain") {
 	case "qun.qq.com":
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + GoString(C.S3_Api_GetGroupPsKey(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": goString(C.S3_Api_GetCookies(goInt2CStr(ctx.Bot))) + goString(C.S3_Api_GetGroupPsKey(goInt2CStr(ctx.Bot)))})
 		return
 	case "qzone.qq.com":
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot))) + GoString(C.S3_Api_GetZonePsKey(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": goString(C.S3_Api_GetCookies(goInt2CStr(ctx.Bot))) + goString(C.S3_Api_GetZonePsKey(goInt2CStr(ctx.Bot)))})
 		return
 	default:
-		ctx.MakeOkResponse(map[string]interface{}{"cookies": GoString(C.S3_Api_GetCookies(GoInt2CStr(ctx.Bot)))})
+		ctx.MakeOkResponse(map[string]interface{}{"cookies": goString(C.S3_Api_GetCookies(goInt2CStr(ctx.Bot)))})
 		return
 	}
 }
@@ -596,16 +596,16 @@ func newMessage(ctx *Context) *Message {
 }
 
 func (m *Message) send() int64 {
-	ret := GoString(
+	ret := goString(
 		C.S3_Api_SendMsgEX_V2(
-			GoInt2CStr(m.Bot),
+			goInt2CStr(m.Bot),
 			C.int(m.Type_),
-			GoInt2CStr(m.GroupID),
-			GoInt2CStr(m.UserID),
-			CString(EscapeEmoji(m.Send)),
+			goInt2CStr(m.GroupID),
+			goInt2CStr(m.UserID),
+			cString(escapeEmoji(m.Send)),
 			C.int(m.Bubble),
-			CBool(m.Anonymous),
-			CString(""),
+			cBool(m.Anonymous),
+			cString(""),
 		),
 	)
 	// 处理返回的 message_id
@@ -624,23 +624,23 @@ func (m *Message) send() int64 {
 
 func (m *Message) json(data value) {
 	C.S3_Api_SendJSON(
-		GoInt2CStr(m.Bot),
+		goInt2CStr(m.Bot),
 		C.int(1),
 		C.int(m.Type_),
-		GoInt2CStr(m.GroupID),
-		GoInt2CStr(m.UserID),
-		CString(escape(data.Str("data"))), // nonebot 的数组没有转义，这里暂时这么解决
+		goInt2CStr(m.GroupID),
+		goInt2CStr(m.UserID),
+		cString(escape(data.Str("data"))), // nonebot 的数组没有转义，这里暂时这么解决
 	)
 }
 
 func (m *Message) xml(data value) {
 	C.S3_Api_SendXML(
-		GoInt2CStr(m.Bot),
+		goInt2CStr(m.Bot),
 		C.int(1),
 		C.int(m.Type_),
-		GoInt2CStr(m.GroupID),
-		GoInt2CStr(m.UserID),
-		CString(escape(data.Str("data"))), // nonebot 的数组没有转义，这里暂时这么解决
+		goInt2CStr(m.GroupID),
+		goInt2CStr(m.UserID),
+		cString(escape(data.Str("data"))), // nonebot 的数组没有转义，这里暂时这么解决
 		0,
 	)
 }
@@ -707,7 +707,7 @@ func (m *Message) image(data value) {
 	}
 	if data.Str("url") != "" {
 		// 解决tx图片链接不落地
-		temp := PicPoolCache.Search(TextMD5(data.Str("url")))
+		temp := PicPoolCache.Search(textMD5(data.Str("url")))
 		if temp != nil && cache {
 			image.res = temp.(string)
 			image.insert(m)
@@ -718,8 +718,8 @@ func (m *Message) image(data value) {
 	switch {
 	// 链接方式
 	case strings.Contains(file, "http://") || strings.Contains(file, "https://"):
-		path := OneBotPath + "image\\" + TextMD5(file) + ".jpg"
-		if !PathExists(path) || !cache {
+		path := OneBotPath + "image\\" + textMD5(file) + ".jpg"
+		if !pathExists(path) || !cache {
 			// 下载图片
 			if err := Download(file, path); err != nil {
 				panic(err)
@@ -728,7 +728,7 @@ func (m *Message) image(data value) {
 		image.res = path
 	// base64方式
 	case strings.Contains(file, "base64://"):
-		path := OneBotPath + "image\\" + TextMD5(file[9:]) + ".jpg"
+		path := OneBotPath + "image\\" + textMD5(file[9:]) + ".jpg"
 		if err := DecodeBase64(file[9:], path); err != nil {
 			panic(err)
 		}
@@ -741,7 +741,7 @@ func (m *Message) image(data value) {
 		image.res = file
 	}
 	// 用文件md5判断缓冲池是否存在该图片
-	temp := PicPoolCache.Search(FileMD5(image.res))
+	temp := PicPoolCache.Search(fileMD5(image.res))
 	if temp != nil && cache {
 		image.res = temp.(string)
 	}
@@ -775,8 +775,8 @@ func (m *Message) record(data value) {
 	switch {
 	// 链接方式
 	case strings.Contains(file, "http://") || strings.Contains(file, "https://"):
-		path := OneBotPath + "record\\" + TextMD5(file)
-		if !PathExists(path) || !cache {
+		path := OneBotPath + "record\\" + textMD5(file)
+		if !pathExists(path) || !cache {
 			// 下载音频
 			if err := Download(file, path); err != nil {
 				panic(err)
@@ -785,7 +785,7 @@ func (m *Message) record(data value) {
 		record.res = path
 	// base64方式
 	case strings.Contains(file, "base64://"):
-		path := OneBotPath + "record\\" + TextMD5(file[9:])
+		path := OneBotPath + "record\\" + textMD5(file[9:])
 		if err := DecodeBase64(file[9:], path); err != nil {
 			panic(err)
 		}
@@ -829,12 +829,12 @@ advertiser_id="0" aid="0"><picture cover="%s" w="0" h="0" />
 		data.Str("content"),
 	)
 	C.S3_Api_SendXML(
-		GoInt2CStr(m.Bot),
+		goInt2CStr(m.Bot),
 		C.int(1),
 		C.int(m.Type_),
-		GoInt2CStr(m.GroupID),
-		GoInt2CStr(m.UserID),
-		CString(strings.ReplaceAll(temp, "\n", "")),
+		goInt2CStr(m.GroupID),
+		goInt2CStr(m.UserID),
+		cString(strings.ReplaceAll(temp, "\n", "")),
 		0,
 	)
 }
@@ -849,20 +849,20 @@ icon="https://i.gtimg.cn/open/app_icon/01/07/98/56/1101079856_100_m.png"
 url="http://web.p.qq.com/qqmpmobile/aio/app.html?id=1101079856" 
 action="app" a_actionData="com.tencent.qqmusic" 
 i_actionData="tencent1101079856://" appid="1101079856" /></msg>`,
-		XmlEscape(data.Str("title")),
+		xmlEscape(data.Str("title")),
 		data.Str("url"),
 		data.Str("image"),
 		data.Str("audio"),
-		XmlEscape(data.Str("title")),
-		XmlEscape(data.Str("content")),
+		xmlEscape(data.Str("title")),
+		xmlEscape(data.Str("content")),
 	)
 	C.S3_Api_SendXML(
-		GoInt2CStr(m.Bot),
+		goInt2CStr(m.Bot),
 		C.int(1),
 		C.int(m.Type_),
-		GoInt2CStr(m.GroupID),
-		GoInt2CStr(m.UserID),
-		CString(strings.ReplaceAll(temp, "\n", "")),
+		goInt2CStr(m.GroupID),
+		goInt2CStr(m.UserID),
+		cString(strings.ReplaceAll(temp, "\n", "")),
 		0,
 	)
 }
@@ -882,12 +882,12 @@ func (m *Message) weather(data value) {
 		data.Str("type"),
 	)
 	C.S3_Api_SendJSON(
-		GoInt2CStr(m.Bot),
+		goInt2CStr(m.Bot),
 		C.int(1),
 		C.int(m.Type_),
-		GoInt2CStr(m.GroupID),
-		GoInt2CStr(m.UserID),
-		CString(strings.ReplaceAll(temp, "\n", "")),
+		goInt2CStr(m.GroupID),
+		goInt2CStr(m.UserID),
+		cString(strings.ReplaceAll(temp, "\n", "")),
 	)
 }
 
@@ -904,34 +904,34 @@ func (m *Message) location(data value) {
 		data.Str("title"),
 	)
 	C.S3_Api_SendJSON(
-		GoInt2CStr(m.Bot),
+		goInt2CStr(m.Bot),
 		C.int(1),
 		C.int(m.Type_),
-		GoInt2CStr(m.GroupID),
-		GoInt2CStr(m.UserID),
-		CString(strings.ReplaceAll(temp, "\n", "")),
+		goInt2CStr(m.GroupID),
+		goInt2CStr(m.UserID),
+		cString(strings.ReplaceAll(temp, "\n", "")),
 	)
 }
 func (m *Message) shake(data value) {
 	C.S3_Api_ShakeWindow(
-		GoInt2CStr(m.Bot),
-		GoInt2CStr(m.UserID),
+		goInt2CStr(m.Bot),
+		goInt2CStr(m.UserID),
 	)
 }
 func (m *Message) poke(data value) {
 	C.S3_Api_SendMsgEX_V2(
-		GoInt2CStr(m.Bot),
+		goInt2CStr(m.Bot),
 		C.int(m.Type_),
-		GoInt2CStr(m.GroupID),
-		GoInt2CStr(m.UserID),
-		CString(fmt.Sprintf(
+		goInt2CStr(m.GroupID),
+		goInt2CStr(m.UserID),
+		cString(fmt.Sprintf(
 			"[系统提示] %v 戳了一下 %v",
 			m.Bot,
 			m.UserID,
 		)),
 		C.int(0),
-		CBool(false),
-		CString(""),
+		cBool(false),
+		cString(""),
 	)
 }
 
@@ -941,48 +941,48 @@ func (m *Message) anonymous(data value) {
 
 func (m *Message) reply(data value) {
 	C.S3_Api_SendMsgEX_V2(
-		GoInt2CStr(m.Bot),
+		goInt2CStr(m.Bot),
 		C.int(m.Type_),
-		GoInt2CStr(m.GroupID),
-		GoInt2CStr(m.UserID),
-		CString(fmt.Sprintf(
+		goInt2CStr(m.GroupID),
+		goInt2CStr(m.UserID),
+		cString(fmt.Sprintf(
 			"[系统消息] %v 尝试回复一条消息并失败了",
 			m.Bot,
 		)),
 		C.int(0),
-		CBool(false),
-		CString(""),
+		cBool(false),
+		cString(""),
 	)
 }
 
 func (m *Message) forward(data value) {
 	C.S3_Api_SendMsgEX_V2(
-		GoInt2CStr(m.Bot),
+		goInt2CStr(m.Bot),
 		C.int(m.Type_),
-		GoInt2CStr(m.GroupID),
-		GoInt2CStr(m.UserID),
-		CString(fmt.Sprintf(
+		goInt2CStr(m.GroupID),
+		goInt2CStr(m.UserID),
+		cString(fmt.Sprintf(
 			"[系统消息] %v 尝试合并转发一条消息并失败了",
 			m.Bot,
 		)),
 		C.int(0),
-		CBool(false),
-		CString(""),
+		cBool(false),
+		cString(""),
 	)
 }
 func (m *Message) node(data value) {
 	C.S3_Api_SendMsgEX_V2(
-		GoInt2CStr(m.Bot),
+		goInt2CStr(m.Bot),
 		C.int(m.Type_),
-		GoInt2CStr(m.GroupID),
-		GoInt2CStr(m.UserID),
-		CString(fmt.Sprintf(
+		goInt2CStr(m.GroupID),
+		goInt2CStr(m.UserID),
+		cString(fmt.Sprintf(
 			"[系统消息] %v 尝试合并转发节点并失败了",
 			m.Bot,
 		)),
 		C.int(0),
-		CBool(false),
-		CString(""),
+		cBool(false),
+		cString(""),
 	)
 }
 func (m *Message) contact(data value) {
@@ -1037,19 +1037,19 @@ sourceMsgId="0" url="%s" flag="0" adverSign="0" multiMsgFlag="0">
 		)
 	}
 	C.S3_Api_SendXML(
-		GoInt2CStr(m.Bot),
+		goInt2CStr(m.Bot),
 		C.int(1),
 		C.int(m.Type_),
-		GoInt2CStr(m.GroupID),
-		GoInt2CStr(m.UserID),
-		CString(strings.ReplaceAll(temp, "\n", "")),
+		goInt2CStr(m.GroupID),
+		goInt2CStr(m.UserID),
+		cString(strings.ReplaceAll(temp, "\n", "")),
 		0,
 	)
 }
 
 func ApiOutPutLog(text interface{}) {
 	C.S3_Api_OutPutLog(
-		CString(fmt.Sprintln(text)),
+		cString(fmt.Sprintln(text)),
 	)
 }
 
@@ -1058,38 +1058,38 @@ func ApiOutPutLog1(text interface{}) {
 }
 
 func XQApiGroupName(bot, groupID int64) string {
-	return GoString(
+	return goString(
 		C.S3_Api_GetGroupName(
-			GoInt2CStr(bot),
-			GoInt2CStr(groupID),
+			goInt2CStr(bot),
+			goInt2CStr(groupID),
 		),
 	)
 }
 
 func XQApiGroupMemberListB(bot, groupID int64) string {
-	return GoString(
+	return goString(
 		C.S3_Api_GetGroupMemberList_B(
-			GoInt2CStr(bot),
-			GoInt2CStr(groupID),
+			goInt2CStr(bot),
+			goInt2CStr(groupID),
 		),
 	)
 }
 
 func XQApiGroupMemberListC(bot, groupID int64) string {
-	return GoString(
+	return goString(
 		C.S3_Api_GetGroupMemberList_C(
-			GoInt2CStr(bot),
-			GoInt2CStr(groupID),
+			goInt2CStr(bot),
+			goInt2CStr(groupID),
 		),
 	)
 }
 
 func XQApiGetNick(bot, userID int64) string {
 	return strings.Split(
-		GoString(
+		goString(
 			C.S3_Api_GetNick(
-				GoInt2CStr(bot),
-				GoInt2CStr(userID),
+				goInt2CStr(bot),
+				goInt2CStr(userID),
 			),
 		),
 		"\n",
@@ -1099,8 +1099,8 @@ func XQApiGetNick(bot, userID int64) string {
 func XQApiGetAge(bot, userID int64) int64 {
 	return int64(
 		C.S3_Api_GetAge(
-			GoInt2CStr(bot),
-			GoInt2CStr(userID),
+			goInt2CStr(bot),
+			goInt2CStr(userID),
 		),
 	)
 }
@@ -1108,24 +1108,24 @@ func XQApiGetAge(bot, userID int64) int64 {
 func XQApiGetGender(bot, userID int64) string {
 	return []string{"unknown", "male", "female"}[int64(
 		C.S3_Api_GetGender(
-			GoInt2CStr(bot),
-			GoInt2CStr(userID),
+			goInt2CStr(bot),
+			goInt2CStr(userID),
 		),
 	)]
 }
 
 func XQApiIsFriend(bot, userID int64) bool {
-	return GoBool(
+	return goBool(
 		C.S3_Api_IfFriend(
-			GoInt2CStr(bot),
-			GoInt2CStr(userID),
+			goInt2CStr(bot),
+			goInt2CStr(userID),
 		),
 	)
 }
 
 func ApiCallMessageBox(text string) {
 	C.S3_Api_CallMessageBox(
-		CString(text),
+		cString(text),
 	)
 }
 
@@ -1134,18 +1134,18 @@ func ApiMessageBoxButton(text string) int64 {
 	// 7 为否
 	return int64(
 		C.S3_Api_MessageBoxButton(
-			CString(text),
+			cString(text),
 		),
 	)
 }
 
 func ApiDefaultQQ() int64 {
 	botList := strings.Split(
-		GoString(C.S3_Api_GetQQList()),
+		goString(C.S3_Api_GetQQList()),
 		"/n",
 	)
 	if len(botList) < 0 {
 		return 0
 	}
-	return Str2Int(botList[0])
+	return str2Int(botList[0])
 }
