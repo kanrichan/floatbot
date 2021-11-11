@@ -6,11 +6,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
+
+	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 )
 
 var (
 	// 先驱插件信息
-	AppInfo = newAppInfo()
+	AppInfo = &App{
+		Name:   "OneBot-YaYa",
+		Pver:   "1.2.10",
+		Sver:   3,
+		Author: "kanri",
+		Desc:   "OneBot标准的先驱实现 项目地址: http://github.com/Yiwen-Chan/OneBot-YaYa",
+	}
 	// 当前OneBot目录
 	OneBotPath = PathExecute() + "OneBot\\"
 
@@ -56,17 +64,6 @@ type App struct {
 	Desc   string `json:"desc"`   // 插件说明
 }
 
-// newAppInfo 返回插件信息
-func newAppInfo() *App {
-	return &App{
-		Name:   "OneBot-YaYa",
-		Pver:   "1.2.9",
-		Sver:   3,
-		Author: "kanri",
-		Desc:   "OneBot标准的先驱实现 项目地址: http://github.com/Yiwen-Chan/OneBot-YaYa",
-	}
-}
-
 // 上下报文，包括了上报数据以及api调用数据
 type Context struct {
 	Bot      int64
@@ -77,18 +74,19 @@ type Context struct {
 //export XQ_Create
 func XQ_Create(version *C.char) *C.char {
 	data, _ := json.Marshal(AppInfo)
-	return CString(string(data))
+	return CString(helper.BytesToString(data))
 }
 
 //export XQ_SetUp
 func XQ_SetUp() C.int {
 	OnSetting(nil)
-	return C.int(0)
+	return 0
 }
 
 //export XQ_DestroyPlugin
 func XQ_DestroyPlugin() C.int {
-	return C.int(0)
+	runtime.GC()
+	return 0
 }
 
 //export XQ_Event
