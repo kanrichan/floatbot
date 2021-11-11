@@ -74,25 +74,25 @@ type Context struct {
 	Response map[string]interface{}
 }
 
-//export GoCreate
-func GoCreate(version *C.char) *C.char {
+//export XQ_Create
+func XQ_Create(version *C.char) *C.char {
 	data, _ := json.Marshal(AppInfo)
 	return CString(string(data))
 }
 
-//export GoSetUp
-func GoSetUp() C.int {
+//export XQ_SetUp
+func XQ_SetUp() C.int {
 	OnSetting(nil)
 	return C.int(0)
 }
 
-//export GoDestroyPlugin
-func GoDestroyPlugin() C.int {
+//export XQ_DestroyPlugin
+func XQ_DestroyPlugin() C.int {
 	return C.int(0)
 }
 
-//export GoEvent
-func GoEvent(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNoticeID, cMessage, cMessageNum, cMessageID, cRawMessage, cTime *C.char, cRet C.int) C.int {
+//export XQ_Event
+func XQ_Event(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNoticeID, cMessage, cMessageNum, cMessageID, cRawMessage, cTime *C.char, cRet C.int) C.int {
 	var (
 		bot         = CStr2GoInt(cBot)
 		messageType = int64(cMessageType)
