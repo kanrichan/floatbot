@@ -91,7 +91,7 @@ func XQ_DestroyPlugin() C.int {
 }
 
 //export XQ_Event
-func XQ_Event(cBot *C.char, cMessageType, cSubType C.int, cGroupID, cUserID, cNoticeID, cMessage, cMessageNum, cMessageID, cRawMessage, cTime unsafe.Pointer, cRet C.int) C.int {
+func XQ_Event(cBot unsafe.Pointer, cMessageType, cSubType C.int, cGroupID, cUserID, cNoticeID, cMessage, cMessageNum, cMessageID, cRawMessage, cTime unsafe.Pointer, cRet C.int) C.int {
 	var (
 		bot         = cStr2GoInt(cBot)
 		messageType = int64(cMessageType)
