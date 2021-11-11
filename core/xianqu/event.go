@@ -71,20 +71,20 @@ type Context struct {
 	Response map[string]interface{}
 }
 
-//export XQ_Create
-func XQ_Create(version *C.char) *C.char {
+//export GoCreate
+func GoCreate(version *C.char) *C.char {
 	data, _ := json.Marshal(AppInfo)
 	return cString(helper.BytesToString(data))
 }
 
-//export XQ_SetUp
-func XQ_SetUp() C.int {
+//export GoSetUp
+func GoSetUp() C.int {
 	OnSetting(nil)
 	return 0
 }
 
-//export XQ_DestroyPlugin
-func XQ_DestroyPlugin() C.int {
+//export GoDestroyPlugin
+func GoDestroyPlugin() C.int {
 	runtime.GC()
 	return 0
 }
