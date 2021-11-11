@@ -51,8 +51,8 @@ var (
 
 func init() {
 	// 创建数据目录
-	xreatePath(OneBotPath + "image\\")
-	xreatePath(OneBotPath + "record\\")
+	createPath(OneBotPath + "image\\")
+	createPath(OneBotPath + "record\\")
 }
 
 // App XQ要求的插件信息
