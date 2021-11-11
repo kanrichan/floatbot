@@ -41,8 +41,8 @@ jobs:
       
     - name: Build
       run: |
-        echo GOGCCFLAGS
-        export GOOS=windows; export GOARCH=386; export CGO_ENABLED=1; export CGO_LDFLAGS="-m32 -Wl,--kill-at"; export CGO_LDFLAGS_ALLOW="-m32 -Wl,--kill-at"; export CGO_CFLAGS="-m32 -O3"; export CGO_CXXFLAGS="-m32 -O3"; export CXX=i686-w64-mingw32-g++; export CC=i686-w64-mingw32-gcc; go build -ldflags="-s -w  -extldflags '-static'" -buildmode=c-shared -o artifacts/OneBot-YaYa.XQ.dll
+        echo $GOGCCFLAGS
+        GOOS=windows GOARCH=386 CGO_ENABLED=1 CGO_LDFLAGS="-m32 -Wl,--kill-at" CGO_CFLAGS="-m32 -O3" CGO_CXXFLAGS="-m32 -O3" CXX=i686-w64-mingw32-g++ CC=i686-w64-mingw32-gcc go build -ldflags="-s -w" -buildmode=c-shared -o artifacts/OneBot-YaYa.XQ.dll
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v2
