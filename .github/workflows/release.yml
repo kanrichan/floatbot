@@ -18,13 +18,12 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.15
+        go-version: 1.16
     - name: Install mingw
       run: |
         sudo apt-get update -y
         sudo apt-get install -y gcc-multilib
         sudo apt-get install -y gcc-mingw-w64
-        sudo apt-get install -y gcc-aarch64-linux-gnu
         
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
@@ -41,7 +40,7 @@ jobs:
       run: go mod tidy
       
     - name: Build
-      run: export GOOS=windows; export GOARCH=386; export CGO_ENABLED=1; export CGO_LDFLAGS=-Wl,--kill-at; export CGO_LDFLAGS_ALLOW=-Wl,--kill-at; export CXX=i686-w64-mingw32-g++; export CC=i686-w64-mingw32-gcc; go build -ldflags="-s -w  -extldflags '-static'" -buildmode=c-shared -o artifacts/OneBot-YaYa.XQ.dll
+      run: export GOOS=windows; export GOARCH=386; export CGO_ENABLED=1; export CGO_LDFLAGS=-m32,-Wl,--kill-at; export CGO_LDFLAGS_ALLOW=-m32,-Wl,--kill-at; export CGO_GCCFLAGS=-m32,-O3; export CXX=i686-w64-mingw32-g++; export CC=i686-w64-mingw32-gcc; go build -ldflags="-s -w  -extldflags '-static'" -buildmode=c-shared -o artifacts/OneBot-YaYa.XQ.dll
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v2
